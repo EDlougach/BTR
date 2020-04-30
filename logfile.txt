@@ -1,0 +1,5 @@
+start NewDocument
+Set Beam - done
+MEM : BTR takes 9076 of 358040 available
+InitData done
+Init Default Scenarious: 1

@@ -1,0 +1,28 @@
+BTR 5 SCENPARAM  
+TITLE = "TEST of MULTI-RUN operation" # optional info
+
+MAXSCEN = 3  # total scenarios
+MAXPARAM = 10 # lines with param (reserved)
+
+SCEN = 0  # base scenario (config) (reserved) 
+	CONFIG = fileNAME.txt  # base geometry (optional)
+	;
+SCEN = 1
+	BeamCoreDivY = 0.003
+	BeamCoreDivZ = 0.003
+	;
+SCEN = 2
+	BeamCoreDivY = 0.007
+	BeamCoreDivZ = 0.007
+	;
+SCEN = 3
+	BeamCoreDivY = 0.007
+	BeamCoreDivZ = 0.007
+	PolarNumberAtom = 30
+	AzimNumberAtom = 36
+	OptTraceAtoms = 1  # trace atoms from IS
+	OptNeutrStop  = 1  # stop residuals after neutraliser
+	OptReionStop  = 1  # stop reions
+	;
+END
+	

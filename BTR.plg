@@ -1,0 +1,68 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: BTR - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\DED\LOCALS~1\Temp\RSP22A.tmp" with contents
+[
+/nologo /MT /W2 /GX /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /Fp"Release/BTR.pch" /Yu"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"D:\Users\Jane\BTR-ITER_VC05\partcfg.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\DED\LOCALS~1\Temp\RSP22A.tmp" 
+Creating temporary file "C:\DOCUME~1\DED\LOCALS~1\Temp\RSP22B.tmp" with contents
+[
+/nologo /subsystem:windows /incremental:no /pdb:"Release/BTR.pdb" /machine:I386 /out:"Release/BTR.exe" 
+".\Release\AskDlg.obj"
+".\Release\BeamDlg.obj"
+".\Release\BeamletDlg.obj"
+".\Release\BTR.obj"
+".\Release\BTRDoc.obj"
+".\Release\BTRView.obj"
+".\Release\CommentsDlg.obj"
+".\Release\config.obj"
+".\Release\DataView.obj"
+".\Release\FieldsDlg.obj"
+".\Release\GasDlg.obj"
+".\Release\InjectDlg.obj"
+".\Release\IonSourceDlg.obj"
+".\Release\LoadStepDlg.obj"
+".\Release\LoadView.obj"
+".\Release\MainFrm.obj"
+".\Release\MainView.obj"
+".\Release\MenuPop.obj"
+".\Release\MFDlg.obj"
+".\Release\NBIconfDlg.obj"
+".\Release\NeutrDlg.obj"
+".\Release\partcfg.obj"
+".\Release\ParticlesDlg.obj"
+".\Release\PlotDlg.obj"
+".\Release\PreviewDlg.obj"
+".\Release\ProjectBar.obj"
+".\Release\ReionDlg.obj"
+".\Release\RemnDlg.obj"
+".\Release\ResSmooth.obj"
+".\Release\SetView.obj"
+".\Release\StdAfx.obj"
+".\Release\SurfDlg.obj"
+".\Release\TaskDlg.obj"
+".\Release\ThickDlg.obj"
+".\Release\ThinDlg.obj"
+".\Release\ViewSizeDlg.obj"
+".\Release\BTR.res"
+]
+Creating command line "link.exe @C:\DOCUME~1\DED\LOCALS~1\Temp\RSP22B.tmp"
+<h3>Output Window</h3>
+Compiling...
+partcfg.cpp
+Linking...
+
+
+
+<h3>Results</h3>
+BTR.exe - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

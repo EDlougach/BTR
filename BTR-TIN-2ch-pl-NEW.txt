@@ -1,0 +1,181 @@
+ BTR INPUT    date 21:08:2019	  time 18:21:46 
+ TITLE: MAMuG BEAM
+ COMMENTS:  BTR input may 2015
+-------------------------------------------------
+ Source Beam:  MAMuG 
+ OPTIONS:  
+	 Magnetic Field: file <C:\USERS\DLUGACH_ED\MY CODES\BTR_4.16\TIN INPUT\_MF_ITERTOTIN.TXT>- ON * 1
+	 Gas Profile: file  <C:\Users\Dlugach_ED\My Codes\BTR_4.16\TIN Input\_gas_ITERtoTIN.txt>
+	 First Wall 2D-profile: <C:\Users\Dlugach_ED\My Codes\BTR-ITER Source_4.16\Input\FW-TIN1.txt> NOT LOADED 
+	 PDP-input: file  <> NOT LOADED 
+	 Beamlets: file  <> NOT LOADED 
+	 Source Particle:  D- 
+	 Neutralization: THIN 
+	 Residual Ions tracing after Neutralization: OFF 
+	 Atoms tracing after Neutralization: OFF 
+	 Reflected ions tracing in RID: OFF 
+	 Re-ionization: ON - 14.1 
+	 Re-ionized particles tracing: ON 
+	 Active rows :       1   2   3   4  
+	 Active channels :    1   2   
+
+ .................. BEAM TRACING .................. 
+Source Beam Current, A                            	IonBeamCurrent      	= 40             
+Source Beam Energy, MeV                           	IonBeamEnergy       	= 0.5            
+BML Split Type (default 0 - Polar)                	BeamSplitType       	= 0              
+BML Atoms Polar Split Number (Polar Split)        	PolarNumberAtom     	= 5              
+BML Atoms Azimuth Split Number (Polar Split)      	AzimNumberAtom      	= 6              
+BML Reion Polar Split Number (Polar!)             	PolarNumberReion    	= 0              
+BML Reion Azimuth Split Number (Polar!)           	AzimNumberReion     	= 0              
+BML Resid Polar Split Number (Polar!)             	PolarNumberResid    	= 5              
+BML Resid Azimuth Split Number (Polar!)           	AzimNumberResid     	= 6              
+BML Core Horizontal Diverg, rad  (>0)             	BeamCoreDivY        	= 0.007          
+BML Core Vertical Diverg, rad  (>0)               	BeamCoreDivZ        	= 0.007          
+BML Halo Divergence, rad                          	BeamHaloDiverg      	= 0.03           
+BML Halo Fraction                                 	BeamHaloPart        	= 0.15           
+BML Current Cut-Off ratio (<<1)                   	CutOffCurrent       	= 5.00e-03       
+Source ions Trajectory Step, m                    	TraceStepL          	= 0.1            
+Cross-Section H- -> Ho, m2                        	NeutrSigma          	= 2.00e-20       
+Cross-Section Ho -> H+, m2                        	ReionSigma          	= 6.00e-21       
+Cross-Section H- -> H+, m2                        	TwoStripSigma       	= 1.42e-21       
+Cross-Section H+ -> Ho, m2                        	PosExchSigma        	= 6.37e-23       
+Neutralization Start, m                           	NeutrXmin           	= 1.4            
+Neutralization End, m                             	NeutrXmax           	= 3.51           
+Neutralization Step, m                            	NeutrStepL          	= 0.05           
+Neutral fraction (Neutr. Efficiency)              	NeutrPart           	= 0.560851       
+Residual Positive Ions fraction                   	PosIonPart          	= 0.207123       
+Re-ionization Start, m                            	ReionXmin           	= 3.51           
+Re-ionization End, m                              	ReionXmax           	= 19             
+Re-ionization Step, m                             	ReionStepL          	= 0.2            
+Reionized/Residual Ions Trajectory Step, m        	IonStepL            	= 0.05           
+Beam Axis Horiz. Misalign Angle, rad              	BeamMisHor          	= 0              
+Beam Axis Vert. Misalign Angle, rad               	BeamMisVert         	= 0              
+Beam Axis Vert. Tilting Angle, rad                	BeamVertTilt        	= 0              
+Calc. area Length, m                              	AreaLong            	= 27.4866        
+Calc. area Horiz. min, m                          	AreaHorMin          	= -0.8           
+Calc. area Horiz. max, m                          	AreaHorMax          	= 0.8            
+Calc. area Bottom, m                              	AreaVertMin         	= -1.5           
+Calc. area Top, m                                 	AreaVertMax         	= 1.5            
+
+ .................. NBI CONFIGURATION .................. 
+NBL Axis Vert. Inclination Angle, rad             	VertInclin          	= 0              
+Neutralizer Channels number                       	NeutrChannels       	= 2              
+Neutralizer Entry Coord. X, m                     	NeutrInX            	= 1.5            
+Neutralizer Exit Coord. X, m                      	NeutrOutX           	= 3.5            
+Neutralizer Height, m                             	NeutrH              	= 1.7            
+Neutralizer Channel Entry Width, m                	NeutrInW            	= 0.196474       
+Neutralizer Channel Exit Width, m                 	NeutrOutW           	= 0.178105       
+Neutralizer Panel Entry Thickness, m              	NeutrInTh           	= 0.043          
+Neutralizer Panel Exit Thickness, m               	NeutrOutTh          	= 0.034          
+Neutralizer Entry Vertical Bias, m                	NeutrBiasInVert     	= 0              
+Neutralizer Exit Vertical Bias, m                 	NeutrBiasOutVert    	= 0              
+Neutralizer Entry Horizontal Bias, m              	NeutrBiasInHor      	= 0              
+Neutralizer Exit Horizontal Bias, m               	NeutrBiasOutHor     	= 0              
+RID Channels number                               	RIDChannels         	= 2              
+RID Entry Coord. X, m                             	RIDInX              	= 4              
+RID Exit Coord. X, m                              	RIDOutX             	= 5.7            
+RID Height, m                                     	RIDH                	= 1.7            
+RID Channel Entry Width, m                        	RIDInW              	= 0.185263       
+RID Channel Exit Width, m                         	RIDOutW             	= 0.162          
+RID Panel Thickness, m                            	RIDTh               	= 0.02           
+RID Potential, kV                                 	RIDU                	= -30            
+RID Entry Vertical Shift, m                       	RIDBiasInVert       	= 0              
+RID Exit Vertical Shift, m                        	RIDBiasOutVert      	= 0              
+RID Entry Horizontal Shift, m                     	RIDBiasInHor        	= 0              
+RID Exit Horizontal Shift, m                      	RIDBiasOutHor       	= 0              
+Calorimeter Entry Coord. X, m                     	CalInX              	= 6.3            
+Calorimeter Exit Coord. X, m                      	CalOutX             	= 7.5            
+Calorimeter Entry Width, m                        	CalInW              	= 0.48           
+Calorimeter Exit Width, m                         	CalOutW             	= 0.48           
+Calorimeter Height, m                             	CalH                	= 1.7            
+Dia 5 Dist X, m                                   	PreDuctX            	= 8              
+Dia 5 Width, m                                    	PreDuctW            	= 0.6            
+Dia 5 Height, m                                   	PreDuctH            	= 1.3            
+Dia 5 Vertical Shift, m                           	DiaBiasVert         	= 0              
+Dia 5 Horizontal Shift, m                         	DiaBiasHor          	= 0              
+Dia 6 Dist X, m                                   	DDLinerInX          	= 8.5            
+Dia 6 Width, m                                    	DDLinerInW          	= 0.6            
+Dia 6 Height, m                                   	DDLinerInH          	= 1.2            
+Dia 6 Vertical Shift, m                           	LinerBiasInVert     	= 0              
+Dia 6 Horizontal Shift, m                         	LinerBiasInHor      	= 0              
+Dia 7 Dist X, m                                   	DDLinerOutX         	= 10.6           
+Dia 7 Width, m                                    	DDLinerOutW         	= 1.5            
+Dia 7 Height, m                                   	DDLinerOutH         	= 2.7            
+Dia 7 Vertical Shift, m                           	LinerBiasOutVert    	= 0              
+Dia 7 Horizontal Shift, m                         	LinerBiasOutHor     	= 0              
+Dia 8 Dist X, m                                   	Duct1X              	= 12.9           
+Dia 8 Width, m                                    	Duct1W              	= 1.5            
+Dia 8 Height, m                                   	Duct1H              	= 2.7            
+Dia 8 Vertical Shift, m                           	Duct1BiasVert       	= 0              
+Dia 8 Horizontal Shift, m                         	Duct1BiasHor        	= 0              
+Dia 9 Dist X, m                                   	Duct2X              	= 14             
+Dia 9 Width, m                                    	Duct2W              	= 1.5            
+Dia 9 Height, m                                   	Duct2H              	= 2.7            
+Dia 9 Vertical Shift, m                           	Duct2BiasVert       	= 0              
+Dia 9 Horizontal Shift, m                         	Duct2BiasHor        	= 0              
+Dia 10 Dist X, m                                  	Duct3X              	= 14.6           
+Dia 10 Width, m                                   	Duct3W              	= 1.5            
+Dia 10 Height, m                                  	Duct3H              	= 2.7            
+Dia 10 Vertical Shift, m                          	Duct3BiasVert       	= 0              
+Dia 10 Horizontal Shift, m                        	Duct3BiasHor        	= 0              
+Dia 11 Dist X, m                                  	Duct4X              	= 15.8           
+Dia 11 Width, m                                   	Duct4W              	= 1.5            
+Dia 11 Height, m                                  	Duct4H              	= 2.7            
+Dia 11 Vertical Shift, m                          	Duct4BiasVert       	= 0              
+Dia 11 Horizontal Shift, m                        	Duct4BiasHor        	= 0              
+Dia 12 Dist X, m                                  	Duct5X              	= 17             
+Dia 12 Width, m                                   	Duct5W              	= 1.5            
+Dia 12 Height, m                                  	Duct5H              	= 2.7            
+Dia 12 Vertical Shift, m                          	Duct5BiasVert       	= 0              
+Dia 12 Horizontal Shift, m                        	Duct5BiasHor        	= 0              
+Dia 13 Dist X, m                                  	Duct6X              	= 18             
+Dia 13 Width, m                                   	Duct6W              	= 1.5            
+Dia 13 Height, m                                  	Duct6H              	= 2.7            
+Dia 13 Vertical Shift, m                          	Duct6BiasVert       	= 0              
+Dia 13 Horizontal Shift, m                        	Duct6BiasHor        	= 0              
+Dia 14 Dist X, m                                  	Duct7X              	= 18.1           
+Dia 14 Width, m                                   	Duct7W              	= 1.5            
+Dia 14 Height, m                                  	Duct7H              	= 2.7            
+Dia 14 Vertical Shift, m                          	Duct7BiasVert       	= 0              
+Dia 14 Horizontal Shift, m                        	Duct7BiasHor        	= 0              
+Dia 15 Dist X, m                                  	Duct8X              	= 19             
+Dia 15 Width, m                                   	Duct8W              	= 0.4            
+Dia 15 Height, m                                  	Duct8H              	= 0.8            
+Dia 15 Vertical Shift, m                          	Duct8BiasVert       	= 0              
+Dia 15  Horizontal Shift, m                       	Duct8BiasHor        	= 0              
+
+ .................. TOKAMAK  area .................. 
+Tokamak Centre X in NBI frame, m                  	TorCentreX          	= 22.5           
+Tokamak Centre Y in NBI frame, m                  	TorCentreY          	= -3.4           
+Tokamak Centre Z in NBI frame, m                  	TorCentreZ          	= 0.5            
+Tokamak Sectors Number                            	TorSegmentNumber    	= 18             
+Target Plane A Position X, m                      	MovX                	= 19             
+Target Plane A Half-Width, m                      	MovHor              	= 1              
+Target Plane A Half-Height, m                     	MovVert             	= 1              
+Target Plane A Vertical Shift, m                  	MovShiftVert        	= 0              
+Target Plane B Position X, m                      	Mov2X               	= 22.5           
+Target Plane B Half-Width, m                      	Mov2Hor             	= 1              
+Target Plane B Half-Height, m                     	Mov2Vert            	= 1              
+Target Plane B Vertical Shift, m                  	Mov2ShiftVert       	= 0              
+Target Plane C Position X, m                      	Mov3X               	= 25             
+Target Plane C Half-Width, m                      	Mov3Hor             	= 1              
+Target Plane C Half-Height, m                     	Mov3Vert            	= 1              
+Target Plane C Vertical Shift, m                  	Mov3ShiftVert       	= 0              
+Target Plane D Position X, m                      	Mov4X               	= 26             
+Target Plane D Half-Width, m                      	Mov4Hor             	= 1              
+Target Plane D Half-Height, m                     	Mov4Vert            	= 1              
+Target Plane D Vertical Shift, m                  	Mov4ShiftVert       	= 0              
+
+ .................. BEAM ARRAY (regular) .................. 
+Beam Groups (Segments): Total Horiz. Number       	NofChannelsHor      	= 2              
+Beam Groups (Segments): Total Vert. Number        	NofChannelsVert     	= 4              
+Beam Groups (Segments): Horiz. Step, m            	SegmStepHor         	= 0.26           
+Beam Groups (Segments): Vert. Step, m             	SegmStepVert        	= 0.396          
+Beam Groups (Segments): Horiz. Aiming Dist, m     	BeamAimHor          	= 19             
+Beam Groups (Segments): Vert. Aiming Dist, m      	BeamAimVert         	= 19             
+Beamlets: Horiz. Number per Segment               	NofBeamletsHor      	= 10             
+Beamlets: Vert. Number per Segment                	NofBeamletsVert     	= 16             
+Beamlets: Horiz. Step, m                          	AppertStepHor       	= 0.02           
+Beamlets: Vert. Step, m                           	AppertStepVert      	= 0.022          
+Beamlets: Horiz. Aiming Dist, m                   	AppertAimHor        	= 12             
+Beamlets: Vert. Aiming Dist, m                    	AppertAimVert       	= 999            
