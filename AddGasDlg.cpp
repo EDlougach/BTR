@@ -4,9 +4,8 @@
 #include "stdafx.h"
 #include "BTR.h"
 #include "AddGasDlg.h"
-#include "BTRDoc.h"
 #include "PreviewDlg.h"
-
+#include "BTRDoc.h"
 
 // CAddGasDlg dialog
 
