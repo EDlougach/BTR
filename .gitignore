@@ -1,3 +1,7 @@
+Release/
+Debug/
+*.ncb
+
 # Prerequisites
 *.d
 
