@@ -260,7 +260,7 @@ private:
 		
 public :
 	CArray<ATTRIBUTES, ATTRIBUTES> * pAttr; // current bml rays Attr Array
-	std::vector<CString> * logarr;
+	//std::vector<CString> * logarr;
 	std::vector<minATTR> * tattr;
 	std::vector<EXIT_RAY> * exitarr;
 	std::vector<FALL_ATTR> * fattr; 
@@ -275,7 +275,7 @@ public:
 	int  Get_ID() { return m_ID; }
 	int  GetBMLmin() { return m_Min; }
 	int  GetBMLmax() { return m_Max; }
-	void SetLogArray(std::vector <CString> * p) {logarr = p; }
+//	void SetLogArray(std::vector <CString> * p) {logarr = p; }
 	void SetAttrArray(std::vector <minATTR> * p) {tattr = p;}
 	void SetExitArray(std::vector <EXIT_RAY> * q) {exitarr = q;}
 	void SetFallArray(std::vector <FALL_ATTR> * f) {fattr = f;}

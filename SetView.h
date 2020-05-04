@@ -46,6 +46,7 @@ public:
 	CPoint  ScreenPoint(C3Point P);
 	void ShowLoad(CDC* pDC);
 	void Show3DLoad(CDC* pDC);
+	void ShowProfiles();
 	void DrawLoadProfiles(CDC* pDC); // in local coord
 	void ShowLoadProfiles(CDC* pDC); // in global coord
 	void ShowIntegralProfiles(CDC* pDC);

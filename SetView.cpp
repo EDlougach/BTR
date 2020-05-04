@@ -87,13 +87,19 @@ void CSetView::OnInitialUpdate()
 void CSetView::OnDraw(CDC* pDC)
 {
 	//AfxMessageBox("CSetView OnDraw");
-	STOP = FALSE;
-	CPen pen;
+	//STOP = FALSE;
+/*	CPen pen;
 	pen.CreatePen(PS_SOLID, 1, RGB(200,200,200));
 	CPen * pOldPen = pDC->SelectObject(&pen);
 	CRect rect;
 	GetClientRect(rect);
-	pDC->Rectangle(rect);
+	pDC->Rectangle(rect);*/
+	
+	ShowStatus(pDC);
+	return;
+
+////////////////////////////////////////////////////////
+/*
 	rect.DeflateRect(30, 50, 30, 20);
 	UpdateScales(rect);
 	pDC->SelectObject(pOldPen);
@@ -135,7 +141,40 @@ void CSetView::OnDraw(CDC* pDC)
 	else ShowStatus(pDC); 
 	//pDC->SelectObject(pOldPen);
 	//Load = NULL;
+*/
+}
+void CSetView:: ShowProfiles()
+{
+	CDC* pDC = GetDC();
+	STOP = FALSE;
+	CPen pen;
+	pen.CreatePen(PS_SOLID, 1, RGB(200,200,200));
+	CPen * pOldPen = pDC->SelectObject(&pen);
+	CRect rect;
+	GetClientRect(rect);
+	pDC->Rectangle(rect);
+	rect.DeflateRect(30, 50, 30, 20);
+	UpdateScales(rect);
+	pDC->SelectObject(pOldPen);
+	CBTRDoc* pDoc = (CBTRDoc*)GetDocument();
+	// CPlate * plate = pDoc->pMarkedPlate;
 
+	if (Load != NULL && Load->MaxVal > 1.e-6) {
+		//if (pDoc->ShowProfiles ) {
+			OrigX = rect.left;
+			ymin1 =  Height / 2 + 5;
+			ymin2 =  Height + 25;
+			
+			if (Load->iProf >= 0 && Load ->jProf >= 0) 
+				ShowLoadProfiles(pDC);
+			else ShowIntegralProfiles(pDC);
+
+			ShowGlobalScale(pDC);
+			//ShowLocalScale(pDC);
+			//Load->DrawLoadProfiles(this, pDC);
+	}// Profiles
+	
+	ReleaseDC(pDC);
 }
 
 void CSetView:: DrawLoadProfiles(CDC* pDC)// not used
@@ -935,7 +974,7 @@ void CSetView:: ShowStatus(CDC* pDC)
 		RectArrayY.RemoveAll();
 		CString S;
 		CTime t = CTime::GetCurrentTime();
-		CTime Tbegin = pDoc->StartTime;
+		CTime Tbegin = pDoc->StartTime0;
 		CTime Tend = t;
 		CTimeSpan Telapsed;
 		int h, m, s, h0, m0, s0, dh, dm, ds, sec;
@@ -951,10 +990,10 @@ void CSetView:: ShowStatus(CDC* pDC)
 		int Maxrun = pDoc->MAXRUN;
 		int Ntot = pDoc->NofBeamlets;
 		int Ncalc = NofCalculated;
-		int Nattr = pDoc->Attr_Array.GetSize();
-		int Npart = pDoc->NofBeamlets * pDoc->MultCoeff;
+		//int Nattr = pDoc->Attr_Array.GetSize();
+		//int Npart = pDoc->NofBeamlets * pDoc->MultCoeff;
 
-		S.Format("Time  %02d:%02d:%02d  V%g  Scen %d Runs %d     ", h, m, s, BTRVersion,  Maxscen, Maxrun);
+		S.Format("Time  %02d:%02d:%02d  V%g  Scen %d Runs %d   ", h, m, s, BTRVersion,  Maxscen, Maxrun);
 		pDC->TextOut(10,5, S);
 				
 		h0 = Tbegin.GetHour(); m0 = Tbegin.GetMinute(); s0 = Tbegin.GetSecond();
@@ -968,7 +1007,7 @@ void CSetView:: ShowStatus(CDC* pDC)
 		S.Format("Active Source Current  %g A", SelCurr);
 		pDC->TextOut(10,65, S);
 		
-		S.Format("Total BPs (all ions+atoms in model)  %d   ", Npart);
+		//S.Format("Total BPs (all ions+atoms in model)  %d   ", Npart);
 		//pDC->TextOut(10,85, S);
 		S.Format("Total active BMLs %d  ", Ntot);
 		pDC->TextOut(10,105, S);
@@ -988,7 +1027,8 @@ void CSetView:: ShowStatus(CDC* pDC)
 		S.Format("Available mem   %ld kB  ", pDoc->MemFree);
 		pDC->TextOut(10, 225, S);
 		
-		S.Format("Falls arr: %ld elem x %d Bytes = %ld Bytes   ", pDoc->ArrSize, sizeof(minATTR), MemFalls);
+		S.Format("Falls arr: %ld elem x %d Bytes = %ld Bytes   ", 
+			pDoc->ArrSize, sizeof(minATTR), MemFalls);
 		pDC->TextOut(10, 265, S);
 				
 		if (Ncalc > 0) { // started or done
@@ -996,7 +1036,7 @@ void CSetView:: ShowStatus(CDC* pDC)
 			pDC->TextOut(10,125, S);
 
 			if (Ncalc < Ntot && !pDoc->STOP ) { // tracing in progress
-				Telapsed = GetElapse(Tbegin, t) - pDoc->SuspendedSpan; 
+			/*	Telapsed = GetElapse(Tbegin, t) - pDoc->SuspendedSpan; 
 				dh = Telapsed.GetHours(); dm = Telapsed.GetMinutes(); ds = Telapsed.GetSeconds();
 				S.Format("Elapsed   %02d:%02d:%02d                     ", dh, dm, ds);
 				pDC->TextOut(10,145, S);
@@ -1022,8 +1062,8 @@ void CSetView:: ShowStatus(CDC* pDC)
 				pDC->TextOut(10,285, S);
 				S.Format("Approx BML limit  %ld      ", Ncalc + (int)Nleft);
 				pDC->TextOut(10, 305, S);
-				
-			}// calculated < Total 
+				 */
+			}// calculated < Total
 
 			else { // finished or stopped
 				Tend = pDoc->StopTime;

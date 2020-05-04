@@ -18,7 +18,11 @@ using namespace std;
 #define   MaxThreadNumber		21
 #define   NofPlasmaImpurMax		16
 
+#define   BTRVersion   5.0 
+// default to change
+
 class CAskDlg;
+class CBtrDoc;
 
 int FindDataColumns(FILE * file);
 
@@ -34,6 +38,47 @@ struct THREADINFO
 	//CTracer * pTracer;
 	//HWND hWnd;
 };
+
+#include <fstream>
+
+using namespace std;
+
+//extern bool LogOFF;
+class logstream // copy outut to log-file
+			// taken from http://www.cplusplus.com/forum/general/19489/
+{
+  public:
+	 bool LogON;
+	 ofstream log;
+	 logstream(void){}
+	 ~logstream(void){}
+	 void SetLogSave(bool bSave) { LogON = bSave; } // save Log-file on disk 
+	 void SetFile(char * path) { log.open(path, ios::out); }// | ios::app); }
+	 void CloseFile() { log.close(); }
+	 void ResetFile(char * path) { // append
+		 if (log.is_open()) log.close(); 
+		 log.open(path, ios::app);
+	 }//
+};
+
+template <class T>
+logstream& operator<< (logstream& f, T val)
+{
+	cout << val;
+	if (f.LogON == FALSE) { // Log-file switched OFF
+		//cout << "\t\t\t ----- logOFF\n";
+		return f;
+	}
+
+	if (f.log.is_open())
+		f.log << val;
+	else cout << "---> skip log-out to file (closed) \n ";// << val; "\n";
+	//f.log.flush();
+	return f;
+};
+
+
+//bool LogOFF = FALSE; // write log-file, (stdout -- is always!)
 
 class CBTRDoc : public CDocument
 {
@@ -69,7 +114,7 @@ private:
 	vector <CString> m_Log[MaxThreadNumber];
 
 public:
-	double Version;
+	//double Version;
 	int SCEN, MAXSCEN; // Scenario 
 	int RUN, MAXRUN; // part of Scenario (max 3 runs per scenario)
 	long MemFree, MemUsed, MemFalls, ArrSize; 
@@ -84,7 +129,8 @@ public:
 	FILE * ParticlesFile;
 	CAskDlg * AskDlg;
 	bool EnableAsk;
-	CTime StartTime, StopTime;
+	CTime StartTime0;// start all SCEN (StartParallel)
+	CTime StartTime, StopTime;//RUN Start 
 	CTime TbeginSuspend, TendSuspend;
 	CTimeSpan DataSaveTime;
 	CTimeSpan SuspendedSpan;
@@ -99,6 +145,7 @@ public:
 	CString FW2DFileName;
 	CString AddSurfName; // single file in config
 	CString LogFilePath;
+	CString LogFileName;// = "LOG_BTR5.txt"; //short name
 	
 	CStringArray ScenData[21]; // list of options for each scenario 
 	CString m_Text;
@@ -180,7 +227,7 @@ public:
 
 	volatile bool STOP;
 	bool MemFallReserved;
-	
+	bool OptLogSave;// log-file output
 	bool DINSELECT;
 	bool NeedSave;
 	bool ShowProfiles;
@@ -522,6 +569,7 @@ public:
 	//UINT ThreadProc(LPVOID pParam);
 	void OpenLogFile();
 	void CloseLogFile();
+	void ResetLogFile();
 	void AddData(char*  comment, char* name, double& value, int type);
 //	int * AddData(char*  comment, char* name, int  value, int type);
 	void  UpdateDataArray();
@@ -947,6 +995,8 @@ public:
 	
 	afx_msg void OnLogView();
 	afx_msg void OnLogSave();
+	//	afx_msg void OnLogSave();
+	afx_msg void OnUpdateLogSave(CCmdUI *pCmdUI);
 	afx_msg void OnStatisticsView();
 	afx_msg void OnStatisticsSet();
 	afx_msg void OnSurfacesMesh();

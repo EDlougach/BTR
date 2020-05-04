@@ -372,11 +372,15 @@ void CLoadView::OnLButtonDblClk(UINT /* nFlags */, CPoint /* point */)
 	//CScrollView::OnLButtonDblClk(nFlags, point);
 }
 
-void CLoadView::OnMouseMove(UINT /* nFlags */, CPoint point) 
+void CLoadView::OnMouseMove(UINT  nFlags, CPoint point) 
 {
 	//STOP = TRUE;
 	if (!ShowLoad) return;
 	CBTRDoc* pDoc = (CBTRDoc*)GetDocument();
+	if (!(pDoc->STOP))  {
+		CScrollView::OnMouseMove(nFlags, point);
+		return; // still running!
+	}
 	//if (pDoc->OptPDP) return;
 	C3Point Local, Global;
 	// int N = pDoc->pMarkedPlate->Number;

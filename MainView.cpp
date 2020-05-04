@@ -115,6 +115,8 @@ BEGIN_MESSAGE_MAP(CMainView, CScrollView)
 	ON_WM_RBUTTONDBLCLK()
 	ON_WM_VSCROLL()
 	ON_WM_SIZE()
+//	ON_COMMAND(ID_LOG_SAVE, &CMainView::OnLogSave)
+//	ON_UPDATE_COMMAND_UI(ID_LOG_SAVE, &CMainView::OnUpdateLogSave)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1445,7 +1447,7 @@ void CMainView::OnPlateMaxprofiles()
 	CPlate * plate = pDoc->pMarkedPlate;
 	if (pDoc->OptCombiPlot == 0) { // base plate selected (one)
 		pDoc->OnPlotMaxprofiles();
-		pDoc->pMarkedPlate->ShowLoadState();
+		//pDoc->pMarkedPlate->ShowLoadState();
 		return;
 	}
 
@@ -2032,7 +2034,12 @@ void CMainView::OnPlateScale()
 void CMainView::OnMouseMove(UINT nFlags, CPoint point) 
 {
 	CBTRDoc* pDoc = (CBTRDoc*)GetDocument();
-	if (pDoc->STOP != TRUE) return; // still running!
+	if (!(pDoc->STOP))  {
+		CScrollView::OnMouseMove(nFlags, point);
+		return; // still running!
+	}
+
+		
 	int k;
 	//CDC* pDC = GetDC();
 	CString S;
@@ -2344,3 +2351,4 @@ void CMainView::OnSize(UINT /* nType*/ , int /* cx */, int /* cy */)
 	// TODO: Add your message handler code here
 	//InvalidateRect(&rect, TRUE);
 }
+

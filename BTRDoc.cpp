@@ -64,10 +64,8 @@ static char THIS_FILE[] = __FILE__;
 
 //using namespace System::Net::Mail;
 
-double BTRVersion = 3.0; // default to change
-
+class logstream;
 logstream logout;
-CString LogFileName = "LOG_BTR5.txt"; //short name
 
 CString FindFileName(CString S) 
 {
@@ -103,6 +101,7 @@ int FindDataColumns(FILE * f)
 
 inline double GAUSS(double arg, double delta){	return exp(-arg*arg / (delta*delta)) / delta;}
 
+extern CBTRApp theApp;
 extern HWND ProjectBar;
 extern CLoadView * pLoadView;
 extern CMainView * pMainView;
@@ -337,6 +336,8 @@ CBTRDoc::CBTRDoc()
 	//	AskDlg->Create();
 		EnableAsk = TRUE;
 		SetColors();
+		OptLogSave = TRUE; //!LogOFF;
+	
 }
 
 CBTRDoc::~CBTRDoc()
@@ -388,6 +389,7 @@ void CBTRDoc:: InitData()
 	ThreadNumber  =  num_proc;
 	if (ThreadNumber > 8) ThreadNumber = 8; // set limit
 	
+	LogFileName = "LOG_BTR5.txt"; //short name
 	InitOptions();
 	//std::cout << "InitOptions done" << std::endl;
 
@@ -576,6 +578,7 @@ void CBTRDoc:: InitOptions()
 	OptTraceAtoms = TRUE;
 	MAXRUN = 1;
 	MAXSCEN = 1;
+	OptLogSave = TRUE; //!LogOFF;
 	
 	//OptStrayField = FALSE;
 	OptCalOpen = TRUE;
@@ -1175,7 +1178,7 @@ void  CBTRDoc::ReadScenFile() // read scenario data
 		"SCENARIO data (*.txt);(*.dat)  | *.txt; *.TXT; *.dat; *.DAT | All Files (*.*) | *.*||", NULL);
 
 	if (dlg.DoModal() == IDOK) {
-		ResumeData(); // set default
+		//ResumeData(); // set default
 		strcpy(name, dlg.GetPathName());
 		/*	
 		FileName = dlg.GetFileName();
@@ -1298,13 +1301,13 @@ BOOL CBTRDoc::OnNewDocument()
 {
 	if (!CDocument::OnNewDocument())
 		return FALSE;
-
-	//char * lname;
-	//strcpy(lname, "logfile.txt");
-	//strcpy(logname, "logfile.txt");
 	
-	logout.SetFile("logfile.txt");
-	//logout.log.open("logfile.txt", ios::out); //, "w");
+	OptStart = 0; // new analysis - not asked
+	OptAddDuct = TRUE; // no duct (not asked)
+	OptLogSave = TRUE; //!LogOFF;
+	logout.SetLogSave(OptLogSave);// NOT WORKING
+	logout.SetFile("logfile.txt");// test log before ReadData
+	
 	CString s;
 
 	//std::cout << "start NewDocument" << std::endl;
@@ -1320,15 +1323,14 @@ BOOL CBTRDoc::OnNewDocument()
 		
 	InitData();// calls InitOptions
 	//std::cout << "InitData done" << std::endl;
-	logout << "InitData done\n";
+	//logout << "InitData done\n";
 
 	InitScenDefault();
 	s.Format("Init Default Scenarious: %d\n", MAXSCEN);
 	//std::cout << "Init Default Scenarious: " << MAXSCEN << " (MAXSCEN)" <<  std::endl;
 	logout << s;	//MAXSCEN = 1; //single 
-	
-	//logout.log.close();
-	logout.CloseFile();
+	logout << "Close tmp log\n";
+	logout.CloseFile();// test log
 
 	GField.reset(new CGasField());
 	AddGField = new CGasField();
@@ -1341,8 +1343,9 @@ BOOL CBTRDoc::OnNewDocument()
 	sdlg.m_Start = OptStart;
 	if (sdlg.DoModal() != IDOK) return FALSE;
 	OptStart = sdlg.m_Start; // 0 - New; 1 - Results; 2 - Demo */
-	OptStart = 0; // new analysis - not asked
-	BTRVersion = 5.0; // not asked now
+	
+	//BTRVersion = 5.0; // not asked now
+
 	CString Sconfig = ScenData[0][1];
 	CString Sopt = "";
 	for (int i = 1; i <= MAXSCEN; i++)
@@ -1376,14 +1379,15 @@ BOOL CBTRDoc::OnNewDocument()
 				OptAddDuct = FALSE; 
 				break;
 			} // switch res2 */
-			OptAddDuct = TRUE; // no duct (not asked)
+			
 			if (OnDataGet() == 0) // ReadData, UpdateDataArray, SetBeam, InitPlasma, SetPlates, SetStatus, SetPolarBeamlets 
 				SetPlates(); // if data not changed 
 			break;
 		case IDNO: //res
 			break;
 		case IDCANCEL: //res
-			CloseLogFile();//logout.log.close();
+			if (OptLogSave) 
+				CloseLogFile();//logout.log.close();
 			return FALSE; // close log before exit
 
 		} //switch res
@@ -1418,7 +1422,8 @@ BOOL CBTRDoc::OnNewDocument()
 			//logout << Sconfig;logout << Sopt;logout << "\n";
 			break;
 		case IDCANCEL: //res1
-			CloseLogFile();//logout.log.close();
+			if (OptLogSave) 
+				CloseLogFile();//logout.log.close();
 			return FALSE;
 		} //switch res1
 		
@@ -1457,10 +1462,8 @@ BOOL CBTRDoc::OnNewDocument()
 	//OnDataActive();
 	FormDataText(0); // no internal names
 
-	char buf[1024];
-	char * path = strcpy(buf, LogFilePath + "\\" + LogFileName);  
-	logout.ResetFile(path);//close + reopen for append
-	
+	ResetLogFile();
+		
 	return TRUE;
 }
 
@@ -2785,8 +2788,7 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	 if (TaskRID)  SelectPlate(pPlate);*/
 
 	 pPlate = new CPlate(); // Entry 
-	 PlateCounter++;
-	 pPlate->Number = PlateCounter; 
+	 //PlateCounter++;  pPlate->Number = PlateCounter; // -> in AddCond
 	 p0 = C3Point(NeutrInX - 0.2, YminIn - 0.1, -NeutrH * 0.5 - 0.1);
 	 p3 = C3Point(NeutrInX - 0.2, -YminIn + 0.1,  NeutrH * 0.5 + 0.1);
 	 pPlate->OrtDirect = -1;
@@ -2797,12 +2799,11 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	 pPlate->Visible = FALSE;
 	 S.Format("NEUTRALIZER Entry plane X = %g m", NeutrInX - 0.2);
 	 pPlate->Comment = S; 
-	 PlatesList.AddTail(pPlate);
+	 AddCond(pPlate);//PlatesList.AddTail(pPlate);
 	// if (TaskRID) SelectPlate(pPlate);
 	
 	 pPlate = new CPlate(); // Exit 
-	 PlateCounter++;
-	 pPlate->Number = PlateCounter; 
+	//PlateCounter++;  pPlate->Number = PlateCounter; // -> in AddCond
 	 p0 = C3Point(NeutrOutX + 0.2, YminOut - 0.1, -NeutrH * 0.5 - 0.1);
 	 p3 = C3Point(NeutrOutX + 0.2, -YminOut + 0.1,  NeutrH * 0.5 + 0.1);
 	 pPlate->OrtDirect = -1;
@@ -2813,7 +2814,7 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	 pPlate->Visible = FALSE;
 	 S.Format("NEUTRALIZER Exit plane X = %g m", NeutrOutX + 0.2);
 	 pPlate->Comment = S; 
-	 PlatesList.AddTail(pPlate);
+	 AddCond(pPlate);//PlatesList.AddTail(pPlate);
 	// if (TaskRID)  SelectPlate(pPlate);
 
 	 int i;
@@ -3074,8 +3075,7 @@ void  CBTRDoc::SetPlatesRID()// -------------  RID -----------------------------
 	double Yin, Yout;
 
 	 pPlate = new CPlate(); // Exit
-	 PlateCounter++;
-	 pPlate->Number = PlateCounter; 
+	//PlateCounter++;  pPlate->Number = PlateCounter; // -> in AddCond
 	 p0 = C3Point(RIDOutX + 0.2, YminOut - 0.15, -RIDH * 0.5 - 0.1);
 	 p3 = C3Point(RIDOutX + 0.2, -YminOut + 0.15,  RIDH * 0.5 + 0.1);
 	 pPlate->OrtDirect = -1;
@@ -3086,7 +3086,7 @@ void  CBTRDoc::SetPlatesRID()// -------------  RID -----------------------------
 	 pPlate->Visible = FALSE;
 	 S.Format("RID Exit plane X = %g m", RIDOutX + 0.2);
 	 pPlate->Comment = S;
-	 PlatesList.AddTail(pPlate);
+	 AddCond(pPlate);// PlatesList.AddTail(pPlate);
 	// if (TaskRID)  SelectPlate(pPlate);
 
 	 int i;
@@ -4907,8 +4907,7 @@ void  CBTRDoc::SetPlatesNBI() // NBI config
 //	if (TaskReionization)  SelectPlate(pPlate);
 
 	pPlate = new CPlate(); // Exit 
-	PlateCounter++;
-	pPlate->Number = PlateCounter; 
+	//PlateCounter++;  pPlate->Number = PlateCounter; // -> in AddCond
 	 p0 = C3Point(CalOutX + 0.01, -CalOutW * 0.5 - 0.5, -CalH * 0.5 - 0.5);
 	 p3 = C3Point(CalOutX + 0.01, CalOutW * 0.5 + 0.5,  CalH * 0.5 + 0.5);
 	 pPlate->OrtDirect = -1;
@@ -4919,7 +4918,7 @@ void  CBTRDoc::SetPlatesNBI() // NBI config
 	 pPlate->Visible = FALSE;
 	 S.Format("Calorimeter Exit plane X = %g m", CalOutX + 0.2);
 	 pPlate->Comment = S;
-	 PlatesList.AddTail(pPlate);
+	 AddCond(pPlate);// PlatesList.AddTail(pPlate);
 //	 if (TaskRID)  SelectPlate(pPlate);
 
 	 //PlasmaEmitter = pPlate->Number; // for next tracing (in Plasma)
@@ -5089,11 +5088,17 @@ void CBTRDoc::AddCond(CPlate * plate)// add to PlateList if condition
 	}
 	//if (FindPlateClones(plate) > 0) return; //found clones in the main PlatesList
 	
-	//if (plate->Orig.X < -0.5) return; // 1st condition
+	//skip posX < -0.5 // 1st condition
 	for (int i = 0; i < 4; i++) { // any corner!
 		if (plate->Corn[i].X < -0.5) return; // skip adding
 	}
+	// skip transparent
+	if (!(plate->Solid)) return;
 	
+	CString comm = plate->Comment;
+	comm.MakeUpper();
+	if (comm.Find("TRANSPAR", 0) > -1) return;
+		
 	PlateCounter++; //OK
 	plate->Number = PlateCounter;
 	PlatesList.AddTail(plate); 
@@ -5192,10 +5197,8 @@ void CBTRDoc::AppendAddPlates() // append free surf to the main PlatesList
 			clones++;
 			continue;
 		}
-		
-		PlateCounter++;
 		pPlate = new CPlate(); // new Plate - copy
-		pPlate->Number = PlateCounter;
+		//PlateCounter++;  pPlate->Number = PlateCounter; // -> in AddCond
 		p0 = C3Point(plate->Corn[0]);
 		p1 = C3Point(plate->Corn[1]);
 		p2 = C3Point(plate->Corn[3]);
@@ -5204,11 +5207,9 @@ void CBTRDoc::AppendAddPlates() // append free surf to the main PlatesList
 		
 		pPlate->Solid = plate->Solid;
 		pPlate->Visible = pPlate->Solid;
-		
 		pPlate->Fixed = -1;// plate->Fixed;// 0 - plan, 1 - side
-		
 		pPlate->Comment = plate->Comment;
-		PlatesList.AddTail(pPlate);
+		AddCond(pPlate); //PlatesList.AddTail(pPlate);
 	}
 	if (clones > 0) {
 		S.Format("%d surf clones found (not added)", clones);
@@ -5672,7 +5673,7 @@ void CBTRDoc::OnDataImport_PDP_SINGAP()
 	}//OK
 }
 
-void CBTRDoc::OnDataStore() // Update without save
+void CBTRDoc::OnDataStore() // Update + save (v5) actual Config 
 {
 	/*if (!STOP) {
 		AfxMessageBox("Stop calculations before updating the data! \n (Red cross on the Toolbar)");
@@ -5716,6 +5717,15 @@ void CBTRDoc::OnDataStore() // Update without save
 	
 	UpdateDataArray();// m_Text -> DataArray // calls SetData, SetOption
 	CheckData();
+
+	char buf[1024];
+	char * name = strcpy(buf, ConfigFileName);
+	FILE * fout = fopen(name, "w");
+	fprintf(fout, m_Text);
+	fclose(fout);
+	S.Format(">>>> Config-file %s is Rewritten! \n", ConfigFileName);
+	logout << S;
+	AfxMessageBox(S);
 
 	pDataView->m_rich.SetFont(&pDataView->font, TRUE);
 	pDataView->m_rich.SetBackgroundColor(FALSE, RGB(210,250,200));
@@ -5794,6 +5804,8 @@ void CBTRDoc::OnDataStore() // Update without save
 
 	SetStatus(); // NofBeamlets, Nofactive channels, InitTracers
 	ShowStatus();
+	logout << "-- Config is Updated by User [OnDataStore] ---\n"; 
+	logout << "OptLogSave is " << OptLogSave << "\n";
 	OnShow();
 	
 }
@@ -5865,9 +5877,9 @@ void   CBTRDoc::SaveData()
 		}
 		delete dlg;
 
-		if (AddPlatesNumber > 0) {
+	/*	if (AddPlatesNumber > 0) {
 			int reply = AfxMessageBox("Save the List of Additional Surfaces?", 3);
-			if (reply != IDYES) return;
+			if (reply != IDYES) return;  //in v5 the Add Surf is included to Config!
 
 		CFileDialog dlg1(FALSE, "dat; txt | * ", "", OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
 		"Additional Surfaces data file (*.txt);(*.dat) | *.txt; *.TXT; *.dat; *.DAT | All Files (*.*) | *.*||", NULL);
@@ -5876,7 +5888,7 @@ void   CBTRDoc::SaveData()
 			WriteAddPlates(name);
 		}
 
-		}
+		}*/
 
 }
 
@@ -5944,14 +5956,15 @@ void  CBTRDoc:: OpenLogFile()//CString dir)
 	//CString Name = LogFileName; // "LOG_BTR5.txt";
 	char buf[1024];
 	char * path = strcpy(buf, LogFilePath + "\\" + LogFileName);  
-	logout.SetFile(path); 
+	if (OptLogSave==1) 
+		logout.SetFile(path); 
 	//logout.log.open("LOG_BTR5.txt");//, ios::out);// | ios::ate); //, "w");
 	CString s;
-	CTime tm = StartTime;//CTime::GetCurrentTime();
+	CTime tm = StartTime0;//CTime::GetCurrentTime();
 	CString Date, Time;
 	Date.Format("%02d-%02d-%04d", tm.GetDay(), tm.GetMonth(), tm.GetYear());
 	Time.Format("%02d:%02d:%02d", tm.GetHour(), tm.GetMinute(), tm.GetSecond());
-	s.Format(" BTR LOG ---- Date %s   Time %s --------\n", Date, Time);
+	s.Format("\n BTR LOG ----  Date %s   Time %s --------\n", Date, Time);
 	logout << s;
 	logout << " BTR version " << BTRVersion << " /MULTI\n";
 	logout << "HomeDirName :  " + CurrentDirName + "\n"; 
@@ -5975,6 +5988,19 @@ void  CBTRDoc:: CloseLogFile()
 	//::SetCurrentDirectory(LogFilePath);
 	logout << "---------- END / CLOSE LOG-file ----------\n";	 
 	logout.CloseFile(); //log.close();
+}
+
+void  CBTRDoc:: ResetLogFile()
+{
+	//logout << "---------- RESET LOG-file ----------\n";	 
+	char buf[1024];
+	char * path = strcpy(buf, LogFilePath + "\\" + LogFileName);  
+	if (OptLogSave) {
+		logout.ResetFile(path);//close + reopen for append
+		logout << "_________ Reset Log File __________\n";
+		logout << "Log File output is ON\n"; 
+	}
+	else logout << "!!!! Log File output is OFF!!!!\n"; 
 }
 
 void  CBTRDoc:: WritePDPinput(char * name)
@@ -10768,7 +10794,7 @@ void CBTRDoc::OnDataSave()
 	} */
 	//STOP = TRUE;
 	
-	CWaitCursor wait; 
+	//CWaitCursor wait; 
 	SaveData();
 	OnShow();
 
@@ -11171,11 +11197,12 @@ void CBTRDoc::OnStop() // stop (or suspend - commented) threads
 	//SetTitle("STOPPED"); // in all cases!
 	//ShowStatus();
 	
-	S.Format(" ---->[STOP]<----\n\n", BTRVersion);
+	S.Format(" -->[STOP]<--\n\n", BTRVersion);
 	//SetTitle(S);
 	logout << S;
+		
 	//OnShow();
-		//SwapMouseButton(TRUE);
+	//SwapMouseButton(TRUE);
 	
 }
 void CBTRDoc::CollectRUNSummary(CString SUMname, CStringArray & names) // merge load list results
@@ -11787,9 +11814,8 @@ void CBTRDoc::CompleteRun() // calculate, save loads, re-init arrays
 	CTimeSpan dt = t1 - t0; //GetElapse(t0, t1);
 	DataSaveTime += dt;
 
-	char * path = strcpy(buf, LogFilePath + "\\" + LogFileName);  
-	logout.ResetFile(path);//close + reopen for append
-	logout << "_________Reset Log after RUN___________\n";
+	ResetLogFile();
+			
 }
 
 void CBTRDoc::CompleteScen() // Scen consists of 1-3 runs 
@@ -11826,10 +11852,12 @@ void CBTRDoc::CompleteScen() // Scen consists of 1-3 runs
 	
 	logout << "\n GO back HOME ->> " << CurrentDirName << "\n";
 
-	char buf[1024];
+/*	char buf[1024];
 	char * path = strcpy(buf, LogFilePath + "\\" + LogFileName);  
-	logout.ResetFile(path);//close + reopen for append
-	logout << "_________Reset Log after SCEN___________\n";
+	if (OptLogSave)
+		logout.ResetFile(path);//close + reopen for append
+	logout << "_________Reset Log after SCEN___________\n";*/
+
 	ResumeData(); // back to initial config
 }
 
@@ -11969,7 +11997,7 @@ void CBTRDoc::InitScen() // set data + opt for current SCEN
 		data += SetData(S, 0);// update data
 		logout << S;// std::endl;
 	}
-	logout << data << " + data lines accepted\n";
+	logout << data << " Data lines + " << maxdata-data << " Opt lines)\n";
 
 	SetBeam(); // MAMuG Channels/Beamlets, Aimings/Positions
 	// update BML Attr arrays for all(3) SCEN Runs
@@ -11984,6 +12012,7 @@ void CBTRDoc::InitScen() // set data + opt for current SCEN
 
 void CBTRDoc::InitRun(int run)
 {
+	StartTime = CTime::GetCurrentTime();// RUN start
 	CString S = "    RUN trace opt : ";
 	OptAtomPower = TRUE; // depose atoms
 	OptNegIonPower = TRUE; // depose negions
@@ -12048,7 +12077,12 @@ void CBTRDoc::RunScen(int iopt[3]) // - current scenario, multi-run trace option
 	
 	int scopt[3] = { optA, optRes, optRei };//SCEN can have specific run opts - basic opts not changed!!!
 	//MAXRUN = runs[0] + runs[1] + runs[2];
-	
+	CString Date, Time;
+	///////Set New StartTime!!!
+	StartTime = CTime::GetCurrentTime();
+	CTime tm = StartTime;
+	Date.Format("%02d-%02d-%04d", tm.GetDay(), tm.GetMonth(), tm.GetYear());
+
 	RUN = 0;// count actual runs 1..3 
 	for (int irun = 0; irun < 3; irun++) { //0,1,2
 		RUN++;	//::MessageBox(NULL, S, "BTR 5 RunScen", 0);//AfxMessageBox(S, MB_ICONEXCLAMATION | MB_OK);
@@ -12057,8 +12091,9 @@ void CBTRDoc::RunScen(int iopt[3]) // - current scenario, multi-run trace option
 			continue; // this trace option - OFF
 		else 
 			InitRun(irun); // set single trace for this run: Atoms or Resid or Reions + Power deposited and saved! 
-		
-		S.Format("    Scen %d RUN %d ...\n",  SCEN, RUN);
+				
+		Time.Format("%02d:%02d:%02d", tm.GetHour(), tm.GetMinute(), tm.GetSecond());
+		S.Format("  --- Scen %d RUN %d ---- %s --- %s --- \n",  SCEN, RUN, Date, Time);
 		//SetTitle(S);	
 		logout << S;//std::cout << S;// << std::endl;//////////
 
@@ -12079,32 +12114,32 @@ void CBTRDoc::RunScen(int iopt[3]) // - current scenario, multi-run trace option
 	SCEN++;	//S.Format("  Scen %d set \n", SCEN); std::cout << S;
 
 	if (SCEN > MAXSCEN) {
-		CTime tm = CTime::GetCurrentTime();
+		tm = CTime::GetCurrentTime();
 		StopTime = tm;
-		CString Date, Time;
-		Date.Format("%02d-%02d-%04d", tm.GetDay(), tm.GetMonth(), tm.GetYear());
+		//CString Date, Time;
+		//Date.Format("%02d-%02d-%04d", tm.GetDay(), tm.GetMonth(), tm.GetYear());
 		Time.Format("%02d:%02d:%02d", tm.GetHour(), tm.GetMinute(), tm.GetSecond());
 		S.Format(" +++++ Date %s  Time %s +++++ \n", Date, Time);
 		logout << "BTR" << BTRVersion << "--- ALL is DONE (last run shown)----\n";
 		logout << S << "\n";
 
-		CTime t0 = StartTime;
+		CTime t0 = StartTime0; // from global start!!!
 		CTime t1 = StopTime;
 		CTimeSpan dt = t1 - t0;
 		Time.Format("%02d:%02d:%02d", dt.GetHours(), dt.GetMinutes(), dt.GetSeconds());
-		S.Format("+++ Running Time %s \n", Time);
+		S.Format("+++ ALL SCENs Running Time %s \n", Time);
 		logout << S;
 		
 		CTimeSpan dst = DataSaveTime;
 		Time.Format("%02d:%02d:%02d", dst.GetHours(), dst.GetMinutes(), dst.GetSeconds());
-		S.Format("+++ Data Writing Time %s \n", Time);
+		S.Format("+++ ALL SCENs Writing Time %s \n", Time);
 		logout << S;
 
 		//Beep(100, 200);
 		ShowStatus();
 		OnShow();
 		SetTitle("DONE");
-		AfxMessageBox("BTR 5 multi-scen\n DONE!\n  Last Run is shown");
+		AfxMessageBox("BTR 5 multi is DONE!\n  LAST RUN is shown");
 	}
 		
 	//for (int i = 0; i <= MAXSCEN; i++)	ScenData[i].RemoveAll();
@@ -12133,6 +12168,7 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 	}
 	OptParallel = TRUE;
 	NofCalculated = 0; //new: NO restart after pause!!
+	logout.SetLogSave(OptLogSave);
 
 	if (BTRVersion  < 5) { //old version
 		AfxMessageBox("Multi-run is supported from Version 5.0");
@@ -12141,6 +12177,11 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 	}
 	//OnShow();
 	//	::MessageBox(NULL, "SCEN >= MAXSCEN", "OnStartPar", 0);
+	
+	//CBTRApp theApp;
+	CWnd * pMW = theApp.m_pMainWnd;
+	pMW->ShowWindow(SW_SHOWMINIMIZED);
+	pMW->UpdateWindow();
 
 	int runs[3] = { 1, 0, 0 }; // { ATOMS, Resid, Reions } - basic options for each scen
 	if (OptTraceAtoms == 0) runs[0] = 0;
@@ -12157,31 +12198,34 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 	
 	SuspendedSpan = 0;
 	DataSaveTime = 0;
-
-	// SHOW TIME //////////////////
-	StartTime = CTime::GetCurrentTime();
+	
+	StartTime0 = CTime::GetCurrentTime();// Global start
+	StartTime = StartTime0; // //Reset time for current RUN start
+	// RESET LOG for append
+	ResetLogFile();
 	
 	ShowStatus();//show active data on views
+
 	CTime tm = StartTime;//CTime::GetCurrentTime();
 	CString Date, Time;
 	Date.Format("%02d-%02d-%04d", tm.GetDay(), tm.GetMonth(), tm.GetYear());
 	Time.Format("%02d:%02d:%02d", tm.GetHour(), tm.GetMinute(), tm.GetSecond());
-	S.Format("BTR %g -------- Date %s  Time %s ------------\n", 
-				BTRVersion, Date, Time);
+	S.Format("BTR %g -------- Date %s  Time %s ------------\n", BTRVersion, Date, Time);
 	logout << S;// << std::endl;////////////
 	
-	if (MAXSCEN > 1) ResumeData(); // back to initial config
+	//if (SCEN > 1 && MAXSCEN > 1) ResumeData(); // back to initial config
 	
 	if (MAXSCEN > 1) { // multi-run, v5.0 /////////////////////////
 		if (SetDefaultMesh()) {  // set surf resolution - before all runs = TRUE
-			S.Format(" ****** Start MULTI-RUN ********\n");
+			S.Format("\n\t *********** Start MULTI-RUN ***********\n");
 			SetTitle(S);
 			logout << S; // << std::endl;///////////////
 
 			while (SCEN <= MAXSCEN) RunScen(runs); // SCEN is +1 after each run-set is complete -> CompleteScen()
 		} // multi-run not cancelled
 
-		CloseLogFile(); // after ALL SCENS
+		//if (OptLogSave) CloseLogFile(); // after ALL SCENS
+		ResetLogFile();
 		return;
 	} // if  MAXSCEN > 1 -> run Multi
 	
@@ -12216,6 +12260,7 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 			if (AfxMessageBox(s, MB_ICONQUESTION | MB_YESNO) == IDYES) OptDrawPart = FALSE;
 		}*/
 		
+		RUN = 13;
 		S.Format(".... Start SINGLE-RUN .....\n", BTRVersion, ThreadNumber);
 		SetTitle(S);
 		logout << S;// << std::endl;////////////////////
@@ -14362,7 +14407,8 @@ void CBTRDoc::OnPlotMaxprofiles()
 	pLoadView->Cross.X = pMarkedPlate->Load->iProf * pMarkedPlate->Load->StepX;
 	pLoadView->Cross.Y = pMarkedPlate->Load->jProf * pMarkedPlate->Load->StepY;
 //	if (pLoadView->ShowLoad == TRUE) pLoadView->InvalidateRect(NULL, TRUE);
-	pSetView->InvalidateRect(NULL, TRUE);
+	pSetView->SetLoad_Plate(pMarkedPlate->Load, pMarkedPlate);
+	pSetView->ShowProfiles();//->InvalidateRect(NULL, TRUE);
 //	UpdateAllViews(NULL, NULL);
 	
 }
@@ -17651,6 +17697,8 @@ BOOL CBTRDoc::CanCloseFrame(CFrameWnd* pFrame)
 	if (reply == IDCANCEL) return FALSE;
 
 	STOP = TRUE;	OnStop();
+	logout << "------------ EXIT BTR 5 session -----------------\n";
+	CloseLogFile();
 		
 	//SendReport(FALSE); // don't include input	//for Valid User returns back:
 
@@ -18076,6 +18124,7 @@ void CBTRDoc::OnOptionsBeam()
 			}
 	
 			SetTraceParticle(TracePartNucl, TracePartQ);
+			logout << "Edit Beam Options - DONE \ n"; 
 
 	} // IDOK
 //	RIDField->Set();
@@ -18731,23 +18780,33 @@ void CBTRDoc::ShowBPdata(int n, int lines) // show statistics on Marked Surf in 
 void CBTRDoc::ShowLogFile(int lines) // show log part. if lines == 0 -> show all
 {
 	m_Text.Empty();// = "";
-	//m_Text += "--- press F2 to return to BTR Input list! ---\n\n";
-	/*while (!feof(fin)) {
-		fgets(buf, 1024, fin);
-		if (!feof(fin))	m_Text += buf;
-	}
-	fclose(fin);
-	SetTitle(name);*/
-	m_Text += "PROGRESS...\n\n";
 	CString S;
+	//m_Text += "--- press F2 to return to BTR Input list! ---\n\n";
+	//SetTitle(name);
+	m_Text += "LOG-file current state...\n";
+	if (!OptLogSave) m_Text += "Log-file output is switched OFF!\n";
+
+	else {
+		S = LogFilePath + "\\" + LogFileName;
+		char * name;
+		char buf[1024];
+		name = strcpy(buf, S);
+		FILE * fin = fopen(name, "r");
+		while (!feof(fin)) {
+			fgets(buf, 1024, fin);
+			if (!feof(fin))	m_Text += buf;
+		}
+		fclose(fin);
+	}
 	
-	int sz = m_GlobalLog.size();
+/*	int sz = m_GlobalLog.size();
 	int imin = max(sz-lines, 0); // to display
 	if (imin >= sz) imin = 0;// if lines == 0
 	for (int i = sz - 1; i >= imin; i--) {
 		S.Format(" %s", m_GlobalLog[i]);
 		m_Text += S;// m_GlobalLog[i];
 	}
+	*/
 	pDataView->m_rich.SetFont(&pDataView->font, TRUE);
 	pDataView->m_rich.SetBackgroundColor(FALSE, RGB(250, 250, 180)); // G230
 	pDataView->m_rich.SetWindowText(m_Text);
@@ -19655,18 +19714,18 @@ bool CBTRDoc::AddFalls(int tid, int isrc,  std::vector<minATTR> * tattr)
 	} CATCH (CMemoryException, e) {
 		S.Format("Thread %d\n FAILED to add Falls! \n Last bml -  %d", tid, NofCalculated);
 		AfxMessageBox(S);
-		STOP = TRUE;
-		//OnStop();
-		
+		//STOP = TRUE;
+		OnStop();
+		return FALSE;
 	} END_CATCH;
 	
-	if (STOP) { 
+/*	if (STOP) { 
 		Slog.Format("AddFalls: Thread %d\n Bml %d is stopped\n", tid, NofCalculated +1);
 		m_GlobalLog.push_back(Slog);
 		OnStop();
 		//for (int i = 0; i < ThreadNumber; i++)		m_Tracer[i].SetContinue(FALSE);
 		return FALSE;
-	}
+	}*/
 
 /*	a = tattr->at(0);
 
@@ -19674,10 +19733,9 @@ bool CBTRDoc::AddFalls(int tid, int isrc,  std::vector<minATTR> * tattr)
 				a.Nfall, a.Xmm, a.Ymm, a.AXmrad, a.AYmrad, a.PowerW, a.Charge);
 	m_GlobalLog.push_back(Slog);*/
 
-	Slog.Format("{%d}  Src %4d Bml %4d - done (BML falls added)\n", tid, isrc, NofCalculated+1); // NofCalculated++ after calling this func 
-	m_GlobalLog.push_back(Slog);
-	//std::cout << Slog << std::endl;
-	//m_GlobalLog.shrink_to_fit();
+	//Slog.Format("{%d}  Src %4d Bml %4d - done (BML falls added)\n", tid, isrc, NofCalculated+1); // NofCalculated++ after calling this func 
+	//m_GlobalLog.push_back(Slog);
+	
 	return TRUE;
 	
 }
@@ -19696,7 +19754,7 @@ void CBTRDoc::InitTracer(int thread, CTracer * pTracer)// not called
 	pTracer->SetDocument(this);
 	pTracer->SetAttrArray(&m_AttrVector[i]);
 	
-	pTracer->SetLogArray(&m_Log[i]);
+//	pTracer->SetLogArray(&m_Log[i]);
 	pTracer->SetViewWnd(pMainView);
 	pTracer->SetStatWnd(pSetView);
 	pTracer->SetContinue(FALSE);// continue = FALSE
@@ -19737,7 +19795,7 @@ void CBTRDoc:: InitTracers()
 			m_Tracer[i].SetAttrArray(&m_AttrVector[i]);
 		//	m_Tracer[i].SetExitArray(&m_ExitVector[i]);
 		//	m_Tracer[i].SetFallArray(&m_FallVector[i]);
-			m_Tracer[i].SetLogArray(&m_Log[i]);
+		//	m_Tracer[i].SetLogArray(&m_Log[i]);
 			m_Tracer[i].SetViewWnd(pMainView);
 			m_Tracer[i].SetStatWnd(pSetView);
 			m_Tracer[i].SetContinue(FALSE);// continue = FALSE
@@ -20790,8 +20848,7 @@ void CBTRDoc::OnUpdateOptionsNbiconfig(CCmdUI *pCmdUI)
 void CBTRDoc::OnInputFree()
 {
 	//OptFree = TRUE; // OLD
-	Version = 5.0;
-	BTRVersion = Version;
+	//Version = 5.0;//BTRVersion = Version;
 
 	OnShow();
 	CString s;
@@ -21170,12 +21227,26 @@ void CBTRDoc::OnLogView()
 }
 
 
-void CBTRDoc::OnLogSave()
+/*void CBTRDoc::OnLogSave()
 {
 	ShowLogFile(10);
 	AfxMessageBox("Log settings will be added here");
+}*/
+
+void CBTRDoc::OnLogSave()
+{
+	OptLogSave = !OptLogSave;
+	logout.SetLogSave(OptLogSave);
+	if (OptLogSave) AfxMessageBox("Log-file is switched ON");
+	else AfxMessageBox("Log-file is switched OFF");
 }
 
+void CBTRDoc::OnUpdateLogSave(CCmdUI *pCmdUI)
+{
+	pCmdUI->SetCheck(OptLogSave);
+	if (OptLogSave) pCmdUI->SetText("ON"); // currently ON
+	else pCmdUI->SetText("OFF");// currently ON
+}
 
 void CBTRDoc::OnStatisticsView() //= Show ALL (all stat options -> ON)
 {

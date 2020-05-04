@@ -49,9 +49,10 @@ int Gray(double Ratio);
 COLORREF GetColor10(double Ratio);
 void SetColors();
 
-// -------------------------------------
+/* -------------------------------------
 #include <fstream>
 using namespace std;
+extern bool LogOFF;
 class logstream // copy outut to log-file
 			// taken from http://www.cplusplus.com/forum/general/19489/
 {
@@ -67,10 +68,13 @@ class logstream // copy outut to log-file
 template <class T>
 logstream& operator<< (logstream& f, T val)
 {
+	cout << val;
+	if (LogOFF) 
+		return f;// Log-file switched OFF
+
 	if (f.log.is_open())
 		f.log << val;
-	else cout << "\t !!! log-file is closed!\n" << "\t -> skip " << val; "\n";
-	cout << val;
+	else cout << "\t !!!  -> skip file output " << val; "\n";
 	//f.log.flush();
 	return f;
 };

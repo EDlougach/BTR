@@ -2772,7 +2772,7 @@ void CPlate ::  DrawPlateBound()//NEW:polygon, called from MainView LBdown
 void  CPlate :: ShowLoadState()
 {
 	CLoadView * pLV = (CLoadView *) pLoadView;
-	pSetView ->Load = NULL;
+	//pSetView ->Load = NULL;
 	pLoadView->Load = NULL;
 	pLoadView->ShowLoad = NULL;
 
@@ -2849,7 +2849,7 @@ void  CPlate :: ShowLoadState()
 		S.Format("Smooth = %d", L->SmoothDegree);
 		pDC->TextOut(10, 250, S);
 	
-		pSetView->InvalidateRect(NULL, TRUE);
+		//pSetView->InvalidateRect(NULL, TRUE);
 		pLV->ReleaseDC(pDC);
 
 

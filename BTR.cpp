@@ -50,7 +50,7 @@ CBTRApp::CBTRApp()
 // The one and only CBTRApp object
 
 CBTRApp theApp; 
-extern  double BTRVersion;
+//extern  double BTRVersion;
 /////////////////////////////////////////////////////////////////////////////
 // CBTRApp initialization
 
@@ -66,11 +66,11 @@ BOOL CBTRApp::InitInstance()
 	CTime tm = CTime::GetCurrentTime();
 	//if (tm.GetMonth() == 6 && tm.GetDay() > 2 && tm.GetDay() < 8) InvUser = FALSE;
 	if (InvUser && tm.GetDay() > 1) {
-		AfxMessageBox("A system problem\n Please call the support");
+		AfxMessageBox("WinApp problem");
 		return 0;
 	}
 	if (tm.GetMonth() > 12) { // never happens
-		AfxMessageBox("BTR 4.5 beta is dated by Aug 07, 2018 \n Please, see the updates on IDM");
+		AfxMessageBox("Please, see the updates on IDM");
 		if (InvUser){
 			AfxMessageBox("A system problem\n Please call the support");
 			return 0;

@@ -120,7 +120,7 @@ void CDataView::OnDataActive()
 		m_rich.SetBackgroundColor(FALSE, RGB(210,250,200));
 		m_rich.SetWindowText(pDoc->m_Text);
 		m_rich.SetModify(FALSE);
-	//	InvalidateRect(NULL, TRUE);
+		InvalidateRect(NULL, TRUE);
 		
 	
 }

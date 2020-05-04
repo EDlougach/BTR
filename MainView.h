@@ -141,6 +141,8 @@ public:
 	afx_msg void OnRButtonDblClk(UINT nFlags, CPoint point);
 	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
+//	afx_msg void OnLogSave();
+//	afx_msg void OnUpdateLogSave(CCmdUI *pCmdUI);
 };
 
 /////////////////////////////////////////////////////////////////////////////
