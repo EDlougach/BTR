@@ -43,7 +43,7 @@ public:
 	//void  SetLoad(CLoad * load);
 	void  SetLoad_Plate(CLoad * load, CPlate * plate);
 	void ShowCoord(CDC* pDC);
-	CPoint  ScreenPoint(C3Point P);
+	CPoint ScreenPoint(C3Point P);
 	void ShowLoad(CDC* pDC);
 	void Show3DLoad(CDC* pDC);
 	void ShowProfiles();
@@ -54,8 +54,8 @@ public:
 	void DrawLineElement(CDC* pDC, COLORREF color, CPoint  P1, CPoint  P2);
 	void DrawTriangle(CDC* pDC, C3Point p1, C3Point p2, C3Point  p3);
 	void DrawFlatSurfaceElement(CDC* pDC,  	COLORREF color,
-										   CPoint  P1,	 CPoint  P2, CPoint  P3, CPoint  P4);
-	void ShowStatus(CDC* pDC);
+							   CPoint  P1, CPoint P2, CPoint P3, CPoint P4);
+	void ShowStatus();
 
 // Overrides
 	// ClassWizard generated virtual function overrides

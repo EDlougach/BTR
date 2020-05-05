@@ -1570,7 +1570,7 @@ int CMagField:: ReadData(char * name)
 	
 	FILE * fin = fopen(name, "r");
 	if (fin == NULL) {
-		S.Format("%s MF-file error / not found at Home\n ..\ %s ", name, pDoc->CurrentDirName);
+		S.Format("%s MF-file error / not found at Home\n ..\\ %s ", name, pDoc->CurrentDirName);
 		AfxMessageBox(S, MB_ICONSTOP | MB_OK);
 		std::cout << S << std::endl;
 		return 0;
@@ -2477,7 +2477,7 @@ int CGasField:: ReadData(char * name)
 		
 	FILE * fin = fopen(name, "r");
 	if (fin == NULL) {
-		S.Format("%s GAS-file error / not found at Home\n ..\ %s ", name, pDoc->CurrentDirName);
+		S.Format("%s GAS-file error / not found at Home\n ..\\ %s ", name, pDoc->CurrentDirName);
 		AfxMessageBox(S, MB_ICONSTOP | MB_OK);//AfxMessageBox(S);
 		std::cout << S << std::endl;
 		
@@ -3105,6 +3105,10 @@ void  CRIDField:: DrawU(CDC* pDC, C3Point & Origin, C3Point & Scale)
 		// Umax = pDoc->RIDU * 1000;
 	 }
 	Umax = pDoc->RIDU * 1000;
+
+	CString S;
+	S.Format("Xmin = %g Xmax = %g Umax = %g", Xmin, Xmax, Umax);
+	//AfxMessageBox(S);
 
 	int X0, Y0, Z0, Top = 150;
 	X0 = (int) Origin.X;

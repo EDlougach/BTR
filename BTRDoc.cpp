@@ -5825,7 +5825,7 @@ void CBTRDoc::ShowStatus()
 	pDataView->OnDataActive();
 
 	pSetView->Load = NULL;
-	pSetView->InvalidateRect(NULL, TRUE);
+	pSetView->ShowStatus(); //InvalidateRect(NULL, TRUE);
 
 }
 
@@ -12177,11 +12177,13 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 	}
 	//OnShow();
 	//	::MessageBox(NULL, "SCEN >= MAXSCEN", "OnStartPar", 0);
-	
+
+///COLLAPSE MAIN VIEW /////////////////////////////////////////////////////////
 	//CBTRApp theApp;
-	CWnd * pMW = theApp.m_pMainWnd;
+	/*CWnd * pMW = theApp.m_pMainWnd;
 	pMW->ShowWindow(SW_SHOWMINIMIZED);
-	pMW->UpdateWindow();
+	pMW->UpdateWindow();*/
+///TO RESTORE ////////////////////////////////////////////////
 
 	int runs[3] = { 1, 0, 0 }; // { ATOMS, Resid, Reions } - basic options for each scen
 	if (OptTraceAtoms == 0) runs[0] = 0;
@@ -12320,55 +12322,13 @@ void CBTRDoc:: GetMemState()
 	if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc)) )
 		MemUsed = pmc.WorkingSetSize /DIV; // currently used by BTR
 		//MemUsed = pmc.PrivateUsage / DIV;
-	//CloseHandle( hProcess );
-
-	long Falls = 0;// total fall-points
+		//CloseHandle( hProcess );
+	//long Falls = 0;// total fall-points
 	MemFalls = 0;// m_AttrVector[0].size() * ThreadNumber * sizeof(SATTR) / DIV;
 	//for (int i = 0; i < ThreadNumber; i++) Falls += m_AttrVector[i].size();// falls within thread
-	
-	// fall-points
-	Falls = m_GlobalVector.size();
+	ArrSize = m_GlobalVector.size();//ArrSize = Falls;
 	//Falls = m_GlobalDeque.size();
-								  //long mem = Falls * sizeof(SATTR);
-	//MemFalls =  mem/ DIV; // total kB for falls
-	ArrSize = Falls; //sizeof(m_AttrVector[0]); // +mem / ThreadNumber) / DIV;
-	
-/*	if (NofCalculated < 1) return;
 
-	int FallsB = Falls / NofCalculated; // falls per beamlet
-
-	if (MemFallReserved) return; // reserve only once!!
-	int numb = NofBeamlets / ThreadNumber; // beamlets per thread
-	int Nattr = Attr_Array.GetSize();
-	int numpart = numb * Nattr * MultCoeff; // particles per thread
-	int newsize = FallsB * numb + Nattr; // for falls array in each Thread
-	
-	for (int i = 0; i < ThreadNumber; i++) {
-		//m_AttrVector[i].shrink_to_fit();
-		m_AttrVector[i].reserve(newsize); // reserve space for all beamlets in Thread
-		m_Tracer[i].SetAttrArray(&m_AttrVector[i]);
-		MemFallReserved = TRUE;
-	}
-*/
-/*	if (OptParallel && NofCalculated == 1) {
-		
-		CString s, s1, s2;
-		std::vector<SATTR> & arr = m_AttrVector[MaxThreadNumber-1];
-		arr = m_AttrVector[0];
-		int sizeTATTR = sizeof(SATTR);
-		long TotPart = NofBeamlets * Attr_Array.GetSize() * MultCoeff;
-		long MemBeamlet = (int)arr.size() * sizeTATTR / DIV / NofCalculated;
-		long MemDemand =  NofBeamlets * MemBeamlet;//TotPart / DIV * kfall * sizeTATTR;
-		
-		//if (MemFree > MemDemand * 2) return;
-		
-		s1.Format("There are %ld KB of FREE physical memory on your system. ", MemFree);//statex.ullAvailPhys/DIV);
-		s2.Format("\nTracing %ld particles can take more than %ld KB \n(~%ld KB per beamlet). ",
-			TotPart, MemDemand, MemBeamlet);
-		s.Format("\n\nYou can stop the beam and reduce the number of particles. \nOr press YES to continue the tracing. ");
-		if (AfxMessageBox(s1+ s2 + s, MB_ICONEXCLAMATION | MB_YESNO) == IDNO) { STOP = TRUE; OnStop(); }
-		
-	} */
 }
 
 int CBTRDoc:: Run_BTR_Fast() // 
@@ -18124,7 +18084,7 @@ void CBTRDoc::OnOptionsBeam()
 			}
 	
 			SetTraceParticle(TracePartNucl, TracePartQ);
-			logout << "Edit Beam Options - DONE \ n"; 
+			logout << "Edit Beam Options - DONE \n"; 
 
 	} // IDOK
 //	RIDField->Set();

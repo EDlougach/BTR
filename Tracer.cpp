@@ -2427,7 +2427,7 @@ bool CTracer::TraceAllResIons() // from ALL beamlets
 		m_iSource = is;
 		istop = is;
 
-		done = TraceBeamletResIons(is);//----- TRACE ATOMS with decay + Write LOG --------
+		done = TraceBeamletResIons(is);//----- TRACE Residuals + Write LOG --------
 
 		if (!done) stopped = TRUE; // !done-> add last bml to log 
 		if (pDoc->STOP) { //-???
@@ -2854,100 +2854,115 @@ void CTracer:: ShowProgress(int Ncalc)
 	bool lout = FALSE;
 	if (Ncalc % 20 == 0) lout = TRUE; 
 	if (!lout) return;
-
 	CBTRDoc * pDoc = (CBTRDoc*) m_pDoc;
+	
+	if (Ncalc == 0 || pDoc->STOP) return; // tracing in progress
+/////////////////////////////////////////////////
 	bool SINGLE = (pDoc->MAXSCEN == 1);
-
 	CSetView * pStatus = (CSetView *)m_pStatus;
-	CDC* pDC = pStatus->GetWindowDC();  //>GetDC();
+	CDC* pDC = pStatus->GetDC(); //or GetWindowDC();  
+	pDC->SetTextColor(RGB(0,0,255));
+	//CFont* pOldFont = pDC->SelectObject(&font);
 	CString S;
 	//cs.Lock();
+		int BMLrays = pAttr->GetSize();//pDoc->Attr_Array.GetSize();
+		pDoc->GetMemState();
 		CTime t = CTime::GetCurrentTime();
 		CTime Tbegin = pDoc->StartTime;
 		CTime Tend = t;
 		CTimeSpan Telapsed;
-		
 		int Maxscen = pDoc->MAXSCEN; // total runs
 		int Nscen = pDoc->SCEN;
 		int Nrun = pDoc->RUN;
 		int Ntot = pDoc->NofBeamlets;
-
 		int h, m, s, h0, m0, s0, dh, dm, ds, sec;
 		long mspb, msleft, sleft, mleft, hleft;
-		double SelCurr = pDoc->IonBeamCurrent / pDoc->NofChannelsHor / pDoc->NofChannelsVert
-						* pDoc->NofActiveChannels * pDoc->NofActiveRows;// source current traced
-		//CFont* pOldFont = pDC->SelectObject(&font);
-		pDC->SetTextColor(RGB(0,0,255));
-			
-		//S.Format("Time  %02d:%02d:%02d  Vers %g Runs %d   ", h, m, s, BTRVersion, maxscen);
-		//pDC->TextOut(10,5, S);
+		h =	t.GetHour(); m = t.GetMinute(); s = t.GetSecond();// current time
 		h0 = Tbegin.GetHour(); m0 = Tbegin.GetMinute(); s0 = Tbegin.GetSecond();
+		Telapsed = t - Tbegin; // t - current
+		dh = Telapsed.GetHours(); dm = Telapsed.GetMinutes(); ds = Telapsed.GetSeconds();
+		sec = ds + dm * 60 + dh * 3600;
+		mspb = sec * 1000 / Ncalc;
+		msleft = mspb * (Ntot - Ncalc); // single run // (Ntot * (Maxscen - Nscen + 1) - Ncalc);
+		sleft = msleft / 1000;
+		mleft = sleft / 60;
+		hleft = mleft / 60;
+			
+		//double SelCurr = pDoc->IonBeamCurrent / pDoc->NofChannelsHor / pDoc->NofChannelsVert
+						//* pDoc->NofActiveChannels * pDoc->NofActiveRows;// source current traced
+		// show RUN starttime	
 		//if (NofCalculated > 0) S.Format("Beam is started    ");
-		if (pDoc->STOP || Ncalc == Ntot) S.Format("STOPPED             ");
-		else S.Format("STARTED at  %02d:%02d:%02d       ", h0, m0, s0);
+	/*	if (pDoc->STOP || Ncalc == Ntot) 
+			S.Format(" *** STOPPED                      ");
+		else S.Format("Run START at %02d:%02d:%02d       ", h0, m0, s0);*/
 		
-		pDoc->GetMemState();
-		long MemFalls = (pDoc->ArrSize) * sizeof(minATTR);
-		if (MemFalls < 0) MemFalls = 0;
+		//long MemFalls = (pDoc->ArrSize) * sizeof(minATTR);//can be > max long!!!
+		//if (MemFalls < 0) MemFalls = 0;
+		long MEM_BTR_kB = pDoc->MemUsed;// kb
+		long MemFreeKB = pDoc->MemFree;// kb
+		long Falls = pDoc->ArrSize; // Global falls array size
+		long FallsBML;
+		long MemBML; // bytes per BML
+		long TotMemB;//(memb) bytes - all falls
+		int MemFallB = sizeof(minATTR);// bytes per 1 fall = 16..20b
 		
-		long memb;
-		if (Ncalc > 0) memb = MemFalls / Ncalc;
-		else memb = MemFalls;
-		if (memb < 1) memb = 1;
-		long Nleft = (pDoc->MemFree * 1024 - MemFalls) / memb;
-		if (Nleft < 0) Nleft = 0;
-
+		if (Ncalc > 0) // impossible
+			FallsBML = Falls / Ncalc; // calculated falls per BML
+		else FallsBML = BMLrays * 5; //5 - "aver" falls per ray Falls / Ntot; 
+		MemBML = FallsBML * MemFallB; // bytes per BML
+		TotMemB = FallsBML * MemFallB;// all falls bytes
+		if (TotMemB < 1) TotMemB = 1;// impossible
+		//long leftFalls = (pDoc->MemFreeKB / MemFallB) * 1024;
+		long leftBML = (MemFreeKB / MemBML) * 1024;
+		//long Nleft = (pDoc->MemFree * 1024 - MemFalls) / TotMemB;
+		//if (Nleft < 0) Nleft = 0;
 		
 	/*	S.Format("BTR holds       %ld kB  ", pDoc->MemUsed);
 		S.Format("Available mem   %ld kB  ", pDoc->MemFree);
 		S.Format("Falls arr: %ld elem x %d Bytes = %ld Bytes   ", pDoc->ArrSize, sizeof(minATTR), MemFalls);
 		*/
-
-		h =	t.GetHour(); m = t.GetMinute(); s = t.GetSecond();// current time
-		if (Ncalc > 0 && Ncalc <= Ntot && !pDoc->STOP) { // tracing in progress
+		
+		//if (Ncalc > 0 && Ncalc <= Ntot && !pDoc->STOP) { // tracing in progress
 			//if (Ncalc < Ntot && !pDoc->STOP ) { 
-				Telapsed = t - Tbegin; 
-				dh = Telapsed.GetHours(); 
-				dm = Telapsed.GetMinutes(); 
-				ds = Telapsed.GetSeconds();
-				sec = ds + dm * 60 + dh * 3600;
-				mspb = sec * 1000 / Ncalc;
-				msleft = mspb * (Ntot - Ncalc); // single run // (Ntot * (Maxscen - Nscen + 1) - Ncalc);
-				sleft = msleft / 1000;
-				mleft = sleft / 60;
-				hleft = mleft / 60;
+			cs.Lock();
+				S.Format("\n%02d:%02d:%02d --- PROGRESS --- SCEN %d RUN %d ---\n", 
+						h,m,s, Nscen, Nrun);
+				pDC->TextOut(10, 105, S);
+				logout << S;
 
-				cs.Lock();
-				S.Format(" %02d:%02d:%02d --- PROGRESS -- SCEN %d RUN %d ---\n", h,m,s, Nscen, Nrun);
-				if (lout) logout << S;
-				S.Format("Traced BMLs      %d                \n", Ncalc);
+				S.Format("Traced BML     %d                \n", Ncalc);
 				pDC->TextOut(10, 125, S);
-				if (lout) logout << S;
-				S.Format("Passed   %02d:%02d:%02d                     \n", dh, dm, ds);
-				if (SINGLE) pDC->TextOut(10,145, S);//logout << S;
-				S.Format("Time / BML      %d ms     \n", mspb);
-				pDC->TextOut(10,165, S);
-				if (lout) logout << S;
-				S.Format("Cuckoo (single run)   %02d:%02d:%02d  \n", hleft,  mleft - hleft*60, sleft - mleft*60);
-				if (SINGLE) pDC->TextOut(10,185, S);//logout << S;
-				S.Format("BTR holds      %ld kB  \n", pDoc->MemUsed);
-				if (SINGLE) pDC->TextOut(10,205, S);
-				if (lout) logout << S;
-				S.Format("Available mem  %ld kB  \n", pDoc->MemFree);
-				if (SINGLE) pDC->TextOut(10,225, S);//logout << S;
-				S.Format("Falls array: %ld elements x %d Bytes = %ld Bytes    \n", 
-					pDoc->ArrSize, sizeof(minATTR), MemFalls);
-				if (SINGLE) pDC->TextOut(10, 265, S);//logout << S;
-				S.Format("Mem / BML        %ld B      \n", memb);
-				if (SINGLE) pDC->TextOut(10,285, S);
-				if (lout) logout << S;
-				S.Format("Approx BML limit  %ld        \n", Ncalc + (int)Nleft);
-				if (SINGLE) pDC->TextOut(10, 305, S);
-				if (lout) logout << S << "-----------------------\n";
+				logout << S;
+
+				S.Format("Passed   %02d:%02d:%02d            \n", dh, dm, ds);
+				pDC->TextOut(10,145, S); //logout << S;
+
+				S.Format("Time / BML      %d ms          \n", mspb);
+				pDC->TextOut(10,165, S); logout << S;
+
+				S.Format("Cuckoo for this Run   %02d:%02d:%02d  \n", 
+					hleft,  mleft - hleft*60, sleft - mleft*60);
+				pDC->TextOut(10,185, S);//logout << S;
+
+				S.Format("BTR holds      %ld kB      \n", MEM_BTR_kB);
+				pDC->TextOut(10,205, S); logout << S;
+
+				S.Format("Available mem  %ld kB      \n", MemFreeKB);
+				pDC->TextOut(10,225, S); //logout << S;
+
+				S.Format("Mem / BML      %ld B               \n", MemBML);
+				pDC->TextOut(10,245, S);  logout << S;
+  
+				S.Format("Falls arr      %ld               \n", Falls);
+				//x %d Bytes    \n", //, MemFallB);
+				pDC->TextOut(10, 265, S); logout << S;
+
+				S.Format("BML maximum    %ld           \n", (long)Ncalc + leftBML);
+				pDC->TextOut(10, 285, S); logout << S << "-----------------------\n";
 				//if (SINGLE) ::GdiFlush();
-				cs.Unlock();
+			cs.Unlock();
 			//}// calculated < Total 
-		} // 
+		//} // if 
 	//::GdiFlush();
 
 	pStatus->ReleaseDC(pDC);

@@ -95,7 +95,7 @@ void CSetView::OnDraw(CDC* pDC)
 	GetClientRect(rect);
 	pDC->Rectangle(rect);*/
 	
-	ShowStatus(pDC);
+	ShowStatus();
 	return;
 
 ////////////////////////////////////////////////////////
@@ -967,8 +967,9 @@ void CSetView:: ShowIntegralProfiles(CDC* pDC)
 
 }
 
-void CSetView:: ShowStatus(CDC* pDC)
+void CSetView:: ShowStatus() //(CDC* pDC)
 {
+	CDC * pDC = GetDC();
 		CBTRDoc* pDoc = (CBTRDoc*)GetDocument();
 		RectArrayX.RemoveAll();
 		RectArrayY.RemoveAll();
@@ -992,25 +993,7 @@ void CSetView:: ShowStatus(CDC* pDC)
 		int Ncalc = NofCalculated;
 		//int Nattr = pDoc->Attr_Array.GetSize();
 		//int Npart = pDoc->NofBeamlets * pDoc->MultCoeff;
-
-		S.Format("Time  %02d:%02d:%02d  V%g  Scen %d Runs %d   ", h, m, s, BTRVersion,  Maxscen, Maxrun);
-		pDC->TextOut(10,5, S);
-				
 		h0 = Tbegin.GetHour(); m0 = Tbegin.GetMinute(); s0 = Tbegin.GetSecond();
-		//if (NofCalculated > 0) S.Format("Beam is started    ");
-		//if (pDoc->STOP) S.Format("STOPPED        ");
-		S.Format("START  %02d:%02d:%02d       ", h0, m0, s0);
-		pDC->TextOut(10,25, S);
-		if (pDoc->OptSINGAP) S.Format("SINGAP array of BMLs ");
-		else S.Format("MAMuG: Channels %d Rows %d   ", (pDoc->NofActiveChannels), (pDoc->NofActiveRows));
-		pDC->TextOut(10,45, S);
-		S.Format("Active Source Current  %g A", SelCurr);
-		pDC->TextOut(10,65, S);
-		
-		//S.Format("Total BPs (all ions+atoms in model)  %d   ", Npart);
-		//pDC->TextOut(10,85, S);
-		S.Format("Total active BMLs %d  ", Ntot);
-		pDC->TextOut(10,105, S);
 
 		pDoc->GetMemState();
 		long MemFalls = (pDoc->ArrSize) * sizeof(minATTR);
@@ -1021,22 +1004,47 @@ void CSetView:: ShowStatus(CDC* pDC)
 		if (memb < 1) memb = 1;
 		long Nleft = (pDoc->MemFree * 1024 - MemFalls) / memb;
 		if (Nleft < 0) Nleft = 0;
+		Tend = pDoc->StopTime;
+		Telapsed = GetElapse(Tbegin, Tend) - pDoc->SuspendedSpan; 
+		dh = Telapsed.GetHours(); dm = Telapsed.GetMinutes(); ds = Telapsed.GetSeconds();
+		sec = ds + dm * 60 + dh * 3600;
+		if (Ncalc == 0)	mspb = 0;//sec * 1000 / (Ntot);
+		else mspb = sec * 1000 / (Ncalc);
 
-		S.Format("BTR holds       %ld kB  ", pDoc->MemUsed);
-		pDC->TextOut(10, 205, S);
-		S.Format("Available mem   %ld kB  ", pDoc->MemFree);
-		pDC->TextOut(10, 225, S);
+		S.Format("Time  %02d:%02d:%02d  V%g  Scens %d   ",
+					h, m, s, BTRVersion,  Maxscen);//, Maxrun);
+		pDC->TextOut(10,5, S);
 		
-		S.Format("Falls arr: %ld elem x %d Bytes = %ld Bytes   ", 
-			pDoc->ArrSize, sizeof(minATTR), MemFalls);
-		pDC->TextOut(10, 265, S);
-				
-		if (Ncalc > 0) { // started or done
-			S.Format("Traced BMLs   %d                  ", Ncalc);
-			pDC->TextOut(10,125, S);
+		S.Format("START  %02d:%02d:%02d       ", h0, m0, s0);
+		pDC->TextOut(10,25, S);
 
+		S.Format("Channels %d Rows %d  ", (pDoc->NofActiveChannels), (pDoc->NofActiveRows));
+		pDC->TextOut(10,45, S);
+
+		S.Format("Active Source Current  %g A", SelCurr);
+		pDC->TextOut(10,65, S);
+		
+		S.Format("Total active BMLs %d  ", Ntot);
+		pDC->TextOut(10,85, S);
+
+		S.Format("Traced BMLs   %d          ", Ncalc);
+		pDC->TextOut(10,105, S);
+
+		S.Format("BTR holds     %ld kB      ", pDoc->MemUsed);
+		pDC->TextOut(10, 125, S);
+		
+		S.Format("Avail mem     %ld kB      ", pDoc->MemFree);
+		pDC->TextOut(10, 145, S);
+
+		S.Format("Av. BML time   %d ms         ", mspb);
+			pDC->TextOut(10,165, S);
+		
+		S.Format("Falls arr: %ld elem         ", pDoc->ArrSize);//, sizeof(minATTR), MemFalls);
+		pDC->TextOut(10, 185, S);
+				
+		/*if (Ncalc > 0) { // started or done
 			if (Ncalc < Ntot && !pDoc->STOP ) { // tracing in progress
-			/*	Telapsed = GetElapse(Tbegin, t) - pDoc->SuspendedSpan; 
+				Telapsed = GetElapse(Tbegin, t) - pDoc->SuspendedSpan; 
 				dh = Telapsed.GetHours(); dm = Telapsed.GetMinutes(); ds = Telapsed.GetSeconds();
 				S.Format("Elapsed   %02d:%02d:%02d                     ", dh, dm, ds);
 				pDC->TextOut(10,145, S);
@@ -1062,32 +1070,31 @@ void CSetView:: ShowStatus(CDC* pDC)
 				pDC->TextOut(10,285, S);
 				S.Format("Approx BML limit  %ld      ", Ncalc + (int)Nleft);
 				pDC->TextOut(10, 305, S);
-				 */
-			}// calculated < Total
+				 
+			}// calculated < Total*/
 
-			else { // finished or stopped
-				Tend = pDoc->StopTime;
-				Telapsed = GetElapse(Tbegin, Tend) - pDoc->SuspendedSpan; 
-				dh = Telapsed.GetHours(); dm = Telapsed.GetMinutes(); ds = Telapsed.GetSeconds();
+		if (Ncalc == Ntot) { // finished
 				
-				sec = ds + dm * 60 + dh * 3600;
-				if (Ncalc == Ntot)	mspb = sec * 1000 / (Ntot * Maxscen);
-				else mspb = sec * 1000 / (Ntot * Nscen + Ncalc);
-				S.Format("Total Run  %02d:%02d:%02d       ", dh, dm, ds);
-				pDC->TextOut(10,145, S);
-				S.Format("Av.time per BML = %d ms         ", mspb);
-				pDC->TextOut(10, 165, S);
-				
-				S.Format("    !!! Abort Scen %d:  Last %d < Total %d        ",Nscen, Ncalc, Ntot);
-				if (Ncalc < Ntot) pDC->TextOut(10,185, S);
+			S.Format("Total Run  %02d:%02d:%02d            ", dh, dm, ds);
+			pDC->TextOut(10,145, S);
 
-				S.Format("Falls arr: %ld elem x %d Bytes = %ld Bytes     ", 
-					pDoc->ArrSize, sizeof(minATTR), MemFalls);
-				pDC->TextOut(10, 265, S);
-			} // STOP or Ncalc = Ntot
+			//S.Format("Av.time per BML  %d ms         ", mspb);
+			//pDC->TextOut(10,165, S);
+			
+			//S.Format("Falls arr: %ld elem       ", pDoc->ArrSize);
+							//, sizeof(minATTR), MemFalls);
+			//pDC->TextOut(10, 185, S);
+		} // Ncalc = Ntot
 
-			} //Ncalc > 0
+		if (Ncalc > 0 && pDoc->STOP)  { //  stopped
+			S.Format(" !!! Abort Scen %d: Last %d of %d  ",Nscen, Ncalc, Ntot);
+			if (Ncalc < Ntot) // stopped
+				pDC->TextOut(10,205, S);
+		} // STOP 
+
+		//} //Ncalc > 0 // started or done
 		pDC->SelectObject(pOldFont);
+		ReleaseDC(pDC);
 }
 
 double CSetView::GetZmax(CLoad* load)

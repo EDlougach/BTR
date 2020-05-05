@@ -104,10 +104,9 @@ private:
 	CWinThread * m_pTraceThread[MaxThreadNumber]; //old
 	CTracer m_Tracer[MaxThreadNumber];
 	//TVectorAttr m_AttrVectors[MaxThreadNumber];
-	vector <minATTR> m_GlobalVector; // global!
+	vector <minATTR> m_GlobalVector; // global Falls Array!
 	//deque <SATTR> m_GlobalDeque;
 	vector <minATTR> m_AttrVector[MaxThreadNumber];
-	
 	vector <EXIT_RAY> m_ExitVector[MaxThreadNumber];
 	vector <FALL_ATTR> m_FallVector[MaxThreadNumber];
 	vector <CString> m_GlobalLog;
