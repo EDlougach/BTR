@@ -373,6 +373,8 @@ void CBTRDoc:: ClearData()
 	//DataName.FreeExtra();
 	if (!DataComment.IsEmpty()) DataComment.RemoveAll();
 	//DataComment.FreeExtra();
+	if (!SkipSurfClass.IsEmpty()) SkipSurfClass.RemoveAll(); // list of substrings to find in plate Comment
+	if (!ExceptSurf.IsEmpty()) ExceptSurf.RemoveAll();// exceptions in skip
 }
 
 void CBTRDoc:: InitData()
@@ -1164,6 +1166,9 @@ void  CBTRDoc::ReadScenFile() // read scenario data
 {
 	logout << " Waiting for SCEN data...\n ";
 
+	if (!SkipSurfClass.IsEmpty()) SkipSurfClass.RemoveAll(); // list of substrings to find in plate Comment
+	if (!ExceptSurf.IsEmpty()) ExceptSurf.RemoveAll();// exceptions in skip
+	
 	for (int i = 0; i <= MAXSCEN; i++)	ScenData[i].RemoveAll();
 	ScenLoaded = FALSE;// INIT default scenarios
 	MAXSCEN = 1;
@@ -1204,29 +1209,64 @@ void  CBTRDoc::ReadScenFile() // read scenario data
 		//m_Text = "";
 
 		// READ SCEN PARAM
-		CString Sbuf, Sparam, Sconfig, Sopt;
+		CString Sbuf, Sparam, Sconfig, Sopt, Sskip, Sexcept;
 		CStringArray Sdata;// temp array to replace ScenData[i] 
 		int maxscen = 0;
 		int maxparam = 0;
 		int datsize;//scen data lines 
-		int pos;
+		int pos, pos1;
+		int nskip = 0;
+		int nexcept = 0;
 		while (!feof(fin) && maxscen < 1) { // find string MAXSCEN, MAXPARAM
 			fgets(buf, 1024, fin);
 			Sbuf.Format("%s", buf);
 			pos = Sbuf.Find("="); // parameters
-			if (pos < 1) continue; // "=" not found
+			if (pos < 1) {
+				pos1 = Sbuf.Find(":"); // options
+				if (pos1 < 1) continue; // "=" not found
+				else pos = pos1;
+			} // "=" not found
+
 			CString valname = Sbuf.Left(pos);
 			CString valstr = Sbuf.Mid(pos + 1);	//double dVal = atof(valstr);
-			int iVal = atoi(valstr);
-			if (valname.Find("MAXSCEN") >= 0) maxscen = iVal;
+			//int iVal = atoi(valstr);
+			if (valname.Find("MAXSCEN") >= 0) 
+				maxscen = atoi(valstr);//iVal;
 			//if (valname.Find("MAXPARAM") >= 0) maxparam = iVal;
+			if (valname.Find("SKIP") >= 0){
+				S = valstr.MakeUpper();
+				S.Trim();
+				SkipSurfClass.Add(S);
+				Sskip += "\t" + S + "\n";
+				//Sskip += "\n";
+				nskip++;
+			}
+			if (valname.Find("EXCEPT") >= 0){
+				S = valstr.MakeUpper();
+				S.Trim();
+				ExceptSurf.Add(S);
+				Sexcept += "\t" + S + "\n";
+				//Sexcept += "\n";
+				nexcept++;
+			}
 		}
+
+		if (nskip > 0) {
+			S.Format("%d Surf types to skip", nskip);
+			AfxMessageBox(S);
+			S.Format("\nSKIP SURFACES:\n%sEXCEPT:\n%s\n", Sskip, Sexcept);
+			logout << S;
+		}
+
 		if (maxscen < 1) {
-			AfxMessageBox("MAXSCEN = 0 or invalid data");
+			S.Format("NO scenarios loaded\n"); 
+			AfxMessageBox(S);
+			logout << S;
+			//AfxMessageBox("MAXSCEN = 0 (NO SCEN DATA)");
 			return;
 		}
 
-		MAXSCEN = maxscen;
+		MAXSCEN = maxscen; // only if > 0!!!
 
 		int scen = 0;
 		int scenend = 0; // ";"
@@ -1283,8 +1323,8 @@ void  CBTRDoc::ReadScenFile() // read scenario data
 		for (int i = 1; i <= MAXSCEN; i++)
 			for (int j = 0; j < ScenData[i].GetSize(); j++)
 				Sopt += ScenData[i][j];
-		S.Format("%s  %s\n", Sconfig, Sopt);
-		//std::cout << Sconfig << Sopt << std::endl ;
+		S.Format("%s%s\n", Sconfig, Sopt);
+		logout << S; //config << Sopt << std::endl ;
 		//AfxMessageBox("Scenario data\n" + Sconfig + Sopt);
 		//return; //success
 	} // file dlg DoModal = OK
@@ -1410,6 +1450,7 @@ BOOL CBTRDoc::OnNewDocument()
 
 			AfxMessageBox("Scenario data\n" + Sconfig + Sopt);
 			*/
+			if (SkipSurfClass.GetSize() > 0) SetPlates();
 			break;
 		case IDNO: //res1
 			//ScenData[0].SetAt(1, ConfigFileName);
@@ -2888,8 +2929,7 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	 } // i
 
 	 pPlate = new CPlate(); //  Bottom CUT at Neutr entrance
-	 PlateCounter++;
-	 pPlate->Number = PlateCounter; 
+	 //PlateCounter++; pPlate->Number = PlateCounter; 
 	 p0 = C3Point(0, AreaHorMin, AreaVertMin);
 	 p1 = C3Point(0, AreaHorMax, AreaVertMin);
 	 p2 = C3Point(NeutrInX, -YminIn + NeutrBiasInHor, 
@@ -2903,11 +2943,10 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	 pPlate->Fixed = 1; // side view
 	 S.Format("CUT-OFF LIMIT: Bottom %d", pPlate->Number);
 	 pPlate->Comment = S; 
-	 PlatesList.AddTail(pPlate);
+	 AddCond(pPlate); //PlatesList.AddTail(pPlate);
 
 	 pPlate = new CPlate(); // Top CUT at Neutr entrance
-	 PlateCounter++;
-	 pPlate->Number = PlateCounter; 
+	 //PlateCounter++; pPlate->Number = PlateCounter; 
 	 p0 = C3Point(NeutrInX, -YminIn + NeutrBiasInHor, 
 		          NeutrH * 0.5 + VShiftNeutr + NeutrBiasInVert);
 	 p1 = C3Point(NeutrInX, YminIn + NeutrBiasInHor,  
@@ -2922,11 +2961,10 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	 pPlate->Fixed = 1; // side view
 	 S.Format("CUT-OFF LIMIT: Top %d", pPlate->Number);
 	 pPlate->Comment = S; 
-	 PlatesList.AddTail(pPlate);
+	 AddCond(pPlate); //PlatesList.AddTail(pPlate);
 
 	 pPlate = new CPlate(); // Right CUT at Neutr entrance
-	 PlateCounter++;
-	 pPlate->Number = PlateCounter; 
+	 //PlateCounter++; pPlate->Number = PlateCounter; 
 	 p0 = C3Point(0, AreaHorMin, AreaVertMin);
 	 p1 = C3Point(NeutrInX, YminIn + NeutrBiasInHor, 
 		          -NeutrH * 0.5 + VShiftNeutr + NeutrBiasInVert);
@@ -2941,11 +2979,10 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	 //pPlate->Fixed = 0; // plan view
 	 S.Format("CUT-OFF LIMIT: Right %d", pPlate->Number);
 	 pPlate->Comment = S; 
-	 PlatesList.AddTail(pPlate);
+	 AddCond(pPlate); //PlatesList.AddTail(pPlate);
 
 	 pPlate = new CPlate(); // Left CUT at Neutr entrance
-	 PlateCounter++;
-	 pPlate->Number = PlateCounter;
+	 //PlateCounter++; pPlate->Number = PlateCounter;
 	 p0 = C3Point(NeutrInX, -YminIn + NeutrBiasInHor, 
 		          -NeutrH * 0.5 + VShiftNeutr + NeutrBiasInVert);
 	 p1 = C3Point(0, AreaHorMax, AreaVertMin);
@@ -2960,7 +2997,7 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	 //pPlate->Fixed = 0; // plan view
 	 S.Format("CUT-OFF LIMIT: Left %d", pPlate->Number);
 	 pPlate->Comment = S; 
-	 PlatesList.AddTail(pPlate);
+	 AddCond(pPlate); //PlatesList.AddTail(pPlate);
 	 
 	 pPlate = new CPlate(); // Bottom of Neutralizer
 	 PlateCounter++;
@@ -3435,8 +3472,13 @@ void  CBTRDoc::SetPlatesTor()
 	Plate = new CPlate(); // Tor Entrance 
 	PlateCounter++;
 	Plate->Number = PlateCounter;
-	p0 = C3Point(PlasmaXmin, DuctExitYmin, DuctExitZmin);
-	p3 = C3Point(PlasmaXmin, DuctExitYmax, DuctExitZmax);
+	//p0 = C3Point(PlasmaXmin, DuctExitYmin, DuctExitZmin);
+	//p3 = C3Point(PlasmaXmin, DuctExitYmax, DuctExitZmax);
+	p0 = C3Point(PlasmaXmin, Ytmin, Zmin);
+	//p1 = C3Point(Xtmax, Ytmax, Zmin); //
+	//p2 = C3Point(Xtmin, Ytmin, Zmax); // r1, y1, Teta0
+	p3 = C3Point(PlasmaXmin, Ytmax, Zmax);
+	
 	Plate->OrtDirect = 1;
 	Plate->SetFromLimits(p0, p3);
 	//pPlate->Shift(0, RIDBiasOutHor, VShiftRID + RIDBiasOutVert);
@@ -5092,12 +5134,49 @@ void CBTRDoc::AddCond(CPlate * plate)// add to PlateList if condition
 	for (int i = 0; i < 4; i++) { // any corner!
 		if (plate->Corn[i].X < -0.5) return; // skip adding
 	}
+
 	// skip transparent
-	if (!(plate->Solid)) return;
-	
+	//if (!(plate->Solid)) return;
+	//if (line.Find("solid") > -1) solid = true;//
 	CString comm = plate->Comment;
-	comm.MakeUpper();
-	if (comm.Find("TRANSPAR", 0) > -1) return;
+	CString S = comm.MakeUpper();
+	CString Sskip;
+	CString Sexcept;
+	int Nskip = SkipSurfClass.GetSize();
+	int Nexc = ExceptSurf.GetSize();
+	if (Nskip > 0) {
+		for (int i = 0; i < Nskip; i++) {
+			Sskip = SkipSurfClass[i];
+			if (S.Find(Sskip,0) >= 0) { // found Skipped
+				
+				if (Nexc == 0) { // no exceptions
+					logout << S << " is SKIPPED \n";
+					return; // found -> SKIP (don't add surf)
+				} // No exceptions
+				
+				// check Exceptions 
+				bool found = FALSE;
+				for (int j = 0; j < Nexc; j++) {
+					Sexcept = ExceptSurf[j];
+					if (S.Find(Sexcept,0) >=0) 
+						found = TRUE;//
+				} // j = Nexc
+
+				if (!found) { // not found in exceptions
+					logout << S << " is SKIPPED \n";
+					return; // SKIP (don't add surf)
+				} // Sexcept not found 
+				
+
+			} // Sskip found 
+		} // Nskip
+	} // Nskip >0
+	
+/*	if (!(plate->Solid) //|| S.Find("TRANSPAR", 0) > -1 
+		&& S.Find("NEUTRAL", 0) < 0){ // keep Neutralizer entry/exit
+		//AfxMessageBox(S + "\n is skipped");
+		return;
+	}*/
 		
 	PlateCounter++; //OK
 	plate->Number = PlateCounter;
@@ -7399,10 +7478,14 @@ void CBTRDoc::DeleteContents()
 	FWdata.RemoveAll();
 	DecayArray.RemoveAll();
 	DecayPathArray.RemoveAll();
+
 	DataComment.RemoveAll();
+	SkipSurfClass.RemoveAll(); // list of substrings to find in plate Comment
+	ExceptSurf.RemoveAll(); // exceptions in skip
 	DataName.RemoveAll();
 	DataType.RemoveAll();
 	DataValue.RemoveAll();
+
 	Attr_Array.RemoveAll();
 	Attr_Array_Reion.RemoveAll();
 	Attr_Array_Resid.RemoveAll();
@@ -12178,12 +12261,12 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 	//OnShow();
 	//	::MessageBox(NULL, "SCEN >= MAXSCEN", "OnStartPar", 0);
 
-///COLLAPSE MAIN VIEW /////////////////////////////////////////////////////////
-	//CBTRApp theApp;
-	/*CWnd * pMW = theApp.m_pMainWnd;
+
+/*	//CBTRApp theApp;
+	CWnd * pMW = theApp.m_pMainWnd;
 	pMW->ShowWindow(SW_SHOWMINIMIZED);
 	pMW->UpdateWindow();*/
-///TO RESTORE ////////////////////////////////////////////////
+
 
 	int runs[3] = { 1, 0, 0 }; // { ATOMS, Resid, Reions } - basic options for each scen
 	if (OptTraceAtoms == 0) runs[0] = 0;
@@ -12223,9 +12306,18 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 			SetTitle(S);
 			logout << S; // << std::endl;///////////////
 
-			while (SCEN <= MAXSCEN) RunScen(runs); // SCEN is +1 after each run-set is complete -> CompleteScen()
+			//CBTRApp theApp;///COLLAPSE MAIN VIEW on start /////////////////////////////
+			CWnd * pMW = theApp.m_pMainWnd;
+			pMW->ShowWindow(SW_SHOWMINIMIZED);
+			pMW->UpdateWindow();///////////////////////////////////////////////////
+
+			while (SCEN <= MAXSCEN) 
+				RunScen(runs); 
+				// SCEN is +1 after each run-set is complete -> CompleteScen()
+		
 		} // multi-run not cancelled
 
+		
 		//if (OptLogSave) CloseLogFile(); // after ALL SCENS
 		ResetLogFile();
 		return;
@@ -16844,8 +16936,8 @@ void CBTRDoc::PlotDecayArray(int opt)// = beamopt 0 - thin, 1 - par, 2 - real
 	double lost = 100 - Percent;//power onto FW (not captured)
 	double Vbeam = pPlasma->Ray.Vmod;
 	
-	S.Format("%d rays, Ytor = %6.2f, Ztor= %6.2f, X = %5.2f->%5.2f, v = %e, SigMult = %4.2f Capt/lost = %7.4f / %5.4f %% %d pts",
-		Nrays, TorCentreY, TorCentreZ, PlasmaXmin, PlasmaXmax, Vbeam, mult, Percent, lost, Kmax);
+	S.Format("%d rays, Ytor = %6.2f, Ztor= %6.2f, X = %5.2f->%5.2f, v = %6.2e, Sig = %4.2f lost = %5.4f %% %d pts",
+		Nrays, TorCentreY, TorCentreZ, PlasmaXmin, PlasmaXmax, Vbeam, mult, lost, Kmax);  //Percent,
 	DecayPlot.Caption += S;
 
 	CPlotDlg pdlg;
@@ -21015,6 +21107,8 @@ void CBTRDoc::OnOptionsThreads()
 			}
 			
 			//dlg.m_MaxScen = MAXSCEN;
+			
+			if (SkipSurfClass.GetSize() > 0) SetPlates();
 					
 			ShowStatus();
 		}

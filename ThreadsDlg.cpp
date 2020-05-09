@@ -61,7 +61,7 @@ void CThreadsDlg::OnBnClickedButtonParam()
 		S.Format("MULTI (%d)", m_MaxScen);
 	else S.Format("SINGLE");
 	SetDlgItemText(IDC_BUTTON_PARAM, S);
-	UpdateData(FALSE);
+	UpdateData(TRUE);
 	InvalidateRect(NULL, TRUE);
 	//return;
 	

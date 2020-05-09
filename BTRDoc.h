@@ -146,7 +146,9 @@ public:
 	CString LogFilePath;
 	CString LogFileName;// = "LOG_BTR5.txt"; //short name
 	
-	CStringArray ScenData[21]; // list of options for each scenario 
+	CStringArray ScenData[21]; // list of options for each scenario
+	CStringArray SkipSurfClass; // list of substrings to find in plate Comment
+	CStringArray ExceptSurf; // exceptions in skip
 	CString m_Text;
 	CStringArray  DataComment;
 	CStringArray  DataName;
