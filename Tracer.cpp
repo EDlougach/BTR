@@ -8,6 +8,7 @@
 #include "MainView.h"
 #include "SetView.h"
 #include "Tracer.h"
+#include "psapi.h"
 //#include <iostream>
 //#include "geom_util.h"
 
@@ -2320,80 +2321,37 @@ bool CTracer::TraceAllAtoms() // from ALL beamlets // no memory reserve test
 		
 		done = TraceBeamletAtoms(is);//----- TRACE ATOMS with decay + Write LOG --------
 		
-		if (!done) stopped = TRUE; // !done-> add last bml to log 
-		if (pDoc->STOP) { //-???
+		if (!done || pDoc->STOP) {
 			SetContinue(FALSE);// m_Continue = FALSE;
 			stopped = TRUE;//  break after adding log!!
+			break;
 		}
 
 		// ADD BML FALLS 
 		cs.Lock();
 		bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
-		if (!added) stopped = TRUE;
+		cs.Unlock();
+		if (!added) {
+			SetContinue(FALSE);// m_Continue = FALSE;
+			stopped = TRUE;
+			break;
+		}
+		cs.Lock();
+		NofCalculated++;	// - if not stopped	
+		int Ncalc = NofCalculated;
 		cs.Unlock();
 
-		// ADD BML LOG - if success 
-		if (is == m_Max) { // finished - is = m_Max
-			ClearArrays();// clear last BML tattr / log
-			  //stopped = TRUE;// no!! otherwise all threads will stop!
-		/*	S.Format("    {%d} Scen%d  ATOM BMLs (%d - %d) - FINISHED at src %d\n", 
-						m_ID, Nscen, m_Min + 1, m_Max + 1, is + 1);
-			logarr->push_back(S);
-			
-			cs.Lock();
-			logout << S;// << std::endl;//////////
-			pDoc->AddLog(logarr);
-			cs.Unlock();*/
-		}
-		// interrupted or failed: is < m_Max
-		else if (stopped) { // is < m_Max - interrupted by any reason -> dump log
-		/*	S.Format("    {%d} Scen%d ATOM BMLs (%d - %d) - STOP at src %d\n", 
-						m_ID, Nscen, m_Min + 1, m_Max + 1, is + 1);
-			logarr->push_back(S);
-			cs.Lock();
-			logout << S;// << std::endl;///////////
-			pDoc->AddLog(logarr);
-			cs.Unlock();*/
-			break; // NofCalculated not increased!
-		}
-		if (stopped) break; // for cycle
-		cs.Lock();
-		NofCalculated++;	// - if not stopped	
-		int Ncalc = NofCalculated;
-		cs.Unlock();
-		//if (!m_Draw) ShowBeamlet(is);// locked inside
-		ShowProgress(Ncalc); // locked inside
-		//::GdiFlush();
-	} // is = m_Max 
-	/*
-		if (stopped) break; // for cycle
-		cs.Lock();
-		NofCalculated++;	// - if not stopped	
-		int Ncalc = NofCalculated;
-		//pStatus->ShowStatus(pDC);
-		S.Format("\t\t ATOMS Traced BML %d", Ncalc);
-		//std::cout << S << std::endl;
-		//cs.Unlock();
+		ClearArrays();// clear last BML tattr
 		//pDoc->ShowStatus();// not working for multi-run!!!
-		if (!m_Draw) ShowBeamlet(is);// locked inside
-		ShowProgress(Ncalc);// locked inside
-		//::GdiFlush();
-		cs.Unlock();
-	} // is = m_Max */
-	ClearArrays();// after last BML
-	
-	//S.Format("    ATOMS Thread %d (%d - %d) stopped\n at Src %d", m_ID, m_Min + 1, m_Max + 1, istop + 1); // NofCalculated);
-	//AfxMessageBox(S);
-	if (stopped)
-	{
-		cs.Lock();
-		//pDoc->StopTime = CTime::GetCurrentTime();
-		pDoc->STOP = TRUE;// -> stop all threads if this one aborted
-		cs.Unlock();
-	}
 		
-	//SetContinue(FALSE);// thread m_Continue = FALSE; - ????
-	S.Format("\t[%d] TraceAllAtoms end\n", m_ID);
+		if (!m_Draw) ShowBeamlet(is);// locked inside
+		ShowProgress(Ncalc); // locked inside
+			//::GdiFlush();
+	} // is = m_Max 
+	
+	ClearArrays();// after last BML - even stopped
+	
+	S.Format("\t------- [%d] TraceAllAtoms END ----------\n", m_ID);
 	logout << S;
 
 	if (stopped) return FALSE;
@@ -2426,6 +2384,52 @@ bool CTracer::TraceAllResIons() // from ALL beamlets
 		ClearArrays();	//CVectorCleanup tattr_cleanup(tattr);//tattr->clear();
 		m_iSource = is;
 		istop = is;
+		
+		done = TraceBeamletResIons(is);//----- TRACE Residuals
+						//TraceBeamletAtoms(is);//----- TRACE ATOMS with decay 
+		if (!done || pDoc->STOP) {
+			SetContinue(FALSE);// m_Continue = FALSE;
+			stopped = TRUE;//  break after adding log!!
+			break;
+		}
+
+		// ADD BML FALLS 
+		cs.Lock();
+		bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
+		cs.Unlock();
+		if (!added) {
+			SetContinue(FALSE);// m_Continue = FALSE;
+			stopped = TRUE;
+			break;
+		}
+		cs.Lock();
+		NofCalculated++;	// - if not stopped	
+		int Ncalc = NofCalculated;
+		cs.Unlock();
+
+		ClearArrays();// clear last BML tattr
+		//pDoc->ShowStatus();// not working for multi-run!!!
+		
+		if (!m_Draw) ShowBeamlet(is);// locked inside
+		ShowProgress(Ncalc); // locked inside
+			//::GdiFlush();
+	} // is = m_Max 
+	
+	ClearArrays();// after last BML - even stopped
+	
+	S.Format("\t------- [%d] TraceAllResiduals END ----------\n", m_ID);
+	logout << S;
+	if (stopped) return FALSE;
+	return TRUE; // success
+}
+
+/*	//------Trace beamlets--- rewrite the tattr-vector and log for each beamlet --------------
+	// skip memory reservation !!!
+	int istop = -1;
+	for (int is = m_Min; is <= m_Max; is++) { // source beamlet number
+		ClearArrays();	//CVectorCleanup tattr_cleanup(tattr);//tattr->clear();
+		m_iSource = is;
+		istop = is;
 
 		done = TraceBeamletResIons(is);//----- TRACE Residuals + Write LOG --------
 
@@ -2452,10 +2456,10 @@ bool CTracer::TraceAllResIons() // from ALL beamlets
 			cs.Lock();
 			logout << S;//std::cout << S; // << std::endl;///////////////
 			pDoc->AddLog(logarr);
-			cs.Unlock();*/
-		}
+			cs.Unlock();
+		}*/
 		// interrupted or failed: is < m_Max
-		else if (stopped) { // is < m_Max - interrupted by any reason -> dump log
+	/*	else if (stopped) { // is < m_Max - interrupted by any reason -> dump log
 		/*	S.Format("    {%d} Scen%d ResIons BMLs (%d - %d) - STOP at src %d\n",
 				m_ID, Nscen, m_Min + 1, m_Max + 1, is + 1);
 			logarr->push_back(S);
@@ -2463,7 +2467,7 @@ bool CTracer::TraceAllResIons() // from ALL beamlets
 			cs.Lock();
 			logout << S;// << std::endl;////////////////
 			pDoc->AddLog(logarr);
-			cs.Unlock();*/
+			cs.Unlock();
 			break; // NofCalculated not increased!
 		}
 		if (stopped) break; // for cycle
@@ -2476,21 +2480,7 @@ bool CTracer::TraceAllResIons() // from ALL beamlets
 		//::GdiFlush();
 	} // is = m_Max 
 
-
-	/*	if (stopped) break; // for cycle
-		cs.Lock();
-		NofCalculated++;	// - if not stopped	
-		int Ncalc = NofCalculated;
-		S.Format("\t\t RESID  Traced BML %d", Ncalc);
-		//std::cout << S << std::endl;
-		//pStatus->ShowStatus(pDC);
-		//cs.Unlock();
-		//pDoc->ShowStatus();// not working for multi-run!!!
-		if (!m_Draw) ShowBeamlet(is);// locked inside
-		ShowProgress(Ncalc);// locked inside
-		//::GdiFlush();
-		cs.Unlock();
-	} // is = m_Max */
+	
 	ClearArrays();// after last BML
 
 	//S.Format("    ResIons Thread %d (%d - %d) stopped\n at Src %d", m_ID, m_Min + 1, m_Max + 1, istop + 1); // NofCalculated);
@@ -2501,14 +2491,14 @@ bool CTracer::TraceAllResIons() // from ALL beamlets
 		pDoc->STOP = TRUE;// -> stop all threads if this one aborted
 		cs.Unlock();
 	}
-	//AfxMessageBox(S);
 	
-	//SetContinue(FALSE);// thread m_Continue = FALSE; - ????
 	S.Format("\t[%d] TraceAllResions end \n", m_ID);
 	logout << S;
+	
+
 	if (stopped) return FALSE;
 	return TRUE; // success
-}
+}*/
 
 bool CTracer::TraceAllReions() // from ALL beamlets
 {
@@ -2531,6 +2521,51 @@ bool CTracer::TraceAllReions() // from ALL beamlets
 
 	//------Trace beamlets--- rewrite the tattr-vector and log for each beamlet --------------
 	// skip memory reservation !!!
+	int istop = -1;
+	for (int is = m_Min; is <= m_Max; is++) { // source beamlet number
+		ClearArrays();	//CVectorCleanup tattr_cleanup(tattr);//tattr->clear();
+		m_iSource = is;
+		istop = is;
+		
+		done = TraceBeamletReions(is);// Trace REIONS
+					//TraceBeamletResIons(is);//----- TRACE Residuals
+						//TraceBeamletAtoms(is);//----- TRACE ATOMS with decay 
+		if (!done || pDoc->STOP) {
+			SetContinue(FALSE);// m_Continue = FALSE;
+			stopped = TRUE;//  break after adding log!!
+			break;
+		}
+
+		// ADD BML FALLS 
+		cs.Lock();
+		bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
+		cs.Unlock();
+		if (!added) {
+			SetContinue(FALSE);// m_Continue = FALSE;
+			stopped = TRUE;
+			break;
+		}
+		cs.Lock();
+		NofCalculated++;	// - if not stopped	
+		int Ncalc = NofCalculated;
+		cs.Unlock();
+
+		ClearArrays();// clear last BML tattr
+		//pDoc->ShowStatus();// not working for multi-run!!!
+		
+		if (!m_Draw) ShowBeamlet(is);// locked inside
+		ShowProgress(Ncalc); // locked inside
+			//::GdiFlush();
+	} // is = m_Max 
+	
+	ClearArrays();// after last BML - even stopped
+	
+	S.Format("\t------- [%d] TraceAllReions END ----------\n", m_ID);
+	logout << S;
+	if (stopped) return FALSE;
+	return TRUE; // success
+}
+	/*
 	int istop = -1;
 	for (int is = m_Min; is <= m_Max; is++) { // source beamlet number
 		ClearArrays();	//CVectorCleanup tattr_cleanup(tattr);//tattr->clear();
@@ -2561,10 +2596,10 @@ bool CTracer::TraceAllReions() // from ALL beamlets
 			cs.Lock();
 			logout << S;// << std::endl;////////////////
 			pDoc->AddLog(logarr);
-			cs.Unlock(); */
-		}
+			cs.Unlock(); 
+		}*/
 		// interrupted or failed: is < m_Max
-		else if (stopped) { // is < m_Max - interrupted by any reason -> dump log
+		//else if (stopped) { // is < m_Max - interrupted by any reason -> dump log
 		/*	S.Format("    {%d} Scen%d Reions BMLs (%d - %d) - STOP at src %d\n",
 				m_ID, Nscen, m_Min + 1, m_Max + 1, is + 1);
 			logarr->push_back(S);
@@ -2572,10 +2607,10 @@ bool CTracer::TraceAllReions() // from ALL beamlets
 			cs.Lock();
 			logout << S;// << std::endl;///////////
 			pDoc->AddLog(logarr);
-			cs.Unlock();*/
+			cs.Unlock();
 			break; // NofCalculated not increased!
-		}
-		if (stopped) break; // for cycle
+		}*/
+	/*	if (stopped) break; // for cycle
 		cs.Lock();
 		NofCalculated++;	// - if not stopped	
 		int Ncalc = NofCalculated;
@@ -2599,7 +2634,7 @@ bool CTracer::TraceAllReions() // from ALL beamlets
 		//::GdiFlush();
 		cs.Unlock();
 	} // is = m_Max */
-	ClearArrays();// after last BML
+	/*ClearArrays();// after last BML
 
 	S.Format("    Reions Thread %d (%d - %d) stopped\n at Src %d\n", m_ID, m_Min + 1, m_Max + 1, istop + 1); // NofCalculated);
 	logout << S;	//AfxMessageBox(S);
@@ -2617,7 +2652,7 @@ bool CTracer::TraceAllReions() // from ALL beamlets
 
 	if (stopped) return FALSE;
 	return TRUE; // success
-}
+}*/
 
 void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based on (new) TestMem
 // trace beamlets [m_Min, m_Max]
@@ -2638,7 +2673,6 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 	//AfxMessageBox(S);
 
 	if (pDoc->STOP || !GetContinue()) return;
-	
 	
 	bool log = TRUE;// write log
 	bool stopped = FALSE;
@@ -2685,8 +2719,10 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 		TRY{ // reserve attributes
 			tattr->reserve(sz);
 		} CATCH(CMemoryException, e) {
-			S.Format("Thread %d\n reserve at %d FAILED (low memory)", m_ID, NofCalculated);
-			AfxMessageBox(S);
+			//S.Format("Thread %d\n reserve at %d FAILED (low memory)", m_ID, NofCalculated);
+			//AfxMessageBox(S);
+			S.Format("Thread %d reserve FAILED (low memory)\n", m_ID);
+			logout << S;
 			stopped = TRUE;
 			break;
 		} END_CATCH;
@@ -2717,49 +2753,35 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 		
 		///////////////////////////////////////////////////////
 
-		if (!done) stopped = TRUE; // !done-> add last bml to log 
-		if (pDoc->STOP) {
+		//if (!done) stopped = TRUE; // !done-> add last bml to log 
+		if (!done || pDoc->STOP) {
 			SetContinue(FALSE);// m_Continue = FALSE;
-			stopped = true;//  break after adding log!!
+			stopped = TRUE;//  break after adding log!!
+			break;
 		}
 
 		// ADD BML FALLS 
 		//CSingleLock cs_lock(&cs, TRUE);
 		cs.Lock();
 		bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
-		if (!added) stopped = TRUE;
 		cs.Unlock();
 
-		// ADD BML LOG 
-		// if successfully finished 
-		if (is == m_Max) { // finished - is = m_Max
-			ClearArrays();// clear last BML log
-			//stopped = TRUE;// no!! otherwise all threads will stop!
-		/*	S.Format("\t[%d] BMLs (%d - %d) - FINISH at src %d\n", m_ID, m_Min + 1, m_Max + 1, is + 1);
-			logarr->push_back(S);
-			cs.Lock();
-			logout << S;// << std::endl;
-			pDoc->AddLog(logarr);
-			cs.Unlock(); */
+		if (!added) {
+			SetContinue(FALSE);// m_Continue = FALSE;
+			stopped = TRUE;
+			break;
 		}
-		// interrupted or failed: is < m_Max
-		else if (stopped) { // is < m_Max - interrupted by any reason -> dump log
-		/*	S.Format("\t[%d] BMLs (%d - %d) - STOP at src %d\n", m_ID, m_Min + 1, m_Max + 1, is + 1);
-			logarr->push_back(S);
-			cs.Lock();
-			logout << S;// << std::endl;
-			pDoc->AddLog(logarr);
-			cs.Unlock(); */
-			break; // NofCalculated not increased!
-		}
-
+		
+		//cs.Unlock();
+		
 		cs.Lock();
 		NofCalculated++;	// - if not stopped	
 		int Ncalc = NofCalculated;
 		if (NofCalculated == pDoc->NofBeamletsTotal)  
 			stopped = TRUE;// -> leads to STOP all threads in doc
-			
 		cs.Unlock();
+
+		ClearArrays();// clear last BML tattr
 		//pDoc->ShowStatus();// not working for multi-run!!!
 		if (!m_Draw) ShowBeamlet(is);// locked inside
 		
@@ -2768,17 +2790,18 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 		//::GdiFlush();
 		
 	} // is = m_Max 
-	SetContinue(FALSE);// m_Continue = FALSE;
 
-	S.Format("\t [%d] Thread (%d - %d) stopped\n at Src %d", 
-		m_ID, m_Min + 1, m_Max + 1, istop + 1); // NofCalculated);
-	//AfxMessageBox(S);
+	SetContinue(FALSE);// finished m_Max or stopped -> m_Continue = FALSE;
+
+	S.Format("\t [%d] Thread (%d - %d) stopped\n at Src %d\n", 
+		 m_ID, m_Min + 1, m_Max + 1, istop + 1); // NofCalculated);
+	logout << S;
 	
 	ClearArrays();
 
 	//CSingleLock cs_lock(&cs, TRUE);
 	if (stopped) {
-		cs.Lock();
+		//cs.Lock();
 		pDoc->STOP = TRUE;// -> stop all threads if one aborted
 		CTime tm = CTime::GetCurrentTime();
 		pDoc->StopTime = tm;
@@ -2793,9 +2816,11 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 		pDoc->ResetLogFile();
 
 		//Beep(100, 200);
-		AfxMessageBox("SINGLE RUN is DONE!");
-		cs.Unlock();
-	}
+		if (NofCalculated == pDoc->NofBeamletsTotal)  
+			AfxMessageBox("SINGLE RUN is DONE!");
+		else AfxMessageBox("SINGLE RUN is STOPPED!");
+		//cs.Unlock();
+	} // if stopped
 	
 	//pStatus->ReleaseDC(pDC);
 
@@ -2849,6 +2874,61 @@ void CTracer::Draw() // old (before 4.5)
 		
 	//pMainView->ReleaseDC(pDC);
 }
+
+long CTracer:: GetMemUsedkB()
+{
+	HANDLE hProcess = GetCurrentProcess();
+	PROCESS_MEMORY_COUNTERS pmc;
+	if (NULL == hProcess)  return 0;
+
+	long MemUsed = 0;
+	if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc)) )
+		MemUsed = pmc.WorkingSetSize /1024; // currently used by BTR
+	return MemUsed;	
+}
+
+long CTracer:: GetMemFreekB()
+{
+	MEMORYSTATUSEX statex;
+	statex.dwLength = sizeof (statex);
+	GlobalMemoryStatusEx (&statex);
+
+	long MemFree = 0;
+	MemFree = (long) (statex.ullAvailPhys / 1024); // available on the system
+	return MemFree;
+}
+
+long CTracer:: GetGlobFalls()
+{
+	CBTRDoc * pDoc = (CBTRDoc*) m_pDoc;
+	long Falls = pDoc->ArrSize;//m_GlobalVector.GetSize(); // Global falls array size
+	return Falls;
+}
+
+
+/*void CBTRDoc:: GetMemState()
+{
+	int DIV = 1024;
+
+	MEMORYSTATUSEX statex;
+	statex.dwLength = sizeof (statex);
+	GlobalMemoryStatusEx (&statex);
+
+	MemFree = (long) (statex.ullAvailPhys /DIV); // available on the system
+	
+	HANDLE hProcess = GetCurrentProcess();
+	PROCESS_MEMORY_COUNTERS pmc;
+	if (NULL == hProcess)  return;
+
+	if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc)) )
+		MemUsed = pmc.WorkingSetSize /DIV; // currently used by BTR
+		
+	MemFalls = 0;// m_AttrVector[0].size() * ThreadNumber * sizeof(SATTR) / DIV;
+
+	ArrSize = m_GlobalVector.size();//ArrSize = Falls;
+
+}*/
+
 void CTracer:: ShowProgress(int Ncalc)
 {
 	bool lout = FALSE;
@@ -2856,9 +2936,28 @@ void CTracer:: ShowProgress(int Ncalc)
 	if (!lout) return;
 	CBTRDoc * pDoc = (CBTRDoc*) m_pDoc;
 	
+	
 	if (Ncalc == 0 || pDoc->STOP) return; // tracing in progress
 /////////////////////////////////////////////////
 	bool SINGLE = (pDoc->MAXSCEN == 1);
+	int Maxscen = pDoc->MAXSCEN; // total runs
+	int Nscen = pDoc->SCEN;
+	int Nrun = pDoc->RUN;
+	int Ntot = pDoc->NofBeamlets;
+	//cs.Lock();
+	CTime Tbegin = pDoc->StartTime;
+	long Falls = pDoc->ArrSize;
+	//cs.Unlock();
+
+	long MEM_BTR_kB = GetMemUsedkB();//pDoc->MemUsed;// kb
+	long MemFreeKB = GetMemFreekB();//pDoc->MemFree;// kb
+	//long Falls = GetGlobFalls();//pDoc->ArrSize; // Global falls array size
+	long FallsBML;// falls per BML
+	long MemBML; // bytes per BML
+	long TotMemB;//(memb) bytes - all falls
+	long leftBML; // 
+	int MemFallB = sizeof(minATTR);// bytes per 1 fall = 16..20b
+	
 	CSetView * pStatus = (CSetView *)m_pStatus;
 	CDC* pDC = pStatus->GetDC(); //or GetWindowDC();  
 	pDC->SetTextColor(RGB(0,0,255));
@@ -2866,15 +2965,12 @@ void CTracer:: ShowProgress(int Ncalc)
 	CString S;
 	//cs.Lock();
 		int BMLrays = pAttr->GetSize();//pDoc->Attr_Array.GetSize();
-		pDoc->GetMemState();
+		//pDoc->GetMemState();
 		CTime t = CTime::GetCurrentTime();
-		CTime Tbegin = pDoc->StartTime;
+		
 		CTime Tend = t;
 		CTimeSpan Telapsed;
-		int Maxscen = pDoc->MAXSCEN; // total runs
-		int Nscen = pDoc->SCEN;
-		int Nrun = pDoc->RUN;
-		int Ntot = pDoc->NofBeamlets;
+		
 		int h, m, s, h0, m0, s0, dh, dm, ds, sec;
 		long mspb, msleft, sleft, mleft, hleft;
 		h =	t.GetHour(); m = t.GetMinute(); s = t.GetSecond();// current time
@@ -2895,25 +2991,19 @@ void CTracer:: ShowProgress(int Ncalc)
 	/*	if (pDoc->STOP || Ncalc == Ntot) 
 			S.Format(" *** STOPPED                      ");
 		else S.Format("Run START at %02d:%02d:%02d       ", h0, m0, s0);*/
-		
 		//long MemFalls = (pDoc->ArrSize) * sizeof(minATTR);//can be > max long!!!
 		//if (MemFalls < 0) MemFalls = 0;
-		long MEM_BTR_kB = pDoc->MemUsed;// kb
-		long MemFreeKB = pDoc->MemFree;// kb
-		long Falls = pDoc->ArrSize; // Global falls array size
-		long FallsBML;
-		long MemBML; // bytes per BML
-		long TotMemB;//(memb) bytes - all falls
-		int MemFallB = sizeof(minATTR);// bytes per 1 fall = 16..20b
-		
+				
 		if (Ncalc > 0) // impossible
 			FallsBML = Falls / Ncalc; // calculated falls per BML
 		else FallsBML = BMLrays * 5; //5 - "aver" falls per ray Falls / Ntot; 
-		MemBML = FallsBML * MemFallB; // bytes per BML
-		TotMemB = FallsBML * MemFallB;// all falls bytes
+		MemBML = FallsBML * MemFallB; // bytes per 1 BML
+		TotMemB = Falls * MemFallB;// all falls bytes
 		if (TotMemB < 1) TotMemB = 1;// impossible
 		//long leftFalls = (pDoc->MemFreeKB / MemFallB) * 1024;
-		long leftBML = (MemFreeKB / MemBML) * 1024;
+		
+		//leftBML = (MemFreeKB / MemBML) * 1024;
+		leftBML = MemFreeKB * 1024 / MemBML;
 		//long Nleft = (pDoc->MemFree * 1024 - MemFalls) / TotMemB;
 		//if (Nleft < 0) Nleft = 0;
 		
@@ -2930,7 +3020,7 @@ void CTracer:: ShowProgress(int Ncalc)
 				pDC->TextOut(10, 105, S);
 				logout << S;
 
-				S.Format("Traced BML     %d                \n", Ncalc);
+				S.Format("Traced BML  %d                \n", Ncalc);
 				pDC->TextOut(10, 125, S);
 				logout << S;
 
@@ -2947,18 +3037,20 @@ void CTracer:: ShowProgress(int Ncalc)
 				S.Format("BTR holds      %ld kB      \n", MEM_BTR_kB);
 				pDC->TextOut(10,205, S); logout << S;
 
-				S.Format("Available mem  %ld kB      \n", MemFreeKB);
-				pDC->TextOut(10,225, S); //logout << S;
-
+				S.Format("Mem left       %ld kB      \n", MemFreeKB);
+				pDC->TextOut(10,225, S); logout << S;
+				
 				S.Format("Mem / BML      %ld B               \n", MemBML);
 				pDC->TextOut(10,245, S);  logout << S;
   
 				S.Format("Falls arr      %ld               \n", Falls);
 				//x %d Bytes    \n", //, MemFallB);
 				pDC->TextOut(10, 265, S); logout << S;
-
-				S.Format("BML maximum    %ld           \n", (long)Ncalc + leftBML);
-				pDC->TextOut(10, 285, S); logout << S << "-----------------------\n";
+				
+				S.Format("BML left   %ld           \n", leftBML);
+				pDC->TextOut(10, 285, S); logout << S;
+				S.Format("BML limit  %ld           \n", (long)Ncalc + leftBML);
+				pDC->TextOut(10, 305, S); logout << S << "-----------------------\n";
 				//if (SINGLE) ::GdiFlush();
 			cs.Unlock();
 			//}// calculated < Total 

@@ -159,6 +159,7 @@ public:
 	CString TaskName;
 	CString TaskComment;
 	CString TaskDate, TaskTime;
+	CString ScenFileName;
 	CArray<double*> DataValue;
 	CArray<int, int> DataType;
 	CArray<int, int> DataLineN;

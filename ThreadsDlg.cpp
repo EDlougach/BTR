@@ -15,6 +15,7 @@ CThreadsDlg::CThreadsDlg(CWnd* pParent /*=NULL*/)
 	, Nproc(0)
 	, Nthreads(0)
 	, m_MaxScen(0)
+	, m_Scenfilename(_T(""))
 {
 
 }
@@ -45,8 +46,18 @@ BEGIN_MESSAGE_MAP(CThreadsDlg, CDialog)
 END_MESSAGE_MAP()
 
 
-// CThreadsDlg message handlers
-
+// CThreadsDlg message handler
+/*void CThreadsDlg::Invalidate(BOOL bErase)
+{
+	CBTRDoc * pDoc = (CBTRDoc*)doc;
+	CString S;
+	if (m_MaxScen > 1)
+		S.Format("%s(%d)", pDoc->ScenFileName, pDoc->MAXSCEN);
+			// ("MULTI (%d)", m_MaxScen);
+	else S.Format("SINGLE");
+	SetDlgItemText(IDC_BUTTON_PARAM, S);
+	CDialog::Invalidate(bErase);
+}*/
 
 void CThreadsDlg::OnBnClickedButtonParam()
 {
@@ -56,14 +67,16 @@ void CThreadsDlg::OnBnClickedButtonParam()
 	
 	pDoc->ReadScenFile();
 	m_MaxScen = pDoc->MAXSCEN;
+	m_Scenfilename = pDoc->ScenFileName;
 	CString S;
 	if (m_MaxScen > 1)
-		S.Format("MULTI (%d)", m_MaxScen);
+		S.Format("%s(%d)", m_Scenfilename, m_MaxScen);
+			// ("MULTI (%d)", m_MaxScen);
 	else S.Format("SINGLE");
 	SetDlgItemText(IDC_BUTTON_PARAM, S);
-	UpdateData(TRUE);
+	UpdateData(FALSE);
 	InvalidateRect(NULL, TRUE);
-	//return;
+	return;
 	
 	
 /*	CFileDialog * fname_dlg;

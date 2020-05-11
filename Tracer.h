@@ -275,6 +275,9 @@ public:
 	int  Get_ID() { return m_ID; }
 	int  GetBMLmin() { return m_Min; }
 	int  GetBMLmax() { return m_Max; }
+	long GetMemUsedkB();
+	long GetMemFreekB();
+	long GetGlobFalls();
 //	void SetLogArray(std::vector <CString> * p) {logarr = p; }
 	void SetAttrArray(std::vector <minATTR> * p) {tattr = p;}
 	void SetExitArray(std::vector <EXIT_RAY> * q) {exitarr = q;}

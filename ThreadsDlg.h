@@ -30,5 +30,6 @@ public:
 //	double m_Xmax;
 	int m_MaxScen;
 	CString m_Scenfilename;
+	//void Invalidate(BOOL bErase =1);
 	afx_msg void OnBnClickedButtonParam();
 };

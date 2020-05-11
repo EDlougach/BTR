@@ -1142,6 +1142,7 @@ void CBTRDoc:: InitTaskTransport()
 void CBTRDoc::InitScenDefault()
 {
 	MAXSCEN = 1;
+	ScenFileName = "";
 	for (int i = 0; i <= MAXSCEN; i++)	ScenData[i].RemoveAll();
 	ScenLoaded = FALSE;// INIT default scenarios
 
@@ -1185,6 +1186,7 @@ void  CBTRDoc::ReadScenFile() // read scenario data
 	if (dlg.DoModal() == IDOK) {
 		//ResumeData(); // set default
 		strcpy(name, dlg.GetPathName());
+		ScenFileName = dlg.GetFileName();
 		/*	
 		FileName = dlg.GetFileName();
 		FilePath = dlg.GetPathName();
@@ -12165,6 +12167,7 @@ void CBTRDoc::RunScen(int iopt[3]) // - current scenario, multi-run trace option
 	StartTime = CTime::GetCurrentTime();
 	CTime tm = StartTime;
 	Date.Format("%02d-%02d-%04d", tm.GetDay(), tm.GetMonth(), tm.GetYear());
+	int success = 1;
 
 	RUN = 0;// count actual runs 1..3 
 	for (int irun = 0; irun < 3; irun++) { //0,1,2
@@ -12186,8 +12189,9 @@ void CBTRDoc::RunScen(int iopt[3]) // - current scenario, multi-run trace option
 		SetPlasmaTarget(); //init plasma object, Geometry, Nray = -1, clear arrays
 		//ShowStatus();//show active data on views
 
-		Run_BTR_Fast();// calls ClearArrays, Starts&Deletes NEW Threads, InitTracers 
+		success = Run_BTR_Fast();// calls ClearArrays, Starts&Deletes NEW Threads, InitTracers 
 		CompleteRun(); // save loads list
+		if (success == 0) break; // CompleteScen
 	}
 	InitScenOpt(optA, optRes, optRei); // GET SCEN options - needed for CompleteScen merging!
 	CompleteScen();  // Resume Config after SCEN //ShowLogFile(0);
@@ -12255,18 +12259,12 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 
 	if (BTRVersion  < 5) { //old version
 		AfxMessageBox("Multi-run is supported from Version 5.0");
-		//MAXSCEN = 1;
 		return;
 	}
 	//OnShow();
 	//	::MessageBox(NULL, "SCEN >= MAXSCEN", "OnStartPar", 0);
 
-
-/*	//CBTRApp theApp;
 	CWnd * pMW = theApp.m_pMainWnd;
-	pMW->ShowWindow(SW_SHOWMINIMIZED);
-	pMW->UpdateWindow();*/
-
 
 	int runs[3] = { 1, 0, 0 }; // { ATOMS, Resid, Reions } - basic options for each scen
 	if (OptTraceAtoms == 0) runs[0] = 0;
@@ -12283,6 +12281,7 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 	
 	SuspendedSpan = 0;
 	DataSaveTime = 0;
+	ArrSize = 0;
 	
 	StartTime0 = CTime::GetCurrentTime();// Global start
 	StartTime = StartTime0; // //Reset time for current RUN start
@@ -12307,23 +12306,26 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 			logout << S; // << std::endl;///////////////
 
 			//CBTRApp theApp;///COLLAPSE MAIN VIEW on start /////////////////////////////
-			CWnd * pMW = theApp.m_pMainWnd;
-			pMW->ShowWindow(SW_SHOWMINIMIZED);
-			pMW->UpdateWindow();///////////////////////////////////////////////////
+			//pMW->ShowWindow(SW_SHOWMINIMIZED);
+			//pMW->UpdateWindow();///////////////////////////////////////////////////
 
 			while (SCEN <= MAXSCEN) 
 				RunScen(runs); 
 				// SCEN is +1 after each run-set is complete -> CompleteScen()
 		
-		} // multi-run not cancelled
+		} // Set Mesh for multi-run 
 
+		//pMW->ShowWindow(SW_SHOWMAXIMIZED);
+		pMW->UpdateWindow();
 		
 		//if (OptLogSave) CloseLogFile(); // after ALL SCENS
 		ResetLogFile();
+		
 		return;
-	} // if  MAXSCEN > 1 -> run Multi
+
+	} // if  MAXSCEN > 1 -> run Multi//////////////////////////////////////
 	
-//    else -> RUN Single run - old, but allows stopping /////////////////////////////////////////
+//  else -> RUN SINGLE run old version (allows manual stop)/////////////////////////
 		
 /*	if (!STOP) {
 		OnStop(); // only stop threads, keep NofCalculated
@@ -12333,7 +12335,7 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 	}*/
 		
 	ClearAllPlates();	//OptCombiPlot = -1; // no load 
-	//->TracksCalculated = 0;//map tracks on vert/horiz planes in plasma -> CalculateTracks
+	
 	if (!SINGAPLoaded) SetSINGAPfromMAMUG();// called before by SetStatus (?)
 	SetPlasmaTarget(); //init plasma object, Geometry, Nray = -1, clear arrays
 		
@@ -12378,9 +12380,7 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 	for (int i = 0; i < ThreadNumber; i++)	
 		m_Tracer[i].SetContinue(TRUE);
 	SuspendAll(TRUE); // run = TRUE
-	
 	//CloseLogFile();// after SINGLE RUN
-
 	//OnShow();
 	//ShowStatus();
 	//if (NofCalculated < NofBeamlets) ShowLogFile(0);// all
@@ -12498,15 +12498,17 @@ int CBTRDoc:: Run_BTR_Fast() //
 		delete m_ThreadArray[j];
 	}*/
 
-	CString s;
-	s.Format("Scen %d DONE\n %d threads \n total %d beamlets", SCEN, nSize, NofCalculated);
+	//CString s;
+	//s.Format("Scen %d DONE\n %d threads \n total %d beamlets", SCEN, nSize, NofCalculated);
 	//::MessageBox(NULL, s, "Run_BTR_FAST", 0);
 	
 	//OnShow();
-	::GdiFlush();
+	//::GdiFlush();
 
 	//cs.Unlock();
-	return 1; // or NofCalculated; // 
+	if (NofCalculated == NofBeamletsTotal) //finished 
+		 return 1;  
+	else return 0; // stopped
 }
 
 UINT CBTRDoc:: _ThreadFunc(LPVOID param)// not active now (earlier called by BTR_FAST) 
@@ -19753,21 +19755,32 @@ bool CBTRDoc::AddLog(std::vector<CString> * log)
 bool CBTRDoc::AddFalls(int tid, int isrc,  std::vector<minATTR> * tattr)
 {
 	if (STOP) return FALSE;
-	vector<minATTR>::iterator it= m_GlobalVector.end();
+	vector<minATTR>::iterator it;//= m_GlobalVector.end();
 	//deque<SATTR>::iterator it= m_GlobalDeque.end();
 	 
 	CString S, Slog;
 	minATTR a;
+	long tsize = tattr->size();
+	long OldArrSize = m_GlobalVector.size();
+	long NewArrSize = OldArrSize + tsize;
+	//logout << "OLD Falls Size " << OldArrSize << "\n";
+	//logout << "NEW Falls Size " << NewArrSize << "\n";
+	
 	TRY {
 		//tattr->reserve(sz);
+		m_GlobalVector.reserve(NewArrSize);
+		it = m_GlobalVector.end();
 		m_GlobalVector.insert(it, tattr->begin(), tattr->end());//append Bml to global vect
 		//m_GlobalDeque.insert(it, tattr->begin(), tattr->end());
-		
 	} CATCH (CMemoryException, e) {
-		S.Format("Thread %d\n FAILED to add Falls! \n Last bml -  %d", tid, NofCalculated);
-		AfxMessageBox(S);
-		//STOP = TRUE;
-		OnStop();
+		//S.Format("Thread %d\n FAILED to add Falls! \n");// Last bml -  %d\n",tid, NofCalculated);
+		//AfxMessageBox(S);
+		S.Format("\n ******* FAILED to add Falls! (out of MEMORY) *******\n");
+		logout << S;
+		ArrSize = m_GlobalVector.size();
+		logout << "----- Last Falls Size --- " << ArrSize << "\n";
+		STOP = TRUE;
+		//OnStop();
 		return FALSE;
 	} END_CATCH;
 	
@@ -19788,6 +19801,9 @@ bool CBTRDoc::AddFalls(int tid, int isrc,  std::vector<minATTR> * tattr)
 	//Slog.Format("{%d}  Src %4d Bml %4d - done (BML falls added)\n", tid, isrc, NofCalculated+1); // NofCalculated++ after calling this func 
 	//m_GlobalLog.push_back(Slog);
 	
+	ArrSize = m_GlobalVector.size();
+	//logout << "Falls Size After Add " << ArrSize << "\n";
+
 	return TRUE;
 	
 }
@@ -21096,14 +21112,15 @@ void CBTRDoc::OnOptionsThreads()
 		dlg.Nthreads = ThreadNumber;
 		dlg.m_MaxScen = MAXSCEN;
 		dlg.doc = this;
+		dlg.m_Scenfilename = ScenFileName;
 
-	
 		if (dlg.DoModal() == IDOK) {
 			
 			ThreadNumber = dlg.Nthreads;
-			if (ThreadNumber > 8) {
-				ThreadNumber = 8;
-				AfxMessageBox("Number of threads has DED-limit = 8\n (for easier debug)");
+			//MaxThreadNumber		21
+			if (ThreadNumber > 20) {
+				ThreadNumber = 20;
+				AfxMessageBox("Number of threads is set = 20 (max)");
 			}
 			
 			//dlg.m_MaxScen = MAXSCEN;
