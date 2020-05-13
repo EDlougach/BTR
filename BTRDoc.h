@@ -65,6 +65,7 @@ template <class T>
 logstream& operator<< (logstream& f, T val)
 {
 	cout << val;
+	cout.flush();
 	if (f.LogON == FALSE) { // Log-file switched OFF
 		//cout << "\t\t\t ----- logOFF\n";
 		return f;
@@ -116,7 +117,7 @@ public:
 	//double Version;
 	int SCEN, MAXSCEN; // Scenario 
 	int RUN, MAXRUN; // part of Scenario (max 3 runs per scenario)
-	long MemFree, MemUsed, MemFalls, ArrSize; 
+	long long MemFree, MemUsed, MemFalls, ArrSize; 
 	int ThreadNumber; // active threads for current run
 	int IofCalculated;
 	
@@ -784,11 +785,13 @@ public:
 
 	void CreateBaseSingle(); // creates a new plate - pMarkedPlate proection
 	void P_CalculateLoad(CPlate * plate);
+	void P_CalculateLoad(CPlate * plate, vector<minATTR> * parr);
 	void P_CalculateCombi(bool update);
 	void P_CalculateAngularProf(CPlate * plate);
 	void SetNullLoad(CPlate * plate);
 	void CalculateAllLoads();
 	BOOL SetDefaultMesh();
+	void SetNullLoads(); // init maps for all "interesting" plates
 	
 	void WriteExitVector();
 	void WriteFallVector();
@@ -798,7 +801,9 @@ public:
 	void SendReport(bool includetext);
 
 	bool AddFalls(int tid, int isrc, std::vector<minATTR> * tattr);
-	
+	//bool AddFalls(int tid, int isrc, std::vector<minATTR> & attr);
+	void AddFallsToLoads(int tid, int isrc,  std::vector<minATTR> * tattr);
+		
 	bool AddLog(std::vector<CString> * log);
 	void ShowPlasmaCut(int icut);
 	//void OnBeaminplasmaVerticalplane();

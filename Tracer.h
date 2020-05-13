@@ -275,9 +275,9 @@ public:
 	int  Get_ID() { return m_ID; }
 	int  GetBMLmin() { return m_Min; }
 	int  GetBMLmax() { return m_Max; }
-	long GetMemUsedkB();
-	long GetMemFreekB();
-	long GetGlobFalls();
+	long long GetMemUsedkB();
+	long long GetMemFreekB();
+	long long GetGlobFalls();
 //	void SetLogArray(std::vector <CString> * p) {logarr = p; }
 	void SetAttrArray(std::vector <minATTR> * p) {tattr = p;}
 	void SetExitArray(std::vector <EXIT_RAY> * q) {exitarr = q;}
@@ -315,7 +315,8 @@ public:
 	void DumpArrays();
 	void ClearArrays();
 	void ShowBeamlet(int isource);
-	void ShowProgress(int Ncalc);
+	void ShowProgress(int Ncalc);// static loads
+	void ShowProgressFalls(int Ncalc);// falls 
 	void SetID(int id) { m_ID = id; }
 	void SetLimits(int min, int max) { m_Min = min; m_Max = max;}
 	void SetStartPoint(int isource);

@@ -996,13 +996,13 @@ void CSetView:: ShowStatus() //(CDC* pDC)
 		h0 = Tbegin.GetHour(); m0 = Tbegin.GetMinute(); s0 = Tbegin.GetSecond();
 
 		pDoc->GetMemState();
-		long MemFalls = (pDoc->ArrSize) * sizeof(minATTR);
+		long long MemFalls = (pDoc->ArrSize) * sizeof(minATTR);
 		if (MemFalls < 0) MemFalls = 0;
-		long memb;
+		long long memb;
 		if (Ncalc > 0) memb = MemFalls / Ncalc;
 		else memb = MemFalls;
 		if (memb < 1) memb = 1;
-		long Nleft = (pDoc->MemFree * 1024 - MemFalls) / memb;
+		long long Nleft = (pDoc->MemFree * 1024 - MemFalls) / memb;
 		if (Nleft < 0) Nleft = 0;
 		Tend = pDoc->StopTime;
 		Telapsed = GetElapse(Tbegin, Tend) - pDoc->SuspendedSpan; 
@@ -1042,37 +1042,7 @@ void CSetView:: ShowStatus() //(CDC* pDC)
 		S.Format("Falls arr: %ld elem         ", pDoc->ArrSize);//, sizeof(minATTR), MemFalls);
 		pDC->TextOut(10, 185, S);
 				
-		/*if (Ncalc > 0) { // started or done
-			if (Ncalc < Ntot && !pDoc->STOP ) { // tracing in progress
-				Telapsed = GetElapse(Tbegin, t) - pDoc->SuspendedSpan; 
-				dh = Telapsed.GetHours(); dm = Telapsed.GetMinutes(); ds = Telapsed.GetSeconds();
-				S.Format("Elapsed   %02d:%02d:%02d                     ", dh, dm, ds);
-				pDC->TextOut(10,145, S);
-				sec = ds + dm*60 + dh*3600;
-				mspb = sec*1000/Ncalc; // single run
-				msleft = mspb*(Ntot - Ncalc);
-				sleft = msleft/1000; 
-				mleft = sleft/60;
-				hleft = mleft/60;
-				S.Format("Av.time per BML = %d ms  ", mspb);
-				pDC->TextOut(10,165, S);
-				S.Format("Left (single run!)   %02d:%02d:%02d            ", 
-					hleft,  mleft - hleft*60, sleft - mleft*60);
-				pDC->TextOut(10,185, S);
-				S.Format("BTR holds      %ld kB   ", pDoc->MemUsed);
-				pDC->TextOut(10,205, S);
-				S.Format("Available mem  %ld kB   ", pDoc->MemFree);
-				pDC->TextOut(10,225, S);
-				S.Format("Falls array: %ld elements x %d Bytes = %ld Bytes      ", 
-					pDoc->ArrSize, sizeof(minATTR), MemFalls);
-				pDC->TextOut(10, 265, S);
-				S.Format("Mem / BML    %ld Bytes     ", memb);
-				pDC->TextOut(10,285, S);
-				S.Format("Approx BML limit  %ld      ", Ncalc + (int)Nleft);
-				pDC->TextOut(10, 305, S);
-				 
-			}// calculated < Total*/
-
+		
 		if (Ncalc == Ntot) { // finished
 				
 			S.Format("Total Run  %02d:%02d:%02d            ", dh, dm, ds);
@@ -1087,7 +1057,7 @@ void CSetView:: ShowStatus() //(CDC* pDC)
 		} // Ncalc = Ntot
 
 		if (Ncalc > 0 && pDoc->STOP)  { //  stopped
-			S.Format(" !!! Abort Scen %d: Last %d of %d  ",Nscen, Ncalc, Ntot);
+			S.Format(" !!! Abort Scen %d: Last %d of %d  ",Nscen-1, Ncalc, Ntot);
 			if (Ncalc < Ntot) // stopped
 				pDC->TextOut(10,205, S);
 		} // STOP 

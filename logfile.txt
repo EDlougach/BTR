@@ -1,5 +1,5 @@
 start NewDocument
 Set Beam - done
-MEM : BTR takes 7028 of 830508 available
+MEM : BTR takes 7008 of 431412 available
 Init Default Scenarious: 1
 Close tmp log

@@ -133,16 +133,17 @@ void CLoadView::OnDraw(CDC* pDC)
 		//ShowPlateBound(pDC);
 		//EndWaitCursor();
 		//pDC->SelectObject(pOldFont);
-	}
 
-	else { // show ALL Surfaces (no loads)
+	} // Show Load selected
+
+	else { // show Surf/Loads list
 		pOldFont = pDC->SelectObject(&smallfont);
 		if (pDoc->LoadSelected < 1) {
 			//int N = pDoc->PlateCounter; 
 			POSITION pos = pDoc->PlatesList.GetHeadPosition(); 
 			//AddPlatesList.GetHeadPosition();
 			int k = 0;
-			pDC->TextOut(10, 5, " SURFACES (1-solid, 0-transparent) ");
+			pDC->TextOut(10, 5, " ALL SURFACES (1-solid, 0-transparent) ");
 			while (pos != NULL) {
 				plate = pDoc->PlatesList.GetNext(pos);
 				Orig = plate->Orig;
@@ -150,42 +151,42 @@ void CLoadView::OnDraw(CDC* pDC)
 					plate->Number, plate->Solid, plate->Comment, Orig.X, Orig.Y, Orig.Z);
 				pDC->TextOut(10, 25 + k*15, S);
 				k++;
-			}
-			
-		}
-
-	// Show Loads 
-	else {	//pDoc->ShowStatus();
-		//DrawBMP(pDC);
-		if (pDoc->Sorted_Load_Ind.GetSize() > 1) // sorted 
-			S0 = " - Sorted";
-		else S0 = "";// - Unsorted";*/
-		
-		//if (pDoc->DINSELECT) pDC->TextOut(10,5, "Power maps list");// + S0);
-		//else 
-		pDC->TextOut(10,5, "Power maps list" + S0);
-		S.Format(" Num      Total, W          Max, W/m2      Steps      Comment      Particles");
-		pDC->TextOut(10, 20, S); 
-		
-		double percent;
-		int k;
-		if (pDoc->LoadSelected < 1) S = "NO loads in the list";
-		for (int i = 0; i < pDoc->LoadSelected; i++) {
-			k = i;
+			}//pos
+		}// if Load list empty
+ 	
+		else {// Show Loads 	//pDoc->ShowStatus();
+			//DrawBMP(pDC);
 			if (pDoc->Sorted_Load_Ind.GetSize() > 1) // sorted 
-				k = pDoc->Sorted_Load_Ind[i]; 
-			plate = pDoc->Load_Arr[k];
-		/*	percent = (plate->Load->Sum) / (pDoc->NeutrPower)/10000;
-			S.Format(" %d    %10.4e    %10.4e    %0.4f", plate->Number, plate->Load->Sum,  plate->Load->MaxVal,  percent);*/
-			S.Format(" %3d    %10.3e    %10.3e    %5g / %5g    ", 
-				plate->Number, plate->Load->Sum,  plate->Load->MaxVal, plate->Load->StepX, plate->Load->StepY);
-			S += plate->Comment; S += "  ";
-			S += plate->Load->Particles;
-			pDC->TextOut(10, 35 + i*15, S);
-		} 
+				S0 = " - Sorted";
+			else S0 = "";// - Unsorted";*/
 		
-	} // ShowStatus
-	}
+			pDC->TextOut(10,5, "NON-ZERO Power maps" + S0);
+			S.Format(" Num      Total, W          Max, W/m2      Steps      Comment      Particles");
+			pDC->TextOut(10, 20, S); 
+		
+			double percent, PDmax, Psum;
+			int k, line = 0;
+			//if (pDoc->LoadSelected < 1) S = "NO loads in the list";
+			for (int i = 0; i < pDoc->LoadSelected; i++) {
+				k = i;
+				if (pDoc->Sorted_Load_Ind.GetSize() > 1) // sorted 
+					k = pDoc->Sorted_Load_Ind[i]; 
+				plate = pDoc->Load_Arr[k];
+				PDmax = plate->Load->MaxVal;
+				Psum = plate->Load->Sum;
+				if (Psum < 1e-3 || PDmax < 1.e-3) continue;// skip ZERO maps
+			/*	percent = (plate->Load->Sum) / (pDoc->NeutrPower)/10000;
+				S.Format(" %d    %10.4e    %10.4e    %0.4f", plate->Number, plate->Load->Sum,  plate->Load->MaxVal,  percent);*/
+				S.Format(" %3d    %10.3e    %10.3e    %5g / %5g    ", 
+				plate->Number, Psum,  PDmax, plate->Load->StepX, plate->Load->StepY);
+				S += plate->Comment; S += "  ";
+				S += plate->Load->Particles;
+				pDC->TextOut(10, 35 + line*15, S);
+				line++;
+			} // i
+		
+		} // Show Loads
+	}// show Surf/Loads list
 	pDC->SelectObject(pOldFont);
 	pDC->SelectObject(pOldPen);
 	

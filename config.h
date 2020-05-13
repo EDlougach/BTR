@@ -179,6 +179,7 @@ inline void Message_NotSelected()  {AfxMessageBox("NO plate selected!", MB_ICONI
 	 bool	 Loaded; // Marked by user for load calc (serial) or calculated already (parallel)
 	 bool    Visible; // Shown  on views
 	 bool    Solid; // stop particles (not transparent)
+	 bool    MAP;// interesting data
 	 bool    Selected; // shown red 
 	 bool	 Touched; // hot-spot shown red (in parallel - needs to calculate load)
 	 int     Number;

@@ -5137,9 +5137,7 @@ void CBTRDoc::AddCond(CPlate * plate)// add to PlateList if condition
 		if (plate->Corn[i].X < -0.5) return; // skip adding
 	}
 
-	// skip transparent
-	//if (!(plate->Solid)) return;
-	//if (line.Find("solid") > -1) solid = true;//
+	plate->MAP = TRUE;// default - interesting
 	CString comm = plate->Comment;
 	CString S = comm.MakeUpper();
 	CString Sskip;
@@ -5152,8 +5150,9 @@ void CBTRDoc::AddCond(CPlate * plate)// add to PlateList if condition
 			if (S.Find(Sskip,0) >= 0) { // found Skipped
 				
 				if (Nexc == 0) { // no exceptions
-					logout << S << " is SKIPPED \n";
-					return; // found -> SKIP (don't add surf)
+					plate->MAP = FALSE;
+					logout << S << " NO MAP (SKIP) \n";
+					//return; // found -> SKIP (don't add surf)
 				} // No exceptions
 				
 				// check Exceptions 
@@ -5165,8 +5164,8 @@ void CBTRDoc::AddCond(CPlate * plate)// add to PlateList if condition
 				} // j = Nexc
 
 				if (!found) { // not found in exceptions
-					logout << S << " is SKIPPED \n";
-					return; // SKIP (don't add surf)
+					logout << S << " NP MAP (SKIPPED) \n";
+					//return; // SKIP (don't add surf)
 				} // Sexcept not found 
 				
 
@@ -5799,6 +5798,7 @@ void CBTRDoc::OnDataStore() // Update + save (v5) actual Config
 	UpdateDataArray();// m_Text -> DataArray // calls SetData, SetOption
 	CheckData();
 
+	/* // automatic update
 	char buf[1024];
 	char * name = strcpy(buf, ConfigFileName);
 	FILE * fout = fopen(name, "w");
@@ -5806,7 +5806,7 @@ void CBTRDoc::OnDataStore() // Update + save (v5) actual Config
 	fclose(fout);
 	S.Format(">>>> Config-file %s is Rewritten! \n", ConfigFileName);
 	logout << S;
-	AfxMessageBox(S);
+	AfxMessageBox(S);*/
 
 	pDataView->m_rich.SetFont(&pDataView->font, TRUE);
 	pDataView->m_rich.SetBackgroundColor(FALSE, RGB(210,250,200));
@@ -7321,7 +7321,7 @@ void CBTRDoc::SaveLoads(bool free)
 		while (pos != NULL) {
 			plate = PlatesList.GetNext(pos);
 			sn.Format("%d",plate->Number);
-			name = "load" + sn + ".dat"; 
+			name = "load" + sn + ".txt"; 
 			fout = fopen(name, "w");
 			plate->WriteLoadAdd(fout); // free
 			plate->filename = name;
@@ -7331,9 +7331,10 @@ void CBTRDoc::SaveLoads(bool free)
 	else { //standard
 	for (int i = 0; i < LoadSelected; i++) {
 		plate = Load_Arr[i];
+		if (plate->Touched == FALSE) continue; // skip ZERO maps
 		//CString  sn;
 		sn.Format("%d",plate->Number);
-		name = "load" + sn + ".dat"; 
+		name = "load" + sn + ".txt"; 
 		fout = fopen(name, "w");
 		//if (free) plate->WriteLoadAdd(fout);
 		plate->WriteLoad(fout);
@@ -7346,13 +7347,13 @@ void CBTRDoc::SaveLoads(bool free)
 		CurrentDirName =  DirName;
 		FormDataText(TRUE);// include internal names of parameters
 	
-		name = "Config.dat";
+		name = "Config.txt";
 		fout = fopen(name, "w");
 		fprintf(fout, m_Text);
 		fclose(fout);
 
-		WriteSumReiPowerX("Sum_ReiX.dat", -1, 100);
-		WriteSumAtomPowerX("Sum_AtomX.dat", -1, 100);
+		//WriteSumReiPowerX("Sum_ReiX.txt", -1, 100);
+		//WriteSumAtomPowerX("Sum_AtomX.txt", -1, 100);
 
 		//WriteSumPowerAngle("Sum_Angle.dat");
 			
@@ -10646,8 +10647,9 @@ void CBTRDoc:: ReadAtomPowerX()
 
 void CBTRDoc::OnResultsSaveall() 
 {
+	SaveLoads(FALSE);
 //	NeedSave = TRUE;
-	int res;
+/*	int res;
 	if (!OptFree) {// Standard Geom
 		res = AfxMessageBox("Standard NBI geometry can be also stored as Free Surfaces.\n Do you want to Save it Free?",
 			MB_YESNOCANCEL); 
@@ -10661,8 +10663,9 @@ void CBTRDoc::OnResultsSaveall()
 		return;
 	} // OptFree = FALSE
 	
-	else 	SaveLoads(TRUE); // OptFree = TRUE -> Save Free
-	
+	else 
+	SaveLoads(TRUE); // OptFree = TRUE -> Save Free
+	*/
 }
 
 void CBTRDoc::OnResultsSaveList()
@@ -11874,7 +11877,7 @@ void CBTRDoc::CollectRUNLoads() // add load for each surf -> create a folder wit
 
 void CBTRDoc::CompleteRun() // calculate, save loads, re-init arrays
 {
-	CalculateAllLoads(); // only touched plates are calculated
+	//CalculateAllLoads(); // only touched plates are calculated
 	CString sn, name, S;
 	char buf[1024];
 	::GetCurrentDirectory(1024, buf); // SCEN folder
@@ -12264,7 +12267,8 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 	//OnShow();
 	//	::MessageBox(NULL, "SCEN >= MAXSCEN", "OnStartPar", 0);
 
-	CWnd * pMW = theApp.m_pMainWnd;
+	CWnd * pMW = theApp.m_pMainWnd;// for collapsing in MULTI-SCEN
+	pMW->FlashWindow(TRUE);
 
 	int runs[3] = { 1, 0, 0 }; // { ATOMS, Resid, Reions } - basic options for each scen
 	if (OptTraceAtoms == 0) runs[0] = 0;
@@ -12288,8 +12292,7 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 	// RESET LOG for append
 	ResetLogFile();
 	
-	ShowStatus();//show active data on views
-
+	//ShowStatus();//show active data on views
 	CTime tm = StartTime;//CTime::GetCurrentTime();
 	CString Date, Time;
 	Date.Format("%02d-%02d-%04d", tm.GetDay(), tm.GetMonth(), tm.GetYear());
@@ -12299,27 +12302,34 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 	
 	//if (SCEN > 1 && MAXSCEN > 1) ResumeData(); // back to initial config
 	
+	SetDefaultMesh();// set surf resolution - before all runs
+	SetNullLoads();
+	S.Format("----- Init Null Loads for ALL surfaces --------\n");
+	logout << S;
+
+	ShowStatus();//show active data on views
+
 	if (MAXSCEN > 1) { // multi-run, v5.0 /////////////////////////
-		if (SetDefaultMesh()) {  // set surf resolution - before all runs = TRUE
+		//if (SetDefaultMesh()) {  // set surf resolution - before all runs = TRUE
+			
 			S.Format("\n\t *********** Start MULTI-RUN ***********\n");
 			SetTitle(S);
 			logout << S; // << std::endl;///////////////
 
 			//CBTRApp theApp;///COLLAPSE MAIN VIEW on start /////////////////////////////
-			//pMW->ShowWindow(SW_SHOWMINIMIZED);
-			//pMW->UpdateWindow();///////////////////////////////////////////////////
+			pMW->ShowWindow(SW_SHOWMINIMIZED);
+			pMW->UpdateWindow();///////////////////////////////////////////////////
 
 			while (SCEN <= MAXSCEN) 
 				RunScen(runs); 
 				// SCEN is +1 after each run-set is complete -> CompleteScen()
 		
-		} // Set Mesh for multi-run 
+		//} // Set Mesh for multi-run 
 
 		//pMW->ShowWindow(SW_SHOWMAXIMIZED);
-		pMW->UpdateWindow();
+		pMW->FlashWindow(FALSE);//>UpdateWindow();
 		
-		//if (OptLogSave) CloseLogFile(); // after ALL SCENS
-		ResetLogFile();
+		ResetLogFile();//if (OptLogSave) CloseLogFile(); // after ALL SCENS
 		
 		return;
 
@@ -12334,7 +12344,7 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 		return;	
 	}*/
 		
-	ClearAllPlates();	//OptCombiPlot = -1; // no load 
+	//ClearAllPlates();// similar to SetNullLoads	//OptCombiPlot = -1; // no load 
 	
 	if (!SINGAPLoaded) SetSINGAPfromMAMUG();// called before by SetStatus (?)
 	SetPlasmaTarget(); //init plasma object, Geometry, Nray = -1, clear arrays
@@ -12380,6 +12390,7 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 	for (int i = 0; i < ThreadNumber; i++)	
 		m_Tracer[i].SetContinue(TRUE);
 	SuspendAll(TRUE); // run = TRUE
+	::GdiFlush();
 	//CloseLogFile();// after SINGLE RUN
 	//OnShow();
 	//ShowStatus();
@@ -12403,7 +12414,7 @@ void CBTRDoc:: GetMemState()
 //  printf ("There are %*I64d total Kbytes of physical memory.\n", WIDTH, statex.ullTotalPhys/DIV);//DIV = 1024
 //  printf ("There are %*I64d free Kbytes of physical memory.\n", WIDTH, statex.ullAvailPhys/DIV);//DIV = 1024
 
-	MemFree = (long) (statex.ullAvailPhys /DIV); // available on the system
+	MemFree = (long long) (statex.ullAvailPhys /DIV); // available on the system
 	
 	HANDLE hProcess = GetCurrentProcess();
 	PROCESS_MEMORY_COUNTERS pmc;
@@ -14454,6 +14465,8 @@ void CBTRDoc::OnUpdatePlotContours(CCmdUI* pCmdUI)
 void CBTRDoc::OnPlotMaxprofiles() 
 {
 	if (OptCombiPlot == -1) return;//(pMarkedPlate == NULL) return;
+	
+	if (pMarkedPlate == NULL) return;
 	if (!(pMarkedPlate->Loaded)) return;
 	//if (!(pMarkedPlate->Selected)) return;
 	//pMarkedPlate->Load->SetSumMax();
@@ -16792,8 +16805,8 @@ void CBTRDoc::PlotPSIArrays() // profiles along PSI
 }
 
 void CBTRDoc::PlotDecayArray(int opt)// = beamopt 0 - thin, 1 - par, 2 - real
-{
-
+{ // plots Decay arrays, calculated in CalculateBeamPlasma
+	// StopArrays are set in SetStopArrays and actually used for beam tracing
 	CArray<double, double> PosX;
 	CArray<double, double> PosY;
 	CArray<C3Point, C3Point> * path = &(pPlasma->AverPath);
@@ -16850,7 +16863,7 @@ void CBTRDoc::PlotDecayArray(int opt)// = beamopt 0 - thin, 1 - par, 2 - real
 	CString S;
 	CString Sopt;
 	if (pPlasma->ProfilesLoaded) Sopt = "EQDSK";
-	else Sopt = "PARAB";
+	else Sopt = "R2";
 	if (BeamType == 2) S.Format("D beam in %s plasma:  ", Sopt);
 	else S.Format("H Beam in %s plasma:", Sopt);
 	DecayPlot.Caption = S;
@@ -16938,13 +16951,14 @@ void CBTRDoc::PlotDecayArray(int opt)// = beamopt 0 - thin, 1 - par, 2 - real
 	double lost = 100 - Percent;//power onto FW (not captured)
 	double Vbeam = pPlasma->Ray.Vmod;
 	
-	S.Format("%d rays, Ytor = %6.2f, Ztor= %6.2f, X = %5.2f->%5.2f, v = %6.2e, Sig = %4.2f lost = %5.4f %% %d pts",
+	S.Format("%d rays, Ytor = %6.2f, Ztor= %6.2f, X = %5.2f->%5.2f, v = %6.2e, Sig = %4.2f lost = %5.3f%% (%dpts)",
 		Nrays, TorCentreY, TorCentreZ, PlasmaXmin, PlasmaXmax, Vbeam, mult, lost, Kmax);  //Percent,
 	DecayPlot.Caption += S;
 
 	CPlotDlg pdlg;
 	pdlg.Plot = &DecayPlot;
 	pdlg.InitPlot();
+	//pdlg.SetWindowTextA("PlotDecayArray");//error
 	if (pdlg.DoModal() == IDCANCEL) idres = IDCANCEL;
 	PosX.RemoveAll();
 	PosY.RemoveAll();
@@ -16952,6 +16966,7 @@ void CBTRDoc::PlotDecayArray(int opt)// = beamopt 0 - thin, 1 - par, 2 - real
 }
 
 void CBTRDoc::PlotStopArray()
+// StopArrays are set in SetStopArrays and actually used for beam decay calc for falls
 {
 	int res;
 	if (pDataView->m_rich.GetModify()) {
@@ -17016,12 +17031,13 @@ void CBTRDoc::PlotStopArray()
 	//double lost = 100 - Percent;//power onto FW (not captured)
 	double Vbeam = pPlasma->Ray.Vmod;
 	
-	S.Format("\n Yt = %g, Zt= %g, X = %5.2f->%5.2f, v = %6.2e, SigmTot = %6.2e lost = %7.4f",
+	S.Format("\n Yt = %g, Zt= %g, X = %5.2f->%5.2f, v = %6.2e, Sig = %6.2e, lost = %7.5f",
 		 TorCentreY, TorCentreZ, PlasmaXmin, PlasmaXmax, Vbeam, sigma*mult, lost);
 	Plot.Caption += S;
 
 	CPlotDlg dlg;
 	dlg.Plot = &Plot;
+	//dlg.SetWindowTextA("PlotStopArray");//error
 	dlg.InitPlot();
 	if (dlg.DoModal() == IDOK) {
 		CFileDialog dlg(FALSE, "txt | * ", "Stopping_data.txt", OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
@@ -18298,7 +18314,8 @@ void CBTRDoc::OnOptionsSurfacesEnabledisableall()
 	// SelectAllPlates();
 	
 	if (OptParallel) { //parallel
-		CalculateAllLoads(); 
+		//CalculateAllLoads(); 
+		ShowStatus();
 	}//parallel
 
 	else //!(pDoc->OptParallel
@@ -18345,36 +18362,75 @@ BOOL CBTRDoc::SetDefaultMesh() // mesh + part opt
 		return FALSE;
 	}
 }
-
-void CBTRDoc::CalculateAllLoads()
+void CBTRDoc::SetNullLoads() // init maps for all "interesting" plates
 {
 	PtrList & List = PlatesList;
 	CPlate * plate;
-	//CString S;
 	//SetDefaultMesh();// removed for multi-run 
 	SetLoadArray(NULL, FALSE); // Load_Arr.RemoveAll();	LoadSelected = 0;
 	POSITION pos = List.GetHeadPosition();
 	OptCombiPlot = -1; //no map selected
-	//S.Format("Include zero loaded maps to the list? "); // incl zero
-	//int res = AfxMessageBox(S, MB_ICONQUESTION | MB_YESNOCANCEL); // question removed
-	//int res = AfxMessageBox("Calculate All non-zero maps", MB_ICONEXCLAMATION | MB_OKCANCEL); // question removed!
-	int res = IDYES; // default
-	if (res != IDCANCEL) {
-		CWaitCursor wait;
-		while (pos != NULL) {
-			plate = List.GetNext(pos);
-			if (plate->Touched == TRUE) { // only non-zero loads 
-			//if (res == IDYES || plate->Touched == TRUE) {
-				SetNullLoad(plate); // create zero load with default mesh option
-				P_CalculateLoad(plate); // distribute m_GlobalVector
-				SetLoadArray(plate, TRUE); // Add the plate to Loads List
-			}
+	//CWaitCursor wait;
+	while (pos != NULL) {
+		plate = List.GetNext(pos);
+		if (plate->MAP == TRUE) { // only for interesting (MAP)
+			SetNullLoad(plate); // create zero load with default mesh option
+			//P_CalculateLoad(plate); // distribute m_GlobalVector
+			SetLoadArray(plate, TRUE); // Add the plate to Loads List
 		}
+		else { //all the rest - single cell for Sum power
+			// not included to Loads list
+			plate->ApplyLoad(TRUE, 1000, 1000); //-> Nx = Ny = 0
+			plate->Load->Sum = 0;
+			plate->Load->MaxVal = 0;
+		}
+	}
+} 
 
-		//ShowStatus();
-		//InvalidateRect(NULL, TRUE);
-	} // YES
+void CBTRDoc::AddFallsToLoads(int tid, int isrc,  std::vector<minATTR> * tattr) 
+//bool CBTRDoc::AddFalls
+// replace CalculateAllLoads()
+// called after Each BML
+// Distribute falls among all maps, Add to Sum - for SKIPPED  
+{
+	if (STOP) return; // FALSE;
+	//vector<minATTR>::iterator it;
+	PtrList & List = PlatesList;
+	CPlate * plate;
+	//SetDefaultMesh();// removed for multi-run 
+	//SetLoadArray(NULL, FALSE); // Load_Arr.RemoveAll();	LoadSelected = 0;
+	POSITION pos = List.GetHeadPosition();
+	OptCombiPlot = -1; //no map selected
+	//CWaitCursor wait;
+	while (pos != NULL) {
+		plate = List.GetNext(pos);
+		P_CalculateLoad(plate, tattr); // distribute m_GlobalVector
+	}
+}
 
+void CBTRDoc::CalculateAllLoads() // called after each RUN or on User request
+// Set Zero loads
+// calls Falls Distribution
+// creates Loads List
+{
+	PtrList & List = PlatesList;
+	CPlate * plate;
+	//SetDefaultMesh();// removed for multi-run 
+	SetLoadArray(NULL, FALSE); // Load_Arr.RemoveAll();	LoadSelected = 0;
+	POSITION pos = List.GetHeadPosition();
+	OptCombiPlot = -1; //no map selected
+	
+	CWaitCursor wait;
+	while (pos != NULL) {
+		plate = List.GetNext(pos);
+		if (plate->Touched == TRUE) { // only non-zero loads 
+			SetNullLoad(plate); // create zero load with default mesh option
+			P_CalculateLoad(plate); // distribute m_GlobalVector
+			SetLoadArray(plate, TRUE); // Add the plate to Loads List
+		}
+	}
+//int res = AfxMessageBox(S, MB_ICONQUESTION | MB_YESNOCANCEL); // question removed
+//int res = AfxMessageBox("Calculate All non-zero maps", MB_ICONEXCLAMATION | MB_OKCANCEL); // question removed!
 }
 
 int OldPDPexe(char * name)
@@ -19753,6 +19809,7 @@ bool CBTRDoc::AddLog(std::vector<CString> * log)
 }
 
 bool CBTRDoc::AddFalls(int tid, int isrc,  std::vector<minATTR> * tattr)
+//bool AddFalls(int tid, int isrc, std::vector<minATTR> & attr);
 {
 	if (STOP) return FALSE;
 	vector<minATTR>::iterator it;//= m_GlobalVector.end();
@@ -19783,24 +19840,7 @@ bool CBTRDoc::AddFalls(int tid, int isrc,  std::vector<minATTR> * tattr)
 		//OnStop();
 		return FALSE;
 	} END_CATCH;
-	
-/*	if (STOP) { 
-		Slog.Format("AddFalls: Thread %d\n Bml %d is stopped\n", tid, NofCalculated +1);
-		m_GlobalLog.push_back(Slog);
-		OnStop();
-		//for (int i = 0; i < ThreadNumber; i++)		m_Tracer[i].SetContinue(FALSE);
-		return FALSE;
-	}*/
 
-/*	a = tattr->at(0);
-
-	Slog.Format("Src %d Pos= (%d  %d)mm  Vy/V= %d Vz/V= %d BPpower = %4.3fW charge = %d\n", 
-				a.Nfall, a.Xmm, a.Ymm, a.AXmrad, a.AYmrad, a.PowerW, a.Charge);
-	m_GlobalLog.push_back(Slog);*/
-
-	//Slog.Format("{%d}  Src %4d Bml %4d - done (BML falls added)\n", tid, isrc, NofCalculated+1); // NofCalculated++ after calling this func 
-	//m_GlobalLog.push_back(Slog);
-	
 	ArrSize = m_GlobalVector.size();
 	//logout << "Falls Size After Add " << ArrSize << "\n";
 
@@ -20032,17 +20072,24 @@ void CBTRDoc::SetNullLoad(CPlate * plate) // create zero load with default mesh 
 
 void CBTRDoc:: P_CalculateLoad(CPlate * plate)
 {
+	vector<minATTR> * parr = &m_GlobalVector;
+	P_CalculateLoad(plate, parr);
+}
+
+void CBTRDoc:: P_CalculateLoad(CPlate * plate, vector<minATTR> * parr)
+{
 	if (plate == NULL) return;// -1;
-	//plate->Loaded = TRUE;
+	if (plate->Loaded == FALSE) return;
+	if (plate->Touched == FALSE) return;
 	CLoad * L = plate->Load;
 	pSetView->Load = L;
-	vector<minATTR> & arr = m_GlobalVector;// m_AttrVector[MaxThreadNumber - 1];
+	//vector<minATTR> & arr = m_GlobalVector;// m_AttrVector[MaxThreadNumber - 1];
 	C3Point Pgl, Ploc;
 	double power;
 	CString S1, S2, S3;
 	
-		for (int i = 0; i < (int)arr.size(); i++) {
-			minATTR &tattr = arr[i];
+		for (int i = 0; i < (int)parr->size(); i++) {
+			minATTR &tattr = parr->at(i);
 			if (tattr.Nfall == plate->Number) {
 				if (!OptAtomPower && tattr.Charge == 0) continue;
 				if (!OptNegIonPower && tattr.Charge < 0 ) continue;

@@ -911,7 +911,7 @@ C3Point CTracer::MakeStepL(double dl)
 }
 
 
-void CTracer::DoNextStep()
+void CTracer::DoNextStep() // old (before 4.5)
 {
 	CBTRDoc * pDoc = (CBTRDoc*)m_pDoc;
 	CString Slog;
@@ -1010,7 +1010,8 @@ label0:
 				
 				cs.Lock();
 
-				pDoc->AddFalls(m_ID, m_iSource, tattr); // add falls after each bml, add line to log: "done"
+				pDoc->AddFalls(m_ID, m_iSource, tattr); // 
+				// add falls after each bml, add line to log: "done"
 				//pDoc->AddLog(logarr);
 				NofCalculated++;
 
@@ -2281,6 +2282,8 @@ void CTracer::TraceAlltest() // replace old Draw(); based on TestMem
 		CSingleLock cs_lock(&cs, TRUE);
 		bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
 		if (!added) stopped = true;
+		//pDoc->AddFallsToLoads(m_ID, is + 1, tattr);
+
 		//pDoc->ShowStatus();//problem with log!!
 		if (is == m_Max) { // finished - is = m_Max
 			ClearArrays();// clear last BML log
@@ -2329,14 +2332,15 @@ bool CTracer::TraceAllAtoms() // from ALL beamlets // no memory reserve test
 
 		// ADD BML FALLS 
 		cs.Lock();
-		bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
+		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);
+		/*bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
 		cs.Unlock();
 		if (!added) {
 			SetContinue(FALSE);// m_Continue = FALSE;
 			stopped = TRUE;
 			break;
 		}
-		cs.Lock();
+		cs.Lock();*/
 		NofCalculated++;	// - if not stopped	
 		int Ncalc = NofCalculated;
 		cs.Unlock();
@@ -2346,7 +2350,7 @@ bool CTracer::TraceAllAtoms() // from ALL beamlets // no memory reserve test
 		
 		if (!m_Draw) ShowBeamlet(is);// locked inside
 		ShowProgress(Ncalc); // locked inside
-			//::GdiFlush();
+		::GdiFlush();
 	} // is = m_Max 
 	
 	ClearArrays();// after last BML - even stopped
@@ -2395,14 +2399,15 @@ bool CTracer::TraceAllResIons() // from ALL beamlets
 
 		// ADD BML FALLS 
 		cs.Lock();
-		bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
+		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);
+		/*bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
 		cs.Unlock();
 		if (!added) {
 			SetContinue(FALSE);// m_Continue = FALSE;
 			stopped = TRUE;
 			break;
 		}
-		cs.Lock();
+		cs.Lock();*/
 		NofCalculated++;	// - if not stopped	
 		int Ncalc = NofCalculated;
 		cs.Unlock();
@@ -2412,7 +2417,7 @@ bool CTracer::TraceAllResIons() // from ALL beamlets
 		
 		if (!m_Draw) ShowBeamlet(is);// locked inside
 		ShowProgress(Ncalc); // locked inside
-			//::GdiFlush();
+		::GdiFlush();
 	} // is = m_Max 
 	
 	ClearArrays();// after last BML - even stopped
@@ -2538,14 +2543,15 @@ bool CTracer::TraceAllReions() // from ALL beamlets
 
 		// ADD BML FALLS 
 		cs.Lock();
-		bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
+		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);
+		/*bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
 		cs.Unlock();
 		if (!added) {
 			SetContinue(FALSE);// m_Continue = FALSE;
 			stopped = TRUE;
 			break;
 		}
-		cs.Lock();
+		cs.Lock();*/
 		NofCalculated++;	// - if not stopped	
 		int Ncalc = NofCalculated;
 		cs.Unlock();
@@ -2555,7 +2561,7 @@ bool CTracer::TraceAllReions() // from ALL beamlets
 		
 		if (!m_Draw) ShowBeamlet(is);// locked inside
 		ShowProgress(Ncalc); // locked inside
-			//::GdiFlush();
+		::GdiFlush();
 	} // is = m_Max 
 	
 	ClearArrays();// after last BML - even stopped
@@ -2763,18 +2769,15 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 		// ADD BML FALLS 
 		//CSingleLock cs_lock(&cs, TRUE);
 		cs.Lock();
-		bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
+		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);
+		/*bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
 		cs.Unlock();
-
 		if (!added) {
 			SetContinue(FALSE);// m_Continue = FALSE;
 			stopped = TRUE;
 			break;
 		}
-		
-		//cs.Unlock();
-		
-		cs.Lock();
+		cs.Unlock();	cs.Lock();*/
 		NofCalculated++;	// - if not stopped	
 		int Ncalc = NofCalculated;
 		if (NofCalculated == pDoc->NofBeamletsTotal)  
@@ -2787,7 +2790,7 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 		
 		ShowProgress(Ncalc); // locked inside
 		
-		//::GdiFlush();
+		::GdiFlush();
 		
 	} // is = m_Max 
 
@@ -2875,33 +2878,33 @@ void CTracer::Draw() // old (before 4.5)
 	//pMainView->ReleaseDC(pDC);
 }
 
-long CTracer:: GetMemUsedkB()
+long long CTracer:: GetMemUsedkB()
 {
 	HANDLE hProcess = GetCurrentProcess();
 	PROCESS_MEMORY_COUNTERS pmc;
 	if (NULL == hProcess)  return 0;
 
-	long MemUsed = 0;
+	long long MemUsed = 0;
 	if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc)) )
 		MemUsed = pmc.WorkingSetSize /1024; // currently used by BTR
 	return MemUsed;	
 }
 
-long CTracer:: GetMemFreekB()
+long long CTracer:: GetMemFreekB()
 {
 	MEMORYSTATUSEX statex;
 	statex.dwLength = sizeof (statex);
 	GlobalMemoryStatusEx (&statex);
 
-	long MemFree = 0;
-	MemFree = (long) (statex.ullAvailPhys / 1024); // available on the system
+	long long MemFree = 0;
+	MemFree = (long long) (statex.ullAvailPhys / 1024); // available on the system
 	return MemFree;
 }
 
-long CTracer:: GetGlobFalls()
+long long CTracer:: GetGlobFalls()
 {
 	CBTRDoc * pDoc = (CBTRDoc*) m_pDoc;
-	long Falls = pDoc->ArrSize;//m_GlobalVector.GetSize(); // Global falls array size
+	long long Falls = pDoc->ArrSize;//m_GlobalVector.GetSize(); // Global falls array size
 	return Falls;
 }
 
@@ -2929,14 +2932,83 @@ long CTracer:: GetGlobFalls()
 
 }*/
 
-void CTracer:: ShowProgress(int Ncalc)
+void CTracer:: ShowProgress(int Ncalc) // new - static loads
+{
+	if (Ncalc % 20 != 0) return;
+	CBTRDoc * pDoc = (CBTRDoc*) m_pDoc;
+	if (Ncalc == 0 || pDoc->STOP) return; // tracing in progress
+/////////////////////////////////////////////////
+	bool SINGLE = (pDoc->MAXSCEN == 1);
+	int Maxscen = pDoc->MAXSCEN; // total runs
+	int Nscen = pDoc->SCEN;
+	int Nrun = pDoc->RUN;
+	int Ntot = pDoc->NofBeamlets;
+	CTime Tbegin = pDoc->StartTime;
+	long long MEM_BTR_kB = GetMemUsedkB();//pDoc->MemUsed;// kb
+	CSetView * pStatus = (CSetView *)m_pStatus;
+	CDC* pDC = pStatus->GetDC(); //or GetWindowDC();  
+	pDC->SetTextColor(RGB(0,0,255));
+	//CFont* pOldFont = pDC->SelectObject(&font);
+	CString S;
+	//cs.Lock();
+		int BMLrays = pAttr->GetSize();//pDoc->Attr_Array.GetSize();
+		//pDoc->GetMemState();
+		CTime t = CTime::GetCurrentTime();
+		
+		CTime Tend = t;
+		CTimeSpan Telapsed;
+		
+		int h, m, s, h0, m0, s0, dh, dm, ds, sec;
+		long mspb, msleft, sleft, mleft, hleft;
+		h =	t.GetHour(); m = t.GetMinute(); s = t.GetSecond();// current time
+		h0 = Tbegin.GetHour(); m0 = Tbegin.GetMinute(); s0 = Tbegin.GetSecond();
+		Telapsed = t - Tbegin; // t - current
+		dh = Telapsed.GetHours(); dm = Telapsed.GetMinutes(); ds = Telapsed.GetSeconds();
+		sec = ds + dm * 60 + dh * 3600;
+		mspb = sec * 1000 / Ncalc;
+		msleft = mspb * (Ntot - Ncalc); // single run // (Ntot * (Maxscen - Nscen + 1) - Ncalc);
+		sleft = msleft / 1000;
+		mleft = sleft / 60;
+		hleft = mleft / 60;
+
+		cs.Lock();
+		S.Format("\n%02d:%02d:%02d --- PROGRESS --- SCEN %d RUN %d ---\n", 
+						h,m,s, Nscen, Nrun);
+		pDC->TextOut(10, 105, S);
+		logout << S;
+
+		S.Format("Traced BML  %d                \n", Ncalc);
+		pDC->TextOut(10, 125, S);
+		logout << S;
+
+		S.Format("Passed   %02d:%02d:%02d            \n", dh, dm, ds);
+		pDC->TextOut(10,145, S); //logout << S;
+
+		S.Format("Time / BML  %d ms            \n", mspb);
+		pDC->TextOut(10,165, S); logout << S;
+
+		S.Format("Cuckoo for this Run   %02d:%02d:%02d  \n", 
+					hleft,  mleft - hleft*60, sleft - mleft*60);
+		pDC->TextOut(10,185, S);//logout << S;
+
+		S.Format("BTR holds   %ld kB         \n", MEM_BTR_kB);
+		pDC->TextOut(10,205, S); logout << S;
+
+		//S.Format("Mem left       %ld kB      \n", MemFreeKB);
+		//pDC->TextOut(10,225, S); logout << S;
+		logout << "-----------------------\n";
+		//if (SINGLE) ::GdiFlush();
+		cs.Unlock();
+
+	pStatus->ReleaseDC(pDC);
+}
+
+void CTracer:: ShowProgressFalls(int Ncalc)
 {
 	bool lout = FALSE;
 	if (Ncalc % 20 == 0) lout = TRUE; 
 	if (!lout) return;
 	CBTRDoc * pDoc = (CBTRDoc*) m_pDoc;
-	
-	
 	if (Ncalc == 0 || pDoc->STOP) return; // tracing in progress
 /////////////////////////////////////////////////
 	bool SINGLE = (pDoc->MAXSCEN == 1);
@@ -2946,16 +3018,16 @@ void CTracer:: ShowProgress(int Ncalc)
 	int Ntot = pDoc->NofBeamlets;
 	//cs.Lock();
 	CTime Tbegin = pDoc->StartTime;
-	long Falls = pDoc->ArrSize;
+	long long Falls = pDoc->ArrSize;
 	//cs.Unlock();
 
-	long MEM_BTR_kB = GetMemUsedkB();//pDoc->MemUsed;// kb
-	long MemFreeKB = GetMemFreekB();//pDoc->MemFree;// kb
+	long long MEM_BTR_kB = GetMemUsedkB();//pDoc->MemUsed;// kb
+	long long MemFreeKB = GetMemFreekB();//pDoc->MemFree;// kb
 	//long Falls = GetGlobFalls();//pDoc->ArrSize; // Global falls array size
 	long FallsBML;// falls per BML
 	long MemBML; // bytes per BML
-	long TotMemB;//(memb) bytes - all falls
-	long leftBML; // 
+	long long TotMemB;//(memb) bytes - all falls
+	long long leftBML; // 
 	int MemFallB = sizeof(minATTR);// bytes per 1 fall = 16..20b
 	
 	CSetView * pStatus = (CSetView *)m_pStatus;

@@ -1535,6 +1535,7 @@ CPlate:: CPlate()
 {
 	Solid = TRUE;
 	Visible  = TRUE;
+	MAP = TRUE;
 	Loaded = FALSE;
 	Load = NULL;
 	SmLoad = NULL;
@@ -1582,6 +1583,7 @@ CPlate::  CPlate(C3Point p0, C3Point p1, C3Point p2, C3Point p3)
 	Fixed = 0; // //	PLAN = TRUE;
 	OrtDirect = 1;
 	SmoothDegree = 0;
+	MAP = TRUE;
 		
 }
 
@@ -2470,7 +2472,7 @@ void  CPlate:: DrawPlate(CView * pView, CDC* pDC) // taken from BTR_K
 	 if (!Visible) 	
 		 //if(pDC->m_hAttribDC != NULL) 
 			 pDC->SelectObject(&pMV->DotPen);
-	 if (Loaded)// && PLAN
+	 if (Loaded && Touched)// && PLAN
 		 //if(pDC->m_hAttribDC != NULL)  
 			pDC->SelectObject(&pMV->MarkPen);
 	  if (Selected) // && PLAN)	
@@ -2491,7 +2493,7 @@ void  CPlate:: DrawPlate(CView * pView, CDC* pDC) // taken from BTR_K
 	 if (!Visible ) 
 		 //if(pDC->m_hAttribDC != NULL) 
 			 pDC->SelectObject(&pMV->DotPen);
-	 if (Loaded) // && !PLAN
+	 if (Loaded && Touched) // && !PLAN
 		 //if(pDC->m_hAttribDC != NULL)  
 		 pDC->SelectObject(&pMV->MarkPen);
 	  if (Selected)// && !PLAN)	
@@ -2510,16 +2512,17 @@ void  CPlate:: DrawPlate(CView * pView, CDC* pDC) // taken from BTR_K
 		if (PLAN) centre.y = pMV->OrigY - shiftY;
 		else centre.y = pMV->OrigZ - shiftZ; 
 	
-		if (Touched && !Loaded) pDC->SelectObject(pMV->RedPen);
+		//if (Touched && !Loaded) pDC->SelectObject(pMV->RedPen);
+		if (Touched && Loaded) pDC->SelectObject(pMV->RedPen);
 
 		CenterPoint = centre;
 		RectMark->SetRect(CenterPoint.x -1, CenterPoint.y -2, CenterPoint.x +3, CenterPoint.y +2);
 		
 		if (pMV->SHOW_NUMBERS) pDC->Rectangle(RectMark);
-		if (Loaded) pDC->SetTextColor(RGB(255, 0, 0));
+		if (Loaded && Touched) pDC->SetTextColor(RGB(255, 0, 0));
 		else pDC->SetTextColor(RGB(0,100,100));
 
-		if (pMV->SHOW_NUMBERS && Loaded) {
+		if (pMV->SHOW_NUMBERS && Loaded && Touched) {
 			//pDC->Rectangle(RectMark);
 			CString S;
 			S.Format("%d", Number);

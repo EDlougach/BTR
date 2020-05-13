@@ -1869,12 +1869,19 @@ pDoc->OnStop();
 void CMainView::OnPlateProperties() 
 {
 	CBTRDoc* pDoc = (CBTRDoc*)GetDocument();
+	CPlate * plate = pDoc->pMarkedPlate;
+	if (plate == NULL) return;
+
+	pDoc->ShowProfiles = TRUE;
+	pDoc->pMarkedPlate->ShowLoadState();
+	pDoc->OnPlotMaxprofiles();
+	return;
+
 
 	if (pDoc->OptCombiPlot == -1) { //|| !(pDoc->pMarkedPlate->Loaded)) {
 		pDoc->ShowStatus(); return;
 	}
-	CPlate * plate = pDoc->pMarkedPlate;
-	if (plate == NULL) return;
+	
 	if (pDoc->OptCombiPlot == 0) { // base already exists
 		pDoc->OnPlotMaxprofiles();
 		plate->ShowLoadState();
@@ -2239,10 +2246,10 @@ void CMainView::OnViewZoombox()
 
 }*/
 
-void CMainView::OnPlateSelectallplates() 
+void CMainView::OnPlateSelectallplates() // Calculate all loads
 {
 	CBTRDoc* pDoc = (CBTRDoc*)GetDocument();
-	pDoc->OnOptionsSurfacesEnabledisableall(); 
+	pDoc->OnOptionsSurfacesEnabledisableall(); // Calculate all loads
 	InvalidateRect(NULL, TRUE);
 
 	/*	PtrList & List = pDoc->PlatesList;
