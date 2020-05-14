@@ -239,14 +239,14 @@ CLoad ::CLoad(double xmax, double ymax)
 	for (i = 0; i <= Nx; i++) {
 		Val[i] = new double [Ny+1];
 	}
-	
+	/*
 	wh = new double * [Nx+1];
 	wv = new double * [Nx+1];
 	for (i = 0;  i <= Nx; i++) {
 		wh[i] = new double [Ny+1];
 		wv[i] = new double [Ny+1];
 	} // i
-
+*/
 	Clear();
 	SmoothDegree = 0;
 	SetCrosses();
@@ -468,18 +468,20 @@ void  CLoad:: SetProf(double x, double y)
 CLoad :: ~CLoad()
 {
 	int i;
-	if (Nx > 0 || Ny > 0) {
-		for (i = 0; i <= Nx; i++ ) delete [] Val[i];
+/*	if (Nx > 0 || Ny > 0) {
+		for (i = 0; i <= Nx; i++ ) 	delete Val[i];
 		delete [] Val;
+	}*/
 	
-	
-		for (i = 0;  i <=  Nx; i++) {
+	/*	for (i = 0;  i <=  Nx; i++) {
 			delete [] wh[i];
 			delete [] wv[i];
 		} // i
 		delete [] wh;
 		delete [] wv;
-	}
+	}*/
+	delete  Val;
+	delete this;
 
 }
 
@@ -1567,17 +1569,19 @@ CPlate::~CPlate()
 	delete RectMark;
 
 	if (Loaded)  {
-	delete Load;
-	if (SmLoad != NULL) delete SmLoad;
+		 delete (Load);
+		//if (SmLoad != NULL) delete SmLoad;
 	}// loaded
 
+	Falls.RemoveAll();
 	AngularProfile.RemoveAll();
 }
 
 CPlate::  CPlate(C3Point p0, C3Point p1, C3Point p2, C3Point p3)  
 {
 	//CPlate::CPlate();
-	Load = NULL;	Loaded = FALSE;
+	Load = NULL;	
+	Loaded = FALSE;
 	SetLocals(p0, p1, p2, p3);
 	Comment = "";
 	Fixed = 0; // //	PLAN = TRUE;
@@ -2877,7 +2881,8 @@ void CPlate::  WriteLoadAdd(FILE * fout)
 			fprintf(fout, "%g    %g    %g\n", P.X, P.Y, P.Z);
 		}
 
-		if (Loaded && Load->MaxVal > 1.e-6) WriteLoad(fout); // write standard
+		if (Loaded && Touched) WriteLoad(fout);// non zero load
+		//if (Loaded && Load->MaxVal > 1.e-6)  // write standard
 		else { // write only header
 			CString S;
 			S.Format(" \t\t PARAMETERS  (Plate  %d)  \n", Number);
@@ -2893,7 +2898,7 @@ void  CPlate:: WriteLoad(FILE * fout)
 		L = SmLoad;
 //		SetSmoothLoad();
 	}
-	L->SetSumMax();
+	//L->SetSumMax();
 	CString S;
 	S.Format(" \t\t PARAMETERS  (Plate  %d)  \n", Number);
 	fprintf(fout, Comment + S);  

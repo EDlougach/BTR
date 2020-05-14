@@ -399,7 +399,7 @@ void CBTRDoc:: InitData()
 //	AppertCurrDensity = 203.; //A/m2 D-
 	AreaLongMax = 40;
 	ReionPercent = 0;
-	PlasmaEmitter = 0;
+	PlasmaEmitter = -1;
 		
 	//ClearData();
 
@@ -632,7 +632,7 @@ void CBTRDoc:: InitOptions()
 	OptCalcDuct = TRUE;
 	OptBeamInPlasma = TRUE;
 	OptAddDuct = TRUE;//FALSE;
-	PlasmaEmitter = 0;
+	PlasmaEmitter = -1;
 	
 }
 
@@ -2943,6 +2943,7 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	 pPlate->Solid = TRUE;
 	 pPlate->OrtDirect = -1;
 	 pPlate->Fixed = 1; // side view
+	 pPlate->MAP = FALSE;
 	 S.Format("CUT-OFF LIMIT: Bottom %d", pPlate->Number);
 	 pPlate->Comment = S; 
 	 AddCond(pPlate); //PlatesList.AddTail(pPlate);
@@ -2961,6 +2962,7 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	 pPlate->Solid = TRUE;
 	 pPlate->OrtDirect = -1;
 	 pPlate->Fixed = 1; // side view
+	 pPlate->MAP = FALSE;
 	 S.Format("CUT-OFF LIMIT: Top %d", pPlate->Number);
 	 pPlate->Comment = S; 
 	 AddCond(pPlate); //PlatesList.AddTail(pPlate);
@@ -2979,6 +2981,7 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	 pPlate->Solid = TRUE;
 	 pPlate->OrtDirect = -1;
 	 //pPlate->Fixed = 0; // plan view
+	 pPlate->MAP = FALSE;
 	 S.Format("CUT-OFF LIMIT: Right %d", pPlate->Number);
 	 pPlate->Comment = S; 
 	 AddCond(pPlate); //PlatesList.AddTail(pPlate);
@@ -2997,6 +3000,7 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	 pPlate->Solid = TRUE;
 	 pPlate->OrtDirect = -1;
 	 //pPlate->Fixed = 0; // plan view
+	 pPlate->MAP = FALSE;
 	 S.Format("CUT-OFF LIMIT: Left %d", pPlate->Number);
 	 pPlate->Comment = S; 
 	 AddCond(pPlate); //PlatesList.AddTail(pPlate);
@@ -3015,6 +3019,7 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	 //pPlate->Shift(0, NeutrHBias, VShiftNeutr + NeutrVBias);
 	 //pPlate->Shift(0,0, VShiftNeutr);
 	 pPlate->Fixed = 1; // side view
+	 pPlate->MAP = FALSE;
 	 S.Format("NEUTRALIZER: Bottom %d", pPlate->Number);
 	 pPlate->Comment = S; 
 	 PlatesList.AddTail(pPlate);
@@ -3034,6 +3039,7 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	 //pPlate->Shift(0, NeutrHBias, VShiftNeutr + NeutrVBias);
 	 //pPlate->Shift(0,0, VShiftNeutr);
 	 pPlate->Fixed = 1; // side view
+	 pPlate->MAP = FALSE;
 	 S.Format("NEUTRALIZER: Top %d", pPlate->Number);
 	 pPlate->Comment = S; 
 	 PlatesList.AddTail(pPlate);
@@ -3470,16 +3476,18 @@ void  CBTRDoc::SetPlatesTor()
 	AreaVertMin = min(AreaVertMin, Zmin);
 	AreaVertMax = max(AreaVertMax, Zmax);*/
 
-	CString S;
+/*	CString S;
 	Plate = new CPlate(); // Tor Entrance 
 	PlateCounter++;
 	Plate->Number = PlateCounter;
+	double ymin, ymax, zmin, zmax;
+	C3Point centre = GetBeamFootLimits(PlasmaXmin, ymin, ymax, zmin, zmax);
 	//p0 = C3Point(PlasmaXmin, DuctExitYmin, DuctExitZmin);
 	//p3 = C3Point(PlasmaXmin, DuctExitYmax, DuctExitZmax);
-	p0 = C3Point(PlasmaXmin, Ytmin, Zmin);
+	p0 = C3Point(PlasmaXmin, ymin-0.2, zmin - 0.2);
 	//p1 = C3Point(Xtmax, Ytmax, Zmin); //
 	//p2 = C3Point(Xtmin, Ytmin, Zmax); // r1, y1, Teta0
-	p3 = C3Point(PlasmaXmin, Ytmax, Zmax);
+	p3 = C3Point(PlasmaXmin, ymax + 0.2, zmax + 0.2);
 	
 	Plate->OrtDirect = 1;
 	Plate->SetFromLimits(p0, p3);
@@ -3490,7 +3498,7 @@ void  CBTRDoc::SetPlatesTor()
 	Plate->Comment = S;
 	PlatesList.AddTail(Plate);
 	//	 if (TaskRID)  SelectPlate(pPlate);
-	PlasmaEmitter = Plate->Number;
+	PlasmaEmitter = Plate->Number;*/
 }
 
 void  CBTRDoc::SetPlatesDuct() // only dias  (not called)
@@ -4404,6 +4412,8 @@ void  CBTRDoc::SetPlatesDuctFull()// not called
 	 S.Format("Duct Exit Cross-plane, X = %g m", DuctExitX);
 	 pPlate->Comment = S;
 	 AddCond(pPlate);//PlatesList.AddTail(pPlate);
+
+	 PlasmaEmitter = pPlate->Number;
 	 
 }
 
@@ -4771,6 +4781,7 @@ void  CBTRDoc::SetPlates() // free
 //	 pPlate->SetFromLimits(p0, p3);
 	 pPlate->Solid = TRUE;
 	 pPlate->Visible = FALSE;
+	 pPlate->MAP = FALSE;
 	 S.Format("Area GG Plane X = %g m", Xmin);
 	 pPlate->Comment = S;
 //	 SelectPlate(pPlate);//pPlate->Selected = TRUE; SetLoadArray(pPlate, TRUE); 
@@ -4788,6 +4799,7 @@ void  CBTRDoc::SetPlates() // free
 //	 pPlate->SetFromLimits(p0, p3);
 	 pPlate->Solid = TRUE;
 	 pPlate->Visible = FALSE;
+	 pPlate->MAP = TRUE;//FALSE;
 	 S.Format("Area Target Plane X = %g m", AreaLong);
 	 pPlate->Comment = S;
 //	 SelectPlate(pPlate);//pPlate->Selected = TRUE; SetLoadArray(pPlate, TRUE); 
@@ -4805,6 +4817,7 @@ void  CBTRDoc::SetPlates() // free
 	// pPlate->SetFromLimits(p0, p3);
 	 pPlate->Solid = TRUE;
 	 pPlate->Visible = FALSE;
+	 pPlate->MAP = FALSE;
 	 S.Format("Right Vertical Limit Y = %g m", AreaHorMin);
 	 pPlate->Comment = S;
 	PlatesList.AddTail(pPlate);
@@ -4820,6 +4833,7 @@ void  CBTRDoc::SetPlates() // free
 	 //pPlate->SetFromLimits(p0, p3);
 	 pPlate->Solid = TRUE;
 	 pPlate->Visible = FALSE;
+	 pPlate->MAP = FALSE;
 	 S.Format("Left Vertical Limit Y = %g m", AreaHorMax);
 	 pPlate->Comment = S;
 	PlatesList.AddTail(pPlate);
@@ -4835,6 +4849,7 @@ void  CBTRDoc::SetPlates() // free
 	 //pPlate->SetFromLimits(p0, p3);
 	 pPlate->Solid = TRUE;
 	 pPlate->Visible = FALSE;
+	 pPlate->MAP = FALSE;
 	 S.Format("Bottom Horizontal Limit Z = %g m", AreaVertMin);
 	 pPlate->Fixed = 1; // side view
 	 pPlate->Comment = S;
@@ -4852,6 +4867,7 @@ void  CBTRDoc::SetPlates() // free
 	 //pPlate->SetFromLimits(p0, p3);
 	 pPlate->Solid = TRUE;
 	 pPlate->Visible = FALSE;
+	 pPlate->MAP = FALSE;
 	 S.Format("Top Horizontal Limit Z = %g m", AreaVertMax);
 	 pPlate->Fixed = 1; // side view
 	 pPlate->Comment = S;
@@ -5137,7 +5153,7 @@ void CBTRDoc::AddCond(CPlate * plate)// add to PlateList if condition
 		if (plate->Corn[i].X < -0.5) return; // skip adding
 	}
 
-	plate->MAP = TRUE;// default - interesting
+	//plate->MAP = TRUE;// default - interesting
 	CString comm = plate->Comment;
 	CString S = comm.MakeUpper();
 	CString Sskip;
@@ -5151,7 +5167,7 @@ void CBTRDoc::AddCond(CPlate * plate)// add to PlateList if condition
 				
 				if (Nexc == 0) { // no exceptions
 					plate->MAP = FALSE;
-					logout << S << " NO MAP (SKIP) \n";
+					logout << S << " - MAP SKIP \n";
 					//return; // found -> SKIP (don't add surf)
 				} // No exceptions
 				
@@ -5164,7 +5180,8 @@ void CBTRDoc::AddCond(CPlate * plate)// add to PlateList if condition
 				} // j = Nexc
 
 				if (!found) { // not found in exceptions
-					logout << S << " NP MAP (SKIPPED) \n";
+					plate->MAP = FALSE;
+					logout << S << " - MAP SKIPPED \n";
 					//return; // SKIP (don't add surf)
 				} // Sexcept not found 
 				
@@ -7055,27 +7072,32 @@ int CBTRDoc::ReadPDPinput(char * name)
 void CBTRDoc:: ShowPlatePoints(bool draw)
 {
 	MSG message;
-	vector <minATTR> & arr = m_GlobalVector;// m_AttrVector[MaxThreadNumber - 1];
-	//pSetView->Load = NULL;
-	pSetView->InvalidateRect(NULL, TRUE);
-
+	CString S;
+	CPlate * plate = pMarkedPlate;
+	if (plate == NULL) return;
 	CLoadView * pLV = (CLoadView *) pLoadView;
-	//pLV->Load = NULL;
-	//pLV->ShowLoad = FALSE;
+	CDC * pDC = pLV->GetDC();
+
+	CArray <minATTR> & falls = plate->Falls;
+	int Nfalls = falls.GetSize();
+	//vector <minATTR> & arr = m_GlobalVector;// m_AttrVector[MaxThreadNumber - 1];
+	//pSetView->Load = NULL;
+	int x, y;
+	
+	pSetView->InvalidateRect(NULL, TRUE); // clear old profiles
+	
 	pLV->STOP = FALSE;
 	//pLV->InvalidateRect(NULL, TRUE);
 	
 	C3Point Pgl, Ploc;
 	double power;
-	CPlate * plate = pMarkedPlate;
-	if (plate == NULL) return;
-	
+		
 	double left = plate->leftX;
 	double bot = plate->botY;
-	int x, y;
+	
 	int Npos = 0, Nneg = 0, Natom = 0;
 	double Ppos = 0, Pneg = 0, Patom = 0;
-	CDC * pDC = pLV->GetDC();
+	
 	//CRect rect;
 	//pLV->GetClientRect(rect);
 	//pDC->Rectangle(rect);
@@ -7088,8 +7110,8 @@ void CBTRDoc:: ShowPlatePoints(bool draw)
 	CFont * pOldFont = pDC->SelectObject(&(pLV->smallfont));
 	//for (int k = 0; k < ThreadNumber; k++) {
 		//arr = m_AttrVector[k];
-		for (int i = 0; i < (int)arr.size(); i++) {
-			minATTR &tattr = arr[i];
+		for (int i = 0; i < Nfalls; i++) {
+			minATTR & tattr = falls[i];
 			if (tattr.Nfall == plate->Number) {
 				if (!OptAtomPower && tattr.Charge == 0) continue;
 				if (!OptNegIonPower && tattr.Charge < 0 ) continue;
@@ -7138,18 +7160,32 @@ void CBTRDoc:: ShowPlatePoints(bool draw)
 		//if (pLV->STOP) break;
 	//} //k
 
-	CString S;
-	S.Format("Atoms %d / %gW", Natom, Patom);
-	x = pLV->OrigX + 20;
-	y = pLV->OrigY + 20; //- (int)((plate->topY - bot) * pLV->ScaleY) + 10;
-	pDC->TextOutA(x, y, S);
-	S.Format("Neg %d / %gW", Nneg, Pneg);
-	y = pLV->OrigY + 40; //- (int)((plate->topY - bot) * pLV->ScaleY) + 30;
-	pDC->TextOutA(x, y, S);
-	S.Format("Pos %d / %gW", Npos, Ppos);
-	y = pLV->OrigY + 60; //- (int)((plate->topY - bot) * pLV->ScaleY) + 50;
-	pDC->TextOutA(x, y, S);
+	if (Nfalls < 1) { // show power
+		S.Format(" NO FALLS FOUND      ");
+		x = pLV->OrigX + 20;
+		y = pLV->OrigY + 20; 
+		pDC->TextOutA(x, y, S);
+		S.Format("Total power = %g W", plate->Load->Sum);
+		y = pLV->OrigY + 40; //- (int)((plate->topY - bot) * pLV->ScaleY) + 10;
+		pDC->TextOutA(x, y, S);
+		S.Format("Max PD = %g Wm2", plate->Load->MaxVal);
+		y = pLV->OrigY + 60; //- (int)((plate->topY - bot) * pLV->ScaleY) + 30;
+		pDC->TextOutA(x, y, S);
+	}
+	else {// Nfalls > 0
+		S.Format("ATOMS  %d / %gW      ", Natom, Patom);
+		x = pLV->OrigX + 20;
+		y = pLV->OrigY + 20; 
+		pDC->TextOutA(x, y, S);
+		S.Format("NEG IONS %d / %gW       ", Nneg, Pneg);
+		y = pLV->OrigY + 40; 
+		pDC->TextOutA(x, y, S);
+		S.Format("POS IONS %d / %gW      ", Npos, Ppos);
+		y = pLV->OrigY + 60; 
+		pDC->TextOutA(x, y, S);
+	}
 	
+
 	pDC->SelectObject(pOldPen);
 	pDC->SelectObject(pOldFont);
 	pLV->ReleaseDC(pDC);
@@ -7168,7 +7204,7 @@ void  CBTRDoc:: SetLoadArray(CPlate* plate, bool flag)
 		return;
 	}
 	if (plate == NULL && flag)  {
-		for (i = 0; i <LoadSelected; i++) { // calculate Max load for all selected plates
+		for (i = 0; i <LoadSelected; i++) { // calculate Max or all selected plates
 			pl = Load_Arr[i];
 			//pl->Load->SetSumMax();
 		}
@@ -10198,8 +10234,8 @@ if (Xmax * Ymax > 1.e-6) {
 			plate->Loaded = TRUE;
 			plate->Xmax = Xmax; plate->Ymax = Ymax;
 			load->Comment = plate->Comment;
-			plate->SmLoad = new CLoad(plate->Xmax, plate->Ymax, StepX, StepY);
-			plate->SmLoad->Comment = load->Comment;
+			//plate->SmLoad = new CLoad(plate->Xmax, plate->Ymax, StepX, StepY);
+			//plate->SmLoad->Comment = load->Comment;
 			plate->SmoothDegree = SmoothDegree;
 			SetLoadArray(plate, TRUE); // 
 			S.Format("Plate %d %s \n is identified", Number, Comment);
@@ -10234,8 +10270,8 @@ if (Xmax * Ymax > 1.e-6) {
 			plate0->Loaded = TRUE;
 			plate0->Load = load;
 			load->Comment = plate0->Comment;
-			plate0->SmLoad = new CLoad(Xmax, Ymax, StepX, StepY);
-			plate0->SmLoad->Comment = load->Comment;
+			//plate0->SmLoad = new CLoad(Xmax, Ymax, StepX, StepY);
+			//plate0->SmLoad->Comment = load->Comment;
 			plate0->SmoothDegree = SmoothDegree;
 		}
 		else  { // load not found
@@ -10896,8 +10932,8 @@ void CBTRDoc::OnResultsReadall()
 	//OnPlateClearSelect();
 	//if (LoadSelected > 0) SelectAllPlates();
 	SetLoadArray(NULL, FALSE);//clear
-	ReadIonPowerX();
-	ReadAtomPowerX();
+	//ReadIonPowerX();
+	//ReadAtomPowerX();
 
 	BeginWaitCursor(); //OnShow();
 	WIN32_FIND_DATA FindFileData; //fData;
@@ -10913,7 +10949,7 @@ void CBTRDoc::OnResultsReadall()
 	SetTitle(OpenDirName);// + TaskName);
 
   // Find the first file in the directory.
-   hFind = FindFirstFile("*.dat", &FindFileData);
+   hFind = FindFirstFile("*.txt", &FindFileData);
 
    if (hFind == INVALID_HANDLE_VALUE) AfxMessageBox("Invalid file handle");
  
@@ -10923,7 +10959,7 @@ void CBTRDoc::OnResultsReadall()
 		strcpy(name, sn);
 		ReadLoad(name);
 	   }
-   }
+   //}
   
       while (FindNextFile(hFind, &FindFileData) != 0) 
       {
@@ -10932,9 +10968,9 @@ void CBTRDoc::OnResultsReadall()
 		  if (sn.Find("load", 0) >= 0) {
 			  strcpy(name, sn);
 			  ReadLoad(name);
-		  }
-      }
-    
+		  } // if
+      } // while
+   } //valid handle
      // dwError = GetLastError();
     FindClose(hFind);
 	EndWaitCursor();
@@ -10943,7 +10979,7 @@ void CBTRDoc::OnResultsReadall()
 	ModifyArea(FALSE);
 	OnPlateClearSelect();
 	Progress = 0;
-	OptParallel = FALSE; // CalculateCombi(0)
+	//OptParallel = FALSE; // CalculateCombi(0)
 	OnShow();
 }
 
@@ -11408,9 +11444,11 @@ void CBTRDoc::CollectRUNSummary(CString SUMname, CStringArray & names) // merge 
 		if (Num[i] > 0) {
 			plate = GetPlateByNumber(Num[i]);
 			Scomm = plate->Comment;
-			fprintf(fout, "%3d  %0.3le  %0.3le  %0.3le    %0.3le    %0.3le  %0.3le  %0.3le \t%s\n",
-				Num[i], Pow_A[i], Pow_Resid[i], Pow_Reion[i], SumPow[i], 
-				Max_A[i], Max_Resid[i], Max_Reion[i], Scomm);
+			if (SumPow[i] > 1.e-6) {// write NIN-ZERO!!
+				fprintf(fout, "%3d  %0.3le  %0.3le  %0.3le    %0.3le    %0.3le  %0.3le  %0.3le \t%s\n",
+					Num[i], Pow_A[i], Pow_Resid[i], Pow_Reion[i], SumPow[i], 
+					Max_A[i], Max_Resid[i], Max_Reion[i], Scomm);
+			}
 		}
 	}
 	fclose(fout);
@@ -11505,6 +11543,7 @@ void CBTRDoc::SaveRUNLoads() // create RUN Loads-storage in current SCEN dir
 	//else { //standard // touched plates only
 		for (int i = 0; i < LoadSelected; i++) {
 			plate = Load_Arr[i];
+			if (plate->Touched == FALSE) continue; // skip zero load
 			sn.Format("%d", plate->Number);
 			name = "load_" + sn + ".txt";
 			fout = fopen(name, "w");
@@ -18373,6 +18412,8 @@ void CBTRDoc::SetNullLoads() // init maps for all "interesting" plates
 	//CWaitCursor wait;
 	while (pos != NULL) {
 		plate = List.GetNext(pos);
+		plate->Falls.RemoveAll();
+
 		if (plate->MAP == TRUE) { // only for interesting (MAP)
 			SetNullLoad(plate); // create zero load with default mesh option
 			//P_CalculateLoad(plate); // distribute m_GlobalVector
@@ -18636,7 +18677,11 @@ void CBTRDoc::StartAtomsFromEmitter()// trace atoms in plasma
 		AfxMessageBox("Emitter is not defined"); return;
 	}
 	CPlate * plate = GetPlateByNumber(n);
-	vector<minATTR> & arr = m_GlobalVector;// m_AttrVector[MaxThreadNumber - 1];
+	//vector<minATTR> & arr = m_GlobalVector;// m_AttrVector[MaxThreadNumber - 1];
+	CArray<minATTR> & falls = plate->Falls;
+	int Nfalls = falls.GetSize();
+	if (Nfalls < 1) return;
+
 	C3Point Pgl, Ploc, Vat, Vgl;
 	double power;
 	double stepL = (pPlasma->Rmax - pPlasma->Rmin) / pPlasma->Nx / 2;
@@ -18645,14 +18690,9 @@ void CBTRDoc::StartAtomsFromEmitter()// trace atoms in plasma
 	//double Mass = pDoc->TracePartMass;
 	//double Vstart = sqrt(2.* EkeV*1000 * Qe / Mass);
 
-		for (int i = 0; i < (int)arr.size(); i++) {
-			minATTR &tattr = arr[i];
-			
-			if (tattr.Nfall == n) { //plate->Number
-				//if (!OptAtomPower && tattr.Charge == 0) continue;
-				//if (!OptNegIonPower && tattr.Charge < 0 ) continue;
-				//if (!OptPosIonPower && tattr.Charge > 0) continue;
-				//Pgl.X = tattr.X; Pgl.Y = tattr.Y; Pgl.Z = tattr.Z;
+		for (int i = 0; i < Nfalls; i++) {
+			minATTR & tattr = falls[i];
+			//if (tattr.Nfall == n) { //plate->Number - always
 				if (tattr.Charge != 0) continue; // trace only atoms!!!
 
 				found++;
@@ -18677,12 +18717,13 @@ void CBTRDoc::StartAtomsFromEmitter()// trace atoms in plasma
 				//pPlasma->SetDecayArrays();// thin ray
 				//pPlasma->AddDecayArrays();// Nrays++
 					
-			} // Nfall == plate Num
-		} // i - scan Global attr arr
+			//} // Nfall == plate Num
+		} // i - scan falls attr 
 
 		CString S;
-		S.Format("%d atoms traced from Emitter plane %d", found, PlasmaEmitter); 
+		S.Format("%d atoms traced from Emitter plane %d\n", found, PlasmaEmitter); 
 		AfxMessageBox(S);
+		logout << S;
 
 		TracksCalculated = 1;
 
@@ -19792,6 +19833,7 @@ void CBTRDoc::ClearArrays()
 	//m_GlobalLog.shrink_to_fit();
 	MemFallReserved = FALSE;
 	Exit_Array.RemoveAll();
+	SetLoadArray(NULL, FALSE);
 
 }
 bool CBTRDoc::AddLog(std::vector<CString> * log)
@@ -19806,6 +19848,44 @@ bool CBTRDoc::AddLog(std::vector<CString> * log)
 	//m_GlobalLog.shrink_to_fit();
 	return TRUE;
 
+}
+
+bool CBTRDoc::AddFallsToFalls(int tid, int isrc, std::vector<minATTR> * tattr)
+// append to plate->falls array
+{
+	return TRUE; // switched OFF now !!!!!!!!!!!!
+////////////////////////////////////////////////////
+	if (STOP) return FALSE;
+	int n = PlasmaEmitter;
+	if (n < 0) return FALSE;
+	CPlate * plate = GetPlateByNumber(n);
+	CString S, Slog;
+	
+	long long tsize = tattr->size();
+	long long OldArrSize = plate->Falls.GetSize(); //m_GlobalVector.size();
+	
+	for (int i = 0; i < tsize; i++) {
+		minATTR fall(tattr->at(i));
+		TRY {
+			//fall = tattr->at(i);
+			plate->Falls.Add(fall);
+
+		//m_GlobalVector.reserve(NewArrSize);
+		//it = m_GlobalVector.end();
+		//m_GlobalVector.insert(it, tattr->begin(), tattr->end());//append Bml to global vect
+		
+		} CATCH (CMemoryException, e) {
+		//S.Format("Thread %d\n FAILED to add Falls! \n");// Last bml -  %d\n",tid, NofCalculated);
+		//AfxMessageBox(S);
+			S.Format("\n ******* FAILED to ADD Falls to Emitter! *******\n");
+			logout << S;
+			//ArrSize = m_GlobalVector.size();
+			logout << "----- Last Falls Size --- " << OldArrSize << "\n";
+			//STOP = TRUE;
+			return FALSE;
+		} END_CATCH;
+	} // i
+	return TRUE;
 }
 
 bool CBTRDoc::AddFalls(int tid, int isrc,  std::vector<minATTR> * tattr)
@@ -19893,6 +19973,7 @@ void CBTRDoc:: InitTracers()
 	int Nmin, Nmax;// BML limits for each tracer
 	
 	ClearArrays();//Global arrays size -> 0
+	SetNullLoads();//clear loads
 	NofCalculated = 0;
 
 	for (int i = 0; i < ThreadNumber; i++)

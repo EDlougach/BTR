@@ -23,6 +23,7 @@ class C3Point;
 class CPlate;
 //class lstream; // copy cout to log-file
 
+
 ///// operations with C3Point, Vectors, Local Coord Systems ----------------------
 C3Point GetMantOrder(double Value); // return integer, decimal parts and exp order
 double ModVect(const C3Point vect);
@@ -49,52 +50,10 @@ int Gray(double Ratio);
 COLORREF GetColor10(double Ratio);
 void SetColors();
 
-/* -------------------------------------
-#include <fstream>
-using namespace std;
-extern bool LogOFF;
-class logstream // copy outut to log-file
-			// taken from http://www.cplusplus.com/forum/general/19489/
-{
-  public:
-	 ofstream log;
-	 logstream(void){}
-	 ~logstream(void){}
-	 void SetFile(char * path) { log.open(path, ios::out); }// | ios::app); }
-	 void CloseFile() { log.close(); }
-	 void ResetFile(char * path) { log.close(); log.open(path, ios::app); }//
-};
-
-template <class T>
-logstream& operator<< (logstream& f, T val)
-{
-	cout << val;
-	if (LogOFF) 
-		return f;// Log-file switched OFF
-
-	if (f.log.is_open())
-		f.log << val;
-	else cout << "\t !!!  -> skip file output " << val; "\n";
-	//f.log.flush();
-	return f;
-};
-
-//template <class T>
-/*logstream& operator<< (logstream& f, ostream& (*pfun)(ostream& f))
-{
-    pfun(f.log);
-    pfun(cout);
-    return f; //*this;
-};*/
-//Works well with  - logstream logout
-// logout << m << 0.1  << " haha\n";
-// logout << "\n";//works // sout<< flush;//another variant 
-//- But doesn't work well for sout << endl; 
-// ----------------------------------------------------- 
-
 inline void Message_NotSelected()  {AfxMessageBox("NO plate selected!", MB_ICONINFORMATION | MB_OK); }
 //inline void Message_Version() { AfxMessageBox("This is BTR 4.5!", MB_OK); }
- /////////// C3Point ------------------------------------------------------
+
+/////////// C3Point ------------------------------------------------------
  class C3Point
  {
  public: 
@@ -114,6 +73,46 @@ inline void Message_NotSelected()  {AfxMessageBox("NO plate selected!", MB_ICONI
 		// C3Point  operator + (const C3Point & P1, const C3Point & P2) const;
 		// C3Point  operator - (const C3Point & P1, const C3Point & P2) const;
  };
+ //////////////////////////////////////////////
+ struct minATTR // size minimized - 15(16) bytes
+{
+	unsigned short Xmm;// 2 bytes 0 ...65535
+	unsigned short Ymm;// 2 bytes 0 ...65535
+	short AXmrad; // 2 bytes –32768...32767
+	short AYmrad; // 2 bytes –32768...32767
+	float PowerW; // 4 bytes 3.4E +/- 38 (7 digits)
+	unsigned short Nfall; // 2 bytes 0 ...65535
+	signed char Charge; // 1 byte -128...127
+
+	minATTR() {}
+
+	minATTR(const minATTR & t)
+	{
+		Xmm = t.Xmm; Ymm = t.Ymm; 
+		AXmrad = t.AXmrad;
+		AYmrad = t.AYmrad;
+		PowerW = t.PowerW;
+		Nfall = t.Nfall;
+		Charge = t.Charge;
+	}
+	
+	minATTR(C3Point pos, double ax, double ay, double power, int nfall, int charge)
+	{
+		double X = pos.X * 1000;
+		if (X < 0) X = 0.0;
+		double Y = pos.Y * 1000;
+		if (Y < 0) Y = 0.0;
+		Xmm = (unsigned short)(X); 
+		Ymm = (unsigned short)(Y); 
+		AXmrad = (short)(ax * 1000);
+		AYmrad = (short)(ay * 1000);
+		PowerW = (float)power;
+		Nfall = (unsigned short)nfall;
+		if (Nfall <= 0) Nfall = 0;
+		Charge = (signed char)charge;
+	}
+};
+
  ////////// CLoad (Counter) -------------------------------------------
  class CLoad : public CObject
  {
@@ -199,6 +198,8 @@ inline void Message_NotSelected()  {AfxMessageBox("NO plate selected!", MB_ICONI
 	 double Xmax, Ymax; // local Max dimensions for Load View (Xmin = Ymin = 0)  
 	 double crossX, crossY; // View grid steps - for Load and Profiles
 	 double leftX, rightX, botY, topY; //local View dimensions
+
+	 CArray <minATTR> Falls;
 
 
  public:

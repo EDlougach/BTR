@@ -2333,6 +2333,8 @@ bool CTracer::TraceAllAtoms() // from ALL beamlets // no memory reserve test
 		// ADD BML FALLS 
 		cs.Lock();
 		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);
+		bool added = pDoc->AddFallsToFalls(m_ID, is + 1, tattr);
+
 		/*bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
 		cs.Unlock();
 		if (!added) {
@@ -2344,6 +2346,8 @@ bool CTracer::TraceAllAtoms() // from ALL beamlets // no memory reserve test
 		NofCalculated++;	// - if not stopped	
 		int Ncalc = NofCalculated;
 		cs.Unlock();
+
+		if (!added) logout << "!!!!! Falls not added !!!!!!!!!!!!!!\n";
 
 		ClearArrays();// clear last BML tattr
 		//pDoc->ShowStatus();// not working for multi-run!!!
@@ -2400,6 +2404,8 @@ bool CTracer::TraceAllResIons() // from ALL beamlets
 		// ADD BML FALLS 
 		cs.Lock();
 		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);
+		bool added = pDoc->AddFallsToFalls(m_ID, is + 1, tattr);
+
 		/*bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
 		cs.Unlock();
 		if (!added) {
@@ -2411,6 +2417,8 @@ bool CTracer::TraceAllResIons() // from ALL beamlets
 		NofCalculated++;	// - if not stopped	
 		int Ncalc = NofCalculated;
 		cs.Unlock();
+
+		if (!added) logout << "!!!!! Falls not added !!!!!!!!!!!!!!\n";
 
 		ClearArrays();// clear last BML tattr
 		//pDoc->ShowStatus();// not working for multi-run!!!
@@ -2544,6 +2552,8 @@ bool CTracer::TraceAllReions() // from ALL beamlets
 		// ADD BML FALLS 
 		cs.Lock();
 		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);
+		bool added = pDoc->AddFallsToFalls(m_ID, is + 1, tattr);
+
 		/*bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
 		cs.Unlock();
 		if (!added) {
@@ -2555,6 +2565,8 @@ bool CTracer::TraceAllReions() // from ALL beamlets
 		NofCalculated++;	// - if not stopped	
 		int Ncalc = NofCalculated;
 		cs.Unlock();
+
+		if (!added) logout << "!!!!! Falls not added !!!!!!!!!!!!!!\n";
 
 		ClearArrays();// clear last BML tattr
 		//pDoc->ShowStatus();// not working for multi-run!!!
@@ -2770,6 +2782,8 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 		//CSingleLock cs_lock(&cs, TRUE);
 		cs.Lock();
 		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);
+		bool added = pDoc->AddFallsToFalls(m_ID, is + 1, tattr);
+
 		/*bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
 		cs.Unlock();
 		if (!added) {
@@ -2783,6 +2797,8 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 		if (NofCalculated == pDoc->NofBeamletsTotal)  
 			stopped = TRUE;// -> leads to STOP all threads in doc
 		cs.Unlock();
+
+		if (!added) logout << "!!!!! Falls not added !!!!!!!!!!!!!!\n";
 
 		ClearArrays();// clear last BML tattr
 		//pDoc->ShowStatus();// not working for multi-run!!!
@@ -2977,11 +2993,11 @@ void CTracer:: ShowProgress(int Ncalc) // new - static loads
 		pDC->TextOut(10, 105, S);
 		logout << S;
 
-		S.Format("Traced BML  %d                \n", Ncalc);
-		pDC->TextOut(10, 125, S);
+		S.Format("Traced BML  %d                   \n", Ncalc);
+		pDC->TextOut(10, 125, S); 
 		logout << S;
 
-		S.Format("Passed   %02d:%02d:%02d            \n", dh, dm, ds);
+		S.Format("Passed   %02d:%02d:%02d                \n", dh, dm, ds);
 		pDC->TextOut(10,145, S); //logout << S;
 
 		S.Format("Time / BML  %d ms            \n", mspb);

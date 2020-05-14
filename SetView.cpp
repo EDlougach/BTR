@@ -1018,7 +1018,7 @@ void CSetView:: ShowStatus() //(CDC* pDC)
 		S.Format("START  %02d:%02d:%02d       ", h0, m0, s0);
 		pDC->TextOut(10,25, S);
 
-		S.Format("Channels %d Rows %d  ", (pDoc->NofActiveChannels), (pDoc->NofActiveRows));
+		S.Format("Channels %d Rows %d   ", (pDoc->NofActiveChannels), (pDoc->NofActiveRows));
 		pDC->TextOut(10,45, S);
 
 		S.Format("Active Source Current  %g A", SelCurr);

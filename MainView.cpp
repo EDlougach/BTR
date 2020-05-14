@@ -1676,7 +1676,10 @@ void CMainView::OnLButtonDown(UINT /* nFlags */, CPoint point)
 		plate0->DrawLoadRect(); //can be zero - calculate and Show Scale (local) for current limits!!
 		plate0->DrawPlateBound(); // plate polygon - scale not recalculated
 		//if(pDoc->OptDrawPart)
-		pDoc->ShowPlatePoints(pDoc->OptDrawPart); // particle spots - scale not recalculated
+		
+		//if (plate0->Number == pDoc->PlasmaEmitter)
+			pDoc->ShowPlatePoints(TRUE);//(pDoc->OptDrawPart);
+		// particle spots - scale not recalculated
 	
 	}// marked
 

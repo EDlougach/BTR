@@ -55,7 +55,7 @@ struct TATTR // Attributes of a thread Particle - 40 bytes
 //UINT ThreadDraw(PVOID pParam);
 //static UINT ThreadFunc(LPVOID pParam); // declared in BTRDOc  private
 
-struct minATTR // size minimized - 15(16) bytes
+/*extern struct minATTR // size minimized - 15(16) bytes
 {
 	unsigned short Xmm;// 2 bytes 0 ...65535
 	unsigned short Ymm;// 2 bytes 0 ...65535
@@ -93,7 +93,7 @@ struct minATTR // size minimized - 15(16) bytes
 		Charge = (signed char)charge;
 	}
 };
-
+*/
 struct SATTR // Attributes of a thread Particle - 20 bytes
 {
 	float X;// 4 bytes 3.4E +/- 38 (7 digits)

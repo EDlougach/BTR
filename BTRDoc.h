@@ -283,7 +283,7 @@ public:
 	CPlate * pBeamHorPlane;
 	CPlate * pBeamVertPlane;
 	int     EmitterNumber;// plate for next beam start
-	int		PlasmaEmitter;
+	int		PlasmaEmitter; // DuctExit for trace in plasma
 	
 	int     DecilType;
 //	int 	NofChannelsHor,	NofChannelsVert, NofBeamletsHor, NofBeamletsVert; // Beam Source
@@ -802,7 +802,8 @@ public:
 
 	bool AddFalls(int tid, int isrc, std::vector<minATTR> * tattr);
 	//bool AddFalls(int tid, int isrc, std::vector<minATTR> & attr);
-	void AddFallsToLoads(int tid, int isrc,  std::vector<minATTR> * tattr);
+	void AddFallsToLoads(int tid, int isrc, std::vector<minATTR> * tattr);
+	bool AddFallsToFalls(int tid, int isrc, std::vector<minATTR> * tattr);
 		
 	bool AddLog(std::vector<CString> * log);
 	void ShowPlasmaCut(int icut);
