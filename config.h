@@ -198,6 +198,7 @@ inline void Message_NotSelected()  {AfxMessageBox("NO plate selected!", MB_ICONI
 	 double Xmax, Ymax; // local Max dimensions for Load View (Xmin = Ymin = 0)  
 	 double crossX, crossY; // View grid steps - for Load and Profiles
 	 double leftX, rightX, botY, topY; //local View dimensions
+	 double AtomPower, NegPower, PosPower; // species power count, W
 
 	 CArray <minATTR> Falls;
 

@@ -1543,7 +1543,9 @@ double CTracer::GetAtomDecay(C3Point P1, C3Point P2)
 	
 	//if (pDoc->OptReionAccount) 	
 	rei_decay = pDoc->GetReionDecay(P2); // to change!
-	pl_decay = pDoc->GetDecay(P2);
+	pl_decay = 1;
+	if (pDoc->AreaLong > pDoc->TorCentreX) 
+		pl_decay = pDoc->GetDecay(P2);
 	
 	Decay = neutr_decay * rei_decay * pl_decay;
 	if (Decay < 0 || Decay > 1) AfxMessageBox("GetAtomDecay: got invalid decay");
@@ -2404,7 +2406,7 @@ bool CTracer::TraceAllResIons() // from ALL beamlets
 		// ADD BML FALLS 
 		cs.Lock();
 		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);
-		bool added = pDoc->AddFallsToFalls(m_ID, is + 1, tattr);
+		bool added = TRUE;// pDoc->AddFallsToFalls(m_ID, is + 1, tattr);
 
 		/*bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
 		cs.Unlock();
@@ -2552,7 +2554,7 @@ bool CTracer::TraceAllReions() // from ALL beamlets
 		// ADD BML FALLS 
 		cs.Lock();
 		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);
-		bool added = pDoc->AddFallsToFalls(m_ID, is + 1, tattr);
+		bool added = TRUE; //pDoc->AddFallsToFalls(m_ID, is + 1, tattr);
 
 		/*bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
 		cs.Unlock();
@@ -2830,19 +2832,24 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 		S.Format(" BTR %g ---- SINGLE RUN is DONE ----\n ----- Date %s  Time %s -----\n\n",
 			BTRVersion, Date, Time);
 		logout << S;
-		
+
+		double Pinj = pDoc->GetInjectedPowerW();
+		double TotPower = pDoc->GetTotSolidPower();
+		double Deposited = TotPower - Pinj;
+		S.Format("  >>> Injected %g W \n  >>> Deposited %g W\n", Pinj, Deposited);
+		logout << S;
 		//if (pDoc->OptLogSave)	pDoc->CloseLogFile(); // after SINGLE SCENS
 		pDoc->ResetLogFile();
 
 		//Beep(100, 200);
-		if (NofCalculated == pDoc->NofBeamletsTotal)  
+		if (NofCalculated == pDoc->NofBeamletsTotal)
 			AfxMessageBox("SINGLE RUN is DONE!");
 		else AfxMessageBox("SINGLE RUN is STOPPED!");
+		pDoc->OnShow();
 		//cs.Unlock();
 	} // if stopped
 	
 	//pStatus->ReleaseDC(pDC);
-
 	//pDoc->ShowStatus();//  breaks sometimes
 }
 
@@ -2924,28 +2931,20 @@ long long CTracer:: GetGlobFalls()
 	return Falls;
 }
 
-
 /*void CBTRDoc:: GetMemState()
 {
 	int DIV = 1024;
-
 	MEMORYSTATUSEX statex;
 	statex.dwLength = sizeof (statex);
 	GlobalMemoryStatusEx (&statex);
-
 	MemFree = (long) (statex.ullAvailPhys /DIV); // available on the system
-	
 	HANDLE hProcess = GetCurrentProcess();
 	PROCESS_MEMORY_COUNTERS pmc;
 	if (NULL == hProcess)  return;
-
 	if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc)) )
 		MemUsed = pmc.WorkingSetSize /DIV; // currently used by BTR
-		
 	MemFalls = 0;// m_AttrVector[0].size() * ThreadNumber * sizeof(SATTR) / DIV;
-
 	ArrSize = m_GlobalVector.size();//ArrSize = Falls;
-
 }*/
 
 void CTracer:: ShowProgress(int Ncalc) // new - static loads
@@ -2961,6 +2960,7 @@ void CTracer:: ShowProgress(int Ncalc) // new - static loads
 	int Ntot = pDoc->NofBeamlets;
 	CTime Tbegin = pDoc->StartTime;
 	long long MEM_BTR_kB = GetMemUsedkB();//pDoc->MemUsed;// kb
+	long long Falls = GetGlobFalls();
 	CSetView * pStatus = (CSetView *)m_pStatus;
 	CDC* pDC = pStatus->GetDC(); //or GetWindowDC();  
 	pDC->SetTextColor(RGB(0,0,255));
@@ -3012,6 +3012,10 @@ void CTracer:: ShowProgress(int Ncalc) // new - static loads
 
 		//S.Format("Mem left       %ld kB      \n", MemFreeKB);
 		//pDC->TextOut(10,225, S); logout << S;
+
+		S.Format("Falls Size  %d               \n", Falls);
+		pDC->TextOut(10, 225, S); 
+		logout << S;
 		logout << "-----------------------\n";
 		//if (SINGLE) ::GdiFlush();
 		cs.Unlock();
@@ -3034,7 +3038,7 @@ void CTracer:: ShowProgressFalls(int Ncalc)
 	int Ntot = pDoc->NofBeamlets;
 	//cs.Lock();
 	CTime Tbegin = pDoc->StartTime;
-	long long Falls = pDoc->ArrSize;
+	long long Falls = GetGlobFalls();// pDoc->ArrSize;
 	//cs.Unlock();
 
 	long long MEM_BTR_kB = GetMemUsedkB();//pDoc->MemUsed;// kb

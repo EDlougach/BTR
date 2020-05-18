@@ -120,7 +120,11 @@ public:
 	long long MemFree, MemUsed, MemFalls, ArrSize; 
 	int ThreadNumber; // active threads for current run
 	int IofCalculated;
-	
+	// tracked params across scens
+	CArray<C3Point> PowSolid; // power on solids for scen(1,2,3 - RUNs)
+	CArray<double> PowInjected; // power on DuctExit (or AreaLimit)
+
+
 	PtrList  PlatesList;
 	PtrList  AddPlatesList;
 	vector <VOLUME> VolumeVector;
@@ -581,6 +585,7 @@ public:
 	void  InitFields();
 	void  SetFields();
 	void  InitOptions();
+	void  InitTrackArrays();
 	void  InitBeam();
 	void  InitNBI();
 	void  InitTokamak();
@@ -635,7 +640,7 @@ public:
 	void  InitAddPlates();
 	void  SetAddPlates();
 	CPlate * GetPlateByNumber(int N);
-	void  AddCond(CPlate * plate);// add to PlateList if condition
+	bool  AddCond(CPlate * plate);// add to PlateList if condition
 	void  AddPlate(CPlate * plate);// Add plate to AddSurfList
 	int   FindPlateClones(CPlate * plate);
 	CPlate * AddPlate(bool isSolid, C3Point p0, C3Point p1, C3Point p2, C3Point p3);// not used
@@ -785,13 +790,16 @@ public:
 
 	void CreateBaseSingle(); // creates a new plate - pMarkedPlate proection
 	void P_CalculateLoad(CPlate * plate);
-	void P_CalculateLoad(CPlate * plate, vector<minATTR> * parr);
+	void P_CalculateLoad(CPlate * plate, vector<minATTR> * parr);// Atom/Neg/PosPower++ 
 	void P_CalculateCombi(bool update);
 	void P_CalculateAngularProf(CPlate * plate);
 	void SetNullLoad(CPlate * plate);
 	void CalculateAllLoads();
 	BOOL SetDefaultMesh();
 	void SetNullLoads(); // init maps for all "interesting" plates
+
+	double GetInjectedPowerW(); // calculate Atom power at Duct Exit
+	double GetTotSolidPower(); // sum power falled on solids
 	
 	void WriteExitVector();
 	void WriteFallVector();

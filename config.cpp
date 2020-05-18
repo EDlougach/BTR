@@ -468,11 +468,11 @@ void  CLoad:: SetProf(double x, double y)
 CLoad :: ~CLoad()
 {
 	int i;
-/*	if (Nx > 0 || Ny > 0) {
+	if (Nx > 0 || Ny > 0) {
 		for (i = 0; i <= Nx; i++ ) 	delete Val[i];
 		delete [] Val;
-	}*/
-	
+	}
+		
 	/*	for (i = 0;  i <=  Nx; i++) {
 			delete [] wh[i];
 			delete [] wv[i];
@@ -480,8 +480,8 @@ CLoad :: ~CLoad()
 		delete [] wh;
 		delete [] wv;
 	}*/
-	delete  Val;
-	delete this;
+	//if (Nx > 0 || Ny > 0) delete [] Val;
+	//delete this;
 
 }
 
@@ -1555,6 +1555,9 @@ CPlate:: CPlate()
 	MinAngle = 0;
 	MaxAngle = 1580;
 	StepAngle = 1; //mrad
+	AtomPower = 0;
+	NegPower = 0; 
+	PosPower = 0;
 
 }
 
@@ -1588,7 +1591,9 @@ CPlate::  CPlate(C3Point p0, C3Point p1, C3Point p2, C3Point p3)
 	OrtDirect = 1;
 	SmoothDegree = 0;
 	MAP = TRUE;
-		
+	AtomPower = 0;
+	NegPower = 0; 
+	PosPower = 0;	
 }
 
 void CPlate::Shift(double X, double Y, double Z) // shift whole plate along vector
@@ -1793,6 +1798,9 @@ void  CPlate::  SetLocals(C3Point p0, C3Point p1, C3Point p2, C3Point p3) // Ori
 	SetViewDim(); // display total rect  
 	Loaded = FALSE;
 	Touched  = FALSE;
+	AtomPower = 0;
+	NegPower = 0; 
+	PosPower = 0;
 }
 int  CPlate::NormDirect(C3Point p0, C3Point p1, C3Point p2, C3Point p3)
 {
@@ -2039,6 +2047,7 @@ void CPlate:: SetFromLimits(C3Point LB, C3Point RT) // LeftBottom, RightTop - on
 	}
 
 	SetLocals(p0, p1, p2, p3);
+	MAP = TRUE;
 //	RgnPlan = new CRgn;
 //	RgnSide = new CRgn;
 }
@@ -2542,7 +2551,8 @@ void  CPlate:: DrawPlate(CView * pView, CDC* pDC) // taken from BTR_K
 		
 }
 
-void  CPlate::ApplyLoad(BOOL flag,  double Hx, double Hy) // flag false => clear existing (true - create or replace)
+void  CPlate::ApplyLoad(BOOL flag,  double Hx, double Hy) 
+// flag false => clear existing; true -> create or replace
 {
 	//CLoad * pOldLoad = Load;
 	int i;

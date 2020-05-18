@@ -68,6 +68,7 @@ void CThreadsDlg::OnBnClickedButtonParam()
 	pDoc->ReadScenFile();
 	m_MaxScen = pDoc->MAXSCEN;
 	m_Scenfilename = pDoc->ScenFileName;
+	if (pDoc->SkipSurfClass.GetSize() > 0) pDoc->SetPlates();
 	CString S;
 	if (m_MaxScen > 1)
 		S.Format("%s(%d)", m_Scenfilename, m_MaxScen);

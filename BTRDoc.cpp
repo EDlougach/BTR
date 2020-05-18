@@ -393,6 +393,7 @@ void CBTRDoc:: InitData()
 	
 	LogFileName = "LOG_BTR5.txt"; //short name
 	InitOptions();
+	InitTrackArrays();
 	//std::cout << "InitOptions done" << std::endl;
 
 //	AppertRadius = 0.007; // m
@@ -461,6 +462,7 @@ void CBTRDoc:: InitData()
 	InitPlasma(); //called in InitData (after SetBeam!!!) // calls SetPlasmaTarget -> SetPlasmaGeom
 	//std::cout << "InitPlasma done" << std::endl;
 
+	ArrSize = 0;
 	SetStatus();// numbers of active channels/rows/totbeamlets
 	if ((int) BeamSplitType == 0) SetPolarBeamletCommon(); //SetBeamletAt(0);
 	else SetGaussBeamlet(BeamCoreDivY, BeamCoreDivZ); 
@@ -633,7 +635,13 @@ void CBTRDoc:: InitOptions()
 	OptBeamInPlasma = TRUE;
 	OptAddDuct = TRUE;//FALSE;
 	PlasmaEmitter = -1;
-	
+
+}
+
+void CBTRDoc:: InitTrackArrays()
+{
+	PowSolid.RemoveAll();
+	PowInjected.RemoveAll();
 }
 
 void CBTRDoc:: InitBeam()
@@ -1143,6 +1151,9 @@ void CBTRDoc::InitScenDefault()
 {
 	MAXSCEN = 1;
 	ScenFileName = "";
+	SkipSurfClass.RemoveAll(); // list of substrings to find in plate Comment
+	ExceptSurf.RemoveAll();
+	
 	for (int i = 0; i <= MAXSCEN; i++)	ScenData[i].RemoveAll();
 	ScenLoaded = FALSE;// INIT default scenarios
 
@@ -1254,9 +1265,9 @@ void  CBTRDoc::ReadScenFile() // read scenario data
 		}
 
 		if (nskip > 0) {
-			S.Format("%d Surf types to skip", nskip);
+			S.Format("%d Load MAPS to skip", nskip);
 			AfxMessageBox(S);
-			S.Format("\nSKIP SURFACES:\n%sEXCEPT:\n%s\n", Sskip, Sexcept);
+			S.Format("\nSKIP MAPS:\n%sEXCEPT:\n%s\n", Sskip, Sexcept);
 			logout << S;
 		}
 
@@ -1328,7 +1339,13 @@ void  CBTRDoc::ReadScenFile() // read scenario data
 		S.Format("%s%s\n", Sconfig, Sopt);
 		logout << S; //config << Sopt << std::endl ;
 		//AfxMessageBox("Scenario data\n" + Sconfig + Sopt);
-		//return; //success
+		
+		// Set Track Arrays
+		InitTrackArrays();// remove all
+		for (int i = 0; i <= MAXSCEN; i++) {// Scen = 0 reserved  
+			PowInjected.Add(0);
+			PowSolid.Add(C3Point(0,0,0));// X - run1 Y - run2 Z - run3
+		}
 	} // file dlg DoModal = OK
 
 	else {
@@ -2840,6 +2857,7 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	// pPlate->ShiftVert(VShiftNeutr + NeutrVBiasIn, VShiftNeutr + NeutrVBiasOut);
 	 pPlate->Solid = FALSE;
 	 pPlate->Visible = FALSE;
+	 pPlate->MAP = TRUE;
 	 S.Format("NEUTRALIZER Entry plane X = %g m", NeutrInX - 0.2);
 	 pPlate->Comment = S; 
 	 AddCond(pPlate);//PlatesList.AddTail(pPlate);
@@ -2855,6 +2873,7 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	// pPlate->ShiftVert(VShiftNeutr + NeutrVBiasIn, VShiftNeutr + NeutrVBiasOut);
 	 pPlate->Solid = FALSE;
 	 pPlate->Visible = FALSE;
+	 pPlate->MAP = TRUE;
 	 S.Format("NEUTRALIZER Exit plane X = %g m", NeutrOutX + 0.2);
 	 pPlate->Comment = S; 
 	 AddCond(pPlate);//PlatesList.AddTail(pPlate);
@@ -2944,7 +2963,7 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	 pPlate->OrtDirect = -1;
 	 pPlate->Fixed = 1; // side view
 	 pPlate->MAP = FALSE;
-	 S.Format("CUT-OFF LIMIT: Bottom %d", pPlate->Number);
+	 S.Format("CUT-OFF LIMIT: Bottom");
 	 pPlate->Comment = S; 
 	 AddCond(pPlate); //PlatesList.AddTail(pPlate);
 
@@ -2963,7 +2982,7 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	 pPlate->OrtDirect = -1;
 	 pPlate->Fixed = 1; // side view
 	 pPlate->MAP = FALSE;
-	 S.Format("CUT-OFF LIMIT: Top %d", pPlate->Number);
+	 S.Format("CUT-OFF LIMIT: Top");
 	 pPlate->Comment = S; 
 	 AddCond(pPlate); //PlatesList.AddTail(pPlate);
 
@@ -2982,7 +3001,7 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	 pPlate->OrtDirect = -1;
 	 //pPlate->Fixed = 0; // plan view
 	 pPlate->MAP = FALSE;
-	 S.Format("CUT-OFF LIMIT: Right %d", pPlate->Number);
+	 S.Format("CUT-OFF LIMIT: Right");
 	 pPlate->Comment = S; 
 	 AddCond(pPlate); //PlatesList.AddTail(pPlate);
 
@@ -3001,7 +3020,7 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 	 pPlate->OrtDirect = -1;
 	 //pPlate->Fixed = 0; // plan view
 	 pPlate->MAP = FALSE;
-	 S.Format("CUT-OFF LIMIT: Left %d", pPlate->Number);
+	 S.Format("CUT-OFF LIMIT: Left");
 	 pPlate->Comment = S; 
 	 AddCond(pPlate); //PlatesList.AddTail(pPlate);
 	 
@@ -3129,6 +3148,7 @@ void  CBTRDoc::SetPlatesRID()// -------------  RID -----------------------------
 	 //pPlate->Shift(0,0, VShiftRID);
 	 pPlate->Solid = FALSE;
 	 pPlate->Visible = FALSE;
+	 pPlate->MAP = TRUE;
 	 S.Format("RID Exit plane X = %g m", RIDOutX + 0.2);
 	 pPlate->Comment = S;
 	 AddCond(pPlate);// PlatesList.AddTail(pPlate);
@@ -4409,11 +4429,12 @@ void  CBTRDoc::SetPlatesDuctFull()// not called
 	 //pPlate->Shift(0,0, VShiftDia);
 	 pPlate->Solid = FALSE;
 	 pPlate->Visible = FALSE;
+	 pPlate->MAP = TRUE;
 	 S.Format("Duct Exit Cross-plane, X = %g m", DuctExitX);
 	 pPlate->Comment = S;
-	 AddCond(pPlate);//PlatesList.AddTail(pPlate);
+	 bool added = AddCond(pPlate);//PlatesList.AddTail(pPlate);
 
-	 PlasmaEmitter = pPlate->Number;
+	// if (added) PlasmaEmitter = pPlate->Number; // else - keep AreaLimit
 	 
 }
 
@@ -4804,6 +4825,7 @@ void  CBTRDoc::SetPlates() // free
 	 pPlate->Comment = S;
 //	 SelectPlate(pPlate);//pPlate->Selected = TRUE; SetLoadArray(pPlate, TRUE); 
 	PlatesList.AddTail(pPlate);
+	PlasmaEmitter = pPlate->Number; // if DuctExitX < 0
 
 	pPlate = new CPlate(); // Right (HorMin) limit
 	PlateCounter++;//2
@@ -4976,6 +4998,7 @@ void  CBTRDoc::SetPlatesNBI() // NBI config
 	 pPlate->Shift(0,0, VShiftCal);
 	 pPlate->Solid = FALSE;
 	 pPlate->Visible = FALSE;
+	 pPlate->MAP = TRUE;
 	 S.Format("Calorimeter Exit plane X = %g m", CalOutX + 0.2);
 	 pPlate->Comment = S;
 	 AddCond(pPlate);// PlatesList.AddTail(pPlate);
@@ -5141,20 +5164,25 @@ void  CBTRDoc::SetPlatesNBI() // NBI config
 	//AfxMessageBox("Exit SetPlatesNBI");
 }
 
-void CBTRDoc::AddCond(CPlate * plate)// add to PlateList if condition
+bool CBTRDoc::AddCond(CPlate * plate)// add to PlateList if condition
 {
 	if (plate->Errors() > 0) {
-		AfxMessageBox("Invalid Surf detected");  return;
+		AfxMessageBox("Invalid Surf detected");  return FALSE;
 	}
 	//if (FindPlateClones(plate) > 0) return; //found clones in the main PlatesList
 	
+	CString comm = plate->Comment;
 	//skip posX < -0.5 // 1st condition
 	for (int i = 0; i < 4; i++) { // any corner!
-		if (plate->Corn[i].X < -0.5) return; // skip adding
+		C3Point corn = plate->Corn[i];
+		if (corn.X < -0.5 || corn.X > AreaLong) { 
+			logout << comm << " - not added (out of AREA) \n";
+			return FALSE; // skip adding
+		}
 	}
 
 	//plate->MAP = TRUE;// default - interesting
-	CString comm = plate->Comment;
+	
 	CString S = comm.MakeUpper();
 	CString Sskip;
 	CString Sexcept;
@@ -5167,8 +5195,7 @@ void CBTRDoc::AddCond(CPlate * plate)// add to PlateList if condition
 				
 				if (Nexc == 0) { // no exceptions
 					plate->MAP = FALSE;
-					logout << S << " - MAP SKIP \n";
-					//return; // found -> SKIP (don't add surf)
+					//logout << S << " - MAP SKIP \n";
 				} // No exceptions
 				
 				// check Exceptions 
@@ -5181,24 +5208,20 @@ void CBTRDoc::AddCond(CPlate * plate)// add to PlateList if condition
 
 				if (!found) { // not found in exceptions
 					plate->MAP = FALSE;
-					logout << S << " - MAP SKIPPED \n";
-					//return; // SKIP (don't add surf)
+					//logout << S << " - MAP SKIPPED \n";
 				} // Sexcept not found 
-				
-
+		
 			} // Sskip found 
 		} // Nskip
 	} // Nskip >0
-	
-/*	if (!(plate->Solid) //|| S.Find("TRANSPAR", 0) > -1 
-		&& S.Find("NEUTRAL", 0) < 0){ // keep Neutralizer entry/exit
-		//AfxMessageBox(S + "\n is skipped");
-		return;
-	}*/
-		
+
 	PlateCounter++; //OK
 	plate->Number = PlateCounter;
 	PlatesList.AddTail(plate); 
+	if (!(plate->MAP))
+		logout << comm << " - MAP SKIPPED \n";
+
+	return TRUE;// added
 }
 
 
@@ -5422,7 +5445,12 @@ void CBTRDoc:: ClearAllPlates() // clear loads
 		plate->Loaded = FALSE;
 		plate->Selected = FALSE;
 		plate->Load = NULL;
-
+		plate->AtomPower = 0;
+		plate->NegPower = 0;
+		plate->PosPower = 0;
+		plate->AtomPower = 0;
+		plate->NegPower = 0; 
+		plate->PosPower = 0;
 	}
 
 	pBeamHorPlane->Load->Clear(); // created in SetPlatesNBI
@@ -5619,8 +5647,8 @@ int CBTRDoc::OnDataGet() // load config;
 	//CString S = m_Text;
 	//InitFields(); // empty MF + GAS called from InitOptions
 	InitOptions(); // empty AddSurfName, Set default tracing options
-	//InitAddPlates(); // Remove AddPlatesList, set AddPlatesNumber = 0;
-
+	InitTrackArrays();
+	
 	UpdateDataArray(); // m_Text -> SetData SetOption CheckData 
 	TaskName += "\n -> " + GetTitle();
 
@@ -5656,6 +5684,7 @@ int CBTRDoc::OnDataGet() // load config;
 		FWRmin = 2.0; FWRmax = 4.4;
 	}
 	*/
+	InitAddPlates(); // Remove AddPlatesList, set AddPlatesNumber = 0;
 	SetAddPlates();//ReadAddPlates(AddSurfName);
 	SetPlates();//SetPlasma is called from SetPlatesNBI
 	SetStatus();
@@ -7161,6 +7190,7 @@ void CBTRDoc:: ShowPlatePoints(bool draw)
 	//} //k
 
 	if (Nfalls < 1) { // show power
+		//plate->Load->SetSumMax();
 		S.Format(" NO FALLS FOUND      ");
 		x = pLV->OrigX + 20;
 		y = pLV->OrigY + 20; 
@@ -7168,7 +7198,7 @@ void CBTRDoc:: ShowPlatePoints(bool draw)
 		S.Format("Total power = %g W", plate->Load->Sum);
 		y = pLV->OrigY + 40; //- (int)((plate->topY - bot) * pLV->ScaleY) + 10;
 		pDC->TextOutA(x, y, S);
-		S.Format("Max PD = %g Wm2", plate->Load->MaxVal);
+		S.Format("Max PD = %g W/m2", plate->Load->MaxVal);
 		y = pLV->OrigY + 60; //- (int)((plate->topY - bot) * pLV->ScaleY) + 30;
 		pDC->TextOutA(x, y, S);
 	}
@@ -11929,10 +11959,18 @@ void CBTRDoc::CompleteRun() // calculate, save loads, re-init arrays
 	sn.Format("%d_run%d_", SCEN, RUN);
 	name = "SCEN" + sn + "loads.txt";
 	
-	SaveRUNSummary(name);// write RUN summary to current SCEN folder (Surf      Total, W     Max, W/m2     GridSteps,m)
+	SaveRUNSummary(name);
+	// write RUN summary to current SCEN folder (Surf      Total, W     Max, W/m2     GridSteps,m)
 	
 	SaveRUNLoads(); //create RUN-folder in current SCEN-folder and Save RUN Loads in it
 	
+	if (RUN == 1) {
+		PowInjected[SCEN] = GetInjectedPowerW();
+		PowSolid[SCEN].X = GetTotSolidPower();
+	}
+	if (RUN == 2) PowSolid[SCEN].Y = GetTotSolidPower();
+	if (RUN == 3) PowSolid[SCEN].Z = GetTotSolidPower();
+
 	::SetCurrentDirectory(OldDir); // back to SCEN
 	S.Format("-- back to %s \n", OldDir);
 	logout << S; //std::cout << S;
@@ -12211,6 +12249,7 @@ void CBTRDoc::RunScen(int iopt[3]) // - current scenario, multi-run trace option
 	Date.Format("%02d-%02d-%04d", tm.GetDay(), tm.GetMonth(), tm.GetYear());
 	int success = 1;
 
+	ArrSize = 0;
 	RUN = 0;// count actual runs 1..3 
 	for (int irun = 0; irun < 3; irun++) { //0,1,2
 		RUN++;	//::MessageBox(NULL, S, "BTR 5 RunScen", 0);//AfxMessageBox(S, MB_ICONEXCLAMATION | MB_OK);
@@ -12251,6 +12290,18 @@ void CBTRDoc::RunScen(int iopt[3]) // - current scenario, multi-run trace option
 		S.Format(" +++++ Date %s  Time %s +++++ \n", Date, Time);
 		logout << "BTR" << BTRVersion << "--- ALL is DONE (last run shown)----\n";
 		logout << S << "\n";
+
+		logout << "----- TRACKED PARAMETERS --------\n"; 
+		for (int i = 1; i <= MAXSCEN; i++) {
+			double Pinj = PowInjected[i];
+			double Psum = PowSolid[i].X + PowSolid[i].Y + PowSolid[i].Z;
+			S.Format("SCEN %d\n Injected %5.3le[W]  Total Deposited %5.3le[W]: \n", 
+							i, Pinj, Psum - Pinj);
+			logout << S;
+			S.Format("\t   Atoms %5.3le[W] Residuals %5.3le[W] Reions %5.3le[W]\n", 
+						PowSolid[i].X - Pinj, PowSolid[i].Y, PowSolid[i].Z);
+			logout << S;
+		} // i
 
 		CTime t0 = StartTime0; // from global start!!!
 		CTime t1 = StopTime;
@@ -12324,7 +12375,7 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 	
 	SuspendedSpan = 0;
 	DataSaveTime = 0;
-	ArrSize = 0;
+	
 	
 	StartTime0 = CTime::GetCurrentTime();// Global start
 	StartTime = StartTime0; // //Reset time for current RUN start
@@ -12341,7 +12392,9 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 	
 	//if (SCEN > 1 && MAXSCEN > 1) ResumeData(); // back to initial config
 	
-	SetDefaultMesh();// set surf resolution - before all runs
+	if (!SetDefaultMesh()) // set surf resolution - before all runs
+		return;// cancel run
+
 	SetNullLoads();
 	S.Format("----- Init Null Loads for ALL surfaces --------\n");
 	logout << S;
@@ -12468,7 +12521,7 @@ void CBTRDoc:: GetMemState()
 	//long Falls = 0;// total fall-points
 	MemFalls = 0;// m_AttrVector[0].size() * ThreadNumber * sizeof(SATTR) / DIV;
 	//for (int i = 0; i < ThreadNumber; i++) Falls += m_AttrVector[i].size();// falls within thread
-	ArrSize = m_GlobalVector.size();//ArrSize = Falls;
+	//ArrSize = m_GlobalVector.size();//ArrSize = Falls;
 	//Falls = m_GlobalDeque.size();
 
 }
@@ -18394,7 +18447,7 @@ BOOL CBTRDoc::SetDefaultMesh() // mesh + part opt
 		return TRUE;
 	}
 	else {
-		CString S = " Multi-Run Cancelled\n ";
+		CString S = " Run Cancelled\n ";
 		AfxMessageBox(S);
 		logout << S;
 		//OnStop();// STOP = TRUE
@@ -18414,17 +18467,20 @@ void CBTRDoc::SetNullLoads() // init maps for all "interesting" plates
 		plate = List.GetNext(pos);
 		plate->Falls.RemoveAll();
 
-		if (plate->MAP == TRUE) { // only for interesting (MAP)
+		if (plate->MAP) { // only for interesting (MAP)
 			SetNullLoad(plate); // create zero load with default mesh option
 			//P_CalculateLoad(plate); // distribute m_GlobalVector
 			SetLoadArray(plate, TRUE); // Add the plate to Loads List
 		}
 		else { //all the rest - single cell for Sum power
 			// not included to Loads list
-			plate->ApplyLoad(TRUE, 1000, 1000); //-> Nx = Ny = 0
+			plate->ApplyLoad(TRUE, 1000, 1000); //-> Nx = Ny = 0 Loaded->TRUE
 			plate->Load->Sum = 0;
 			plate->Load->MaxVal = 0;
 		}
+		plate->AtomPower = 0;
+		plate->NegPower = 0; 
+		plate->PosPower = 0;
 	}
 } 
 
@@ -18434,7 +18490,7 @@ void CBTRDoc::AddFallsToLoads(int tid, int isrc,  std::vector<minATTR> * tattr)
 // called after Each BML
 // Distribute falls among all maps, Add to Sum - for SKIPPED  
 {
-	if (STOP) return; // FALSE;
+	//if (STOP) return; // FALSE;
 	//vector<minATTR>::iterator it;
 	PtrList & List = PlatesList;
 	CPlate * plate;
@@ -18473,6 +18529,37 @@ void CBTRDoc::CalculateAllLoads() // called after each RUN or on User request
 //int res = AfxMessageBox(S, MB_ICONQUESTION | MB_YESNOCANCEL); // question removed
 //int res = AfxMessageBox("Calculate All non-zero maps", MB_ICONEXCLAMATION | MB_OKCANCEL); // question removed!
 }
+
+double CBTRDoc::GetInjectedPowerW() // calculate Atom power at Duct Exit
+{
+	double Pinj = 0;
+	int n = PlasmaEmitter;
+	CPlate * plate = GetPlateByNumber(n);
+	if (plate != NULL) Pinj = plate->AtomPower;
+
+	return Pinj;
+}
+
+double CBTRDoc::GetTotSolidPower() // sum power falled on solids
+{
+	double Ptot = 0;
+	PtrList & List = PlatesList;
+	CPlate * plate;
+	double Pow;
+	POSITION pos = List.GetHeadPosition();
+	//CWaitCursor wait;
+	while (pos != NULL) {
+		plate = List.GetNext(pos);
+		if (plate->Loaded == FALSE) continue;
+		if (plate->Touched && plate->Solid) { // only non-zero loads on solids
+			//Ptot += plate->Load->Sum;
+			Pow = plate->AtomPower + plate->NegPower + plate->PosPower;
+			Ptot += Pow;
+		}
+	}
+	return Ptot;
+}
+
 
 int OldPDPexe(char * name)
 {
@@ -19853,7 +19940,10 @@ bool CBTRDoc::AddLog(std::vector<CString> * log)
 bool CBTRDoc::AddFallsToFalls(int tid, int isrc, std::vector<minATTR> * tattr)
 // append to plate->falls array
 {
-	return TRUE; // switched OFF now !!!!!!!!!!!!
+	if (RUN > 1 && RUN !=13) return TRUE; // keep only atoms (multi or single run)
+	if (Attr_Array.GetSize() > 3003) return true; // max size for falls - 24.5e+6
+	
+	//return TRUE; // switched OFF now !!!!!!!!!!!!
 ////////////////////////////////////////////////////
 	if (STOP) return FALSE;
 	int n = PlasmaEmitter;
@@ -19864,8 +19954,12 @@ bool CBTRDoc::AddFallsToFalls(int tid, int isrc, std::vector<minATTR> * tattr)
 	long long tsize = tattr->size();
 	long long OldArrSize = plate->Falls.GetSize(); //m_GlobalVector.size();
 	
+	ArrSize = OldArrSize;
+
 	for (int i = 0; i < tsize; i++) {
 		minATTR fall(tattr->at(i));
+		if (fall.Nfall != n) continue;
+
 		TRY {
 			//fall = tattr->at(i);
 			plate->Falls.Add(fall);
@@ -19889,6 +19983,7 @@ bool CBTRDoc::AddFallsToFalls(int tid, int isrc, std::vector<minATTR> * tattr)
 }
 
 bool CBTRDoc::AddFalls(int tid, int isrc,  std::vector<minATTR> * tattr)
+// not called now  - only for tests (DoNextStep, TestMem)
 //bool AddFalls(int tid, int isrc, std::vector<minATTR> & attr);
 {
 	if (STOP) return FALSE;
@@ -20182,7 +20277,9 @@ void CBTRDoc:: P_CalculateLoad(CPlate * plate, vector<minATTR> * parr)
 				Ploc.Z = 0;
 				if (plate->WithinPoly(Ploc)) 
 					plate->Load->Distribute(Ploc.X, Ploc.Y, power);
-					
+				if (tattr.Charge == 0)	plate->AtomPower += power;
+				if (tattr.Charge < 0)	plate->NegPower += power;
+				if (tattr.Charge > 0)	plate->PosPower += power;
 			} // Nfall == plate Num
 		} // i
 	
