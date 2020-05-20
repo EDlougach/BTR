@@ -401,6 +401,7 @@ void CBTRDoc:: InitData()
 	AreaLongMax = 40;
 	ReionPercent = 0;
 	PlasmaEmitter = -1;
+	DuctExit = -1;
 		
 	//ClearData();
 
@@ -546,12 +547,25 @@ void CBTRDoc:: SetAddPlates()
 {
 	//if (MagFieldFileName.GetLength() > 3) { // MF file defined
 		//strcpy(name, MagFieldFileName);
+	bool ReadDir = FALSE;
+	int last = AddSurfName.GetLength();
+	if (last < 4) return; // empty surf name
 
+	int pos = AddSurfName.Find("\\", last - 3);
+	if (pos > 0) {
+		ReadDir = TRUE;// ended by "\" - folder
+		AddSurfName.Left(pos);
+	}
+	
 	char name[1024];
-	if (AddSurfName.GetLength() > 3) {
-		strcpy(name, AddSurfName);
+	strcpy(name, AddSurfName);
+	if (!ReadDir) { //(AddSurfName.GetLength() > 3) {// read all addsurf from single file
 		ReadAddPlates(name);
 	}
+	else { // read all surf files from folder
+		ReadAddPlatesDir(name);
+	}
+
 }
 
 void CBTRDoc:: InitOptions()
@@ -563,6 +577,7 @@ void CBTRDoc:: InitOptions()
 				 //GasFileName = "";//"Gas Pressure data";
 				 //MagFieldFileName = "";//"MF data";
 	AddSurfName = "";
+	AddSurfDir = "";
 	TracksCalculated = 0;
 	MemFallReserved = FALSE;
 	//PDPgeomLoaded = FALSE;
@@ -635,6 +650,7 @@ void CBTRDoc:: InitOptions()
 	OptBeamInPlasma = TRUE;
 	OptAddDuct = TRUE;//FALSE;
 	PlasmaEmitter = -1;
+	DuctExit = -1;
 
 }
 
@@ -652,7 +668,7 @@ void CBTRDoc:: InitBeam()
 //	IonBeamPower = AddData("Ion Beam Power, MW", NAME(IonBeamPower),  IonPower, 1);
 	//AddData("BML Radius at GG, m", NAME(BeamRadius), BeamRadius = 0, 1);
 	//AddData("BML Focus dist from GG, m", NAME(BeamFocusX), BeamFocusX = 0, 1);
-	AddData("BML Split Type (default 0 - Polar)", NAME(BeamSplitType), BeamSplitType = 0, 0);
+	//AddData("BML Split Type (default 0 - Polar)", NAME(BeamSplitType), BeamSplitType = 0, 0);
 	AddData("BML Atoms Polar Split Number (Polar Split)", NAME(PolarNumberAtom), PolarNumberAtom = 0, 0);	
 	AddData("BML Atoms Azimuth Split Number (Polar Split)", NAME(AzimNumberAtom), AzimNumberAtom = 0, 0); // one aperture
 	//AddData("Beamlet Hor. Split Number (Cartesian)  (>0)", NAME(BeamSplitNumberY), BeamSplitNumberY = 10, 0);
@@ -682,7 +698,7 @@ void CBTRDoc:: InitBeam()
 //	TracePartType = AddData("Source ions Type (0/1/2 for e/H/D)", NAME(TracePartType), 2., 0);
 //	TracePartQ = AddData("Source ions Charge", NAME(TracePartQ), -1, 0);
 //	TracePartNucl = AddData("Source ions Mass, nucl.", NAME(TracePartNucl), 2., 0);
-	AddData("Source ions Trajectory Step, m", NAME(TraceStepL), TraceStepL = 0.1, 1);
+	AddData("Source ions Tracking Step, m", NAME(TraceStepL), TraceStepL = 0.1, 1);
 //	TraceTimeStep = 1E-8;
 	TracePartType = -2; // D-
 /*	TracePartQ  = -1;	TracePartNucl = 1;*/
@@ -705,7 +721,7 @@ void CBTRDoc:: InitBeam()
 	AddData("Re-ionization Start, m", NAME(ReionXmin), ReionXmin = 4.6, 1);
 	AddData("Re-ionization End, m", NAME(ReionXmax), ReionXmax = 25, 1);
 	AddData("Re-ionization Step, m", NAME(ReionStepL), ReionStepL = 0.1, 1);
-	AddData("Reionized/Residual Ions Trajectory Step, m", NAME(IonStepL), IonStepL = 0.05, 1);
+	AddData("Reionized/Residual Ions Tracking Step, m", NAME(IonStepL), IonStepL = 0.05, 1);
 	//MinStepL = AddData("Min Step near Surfaces, m", NAME(MinStepL), 0.01, 1);
 	IonStepLspec = IonStepL; Xspec0 = 0; Xspec1 = 0;
 	ReionStepLspec = ReionStepL; RXspec0 = 0; RXspec1 = 0;
@@ -746,10 +762,10 @@ void CBTRDoc:: InitNBI() // not active for free config
 	NeutrInW4 = NeutrInW; NeutrOutW4 = NeutrOutW;
 	AddData("Neutralizer Panel Entry Thickness, m",  NAME(NeutrInTh), NeutrInTh = 0.04406, 1);
 	AddData("Neutralizer Panel Exit Thickness, m",  NAME(NeutrOutTh), NeutrOutTh = 0.03355, 1);
-	AddData("Neutralizer Entry Vertical Bias, m",  NAME(NeutrBiasInVert), NeutrBiasInVert = 0, 1);
-	AddData("Neutralizer Exit Vertical Bias, m",  NAME(NeutrBiasOutVert), NeutrBiasOutVert = 0, 1);
-	AddData("Neutralizer Entry Horizontal Bias, m",  NAME(NeutrBiasInHor), NeutrBiasInHor = 0, 1);
-	AddData("Neutralizer Exit Horizontal Bias, m",  NAME(NeutrBiasOutHor), NeutrBiasOutHor = 0, 1);
+	AddData("Neutralizer Entry Vertical Shift, m",  NAME(NeutrBiasInVert), NeutrBiasInVert = 0, 1);
+	AddData("Neutralizer Exit Vertical Shift, m",  NAME(NeutrBiasOutVert), NeutrBiasOutVert = 0, 1);
+	AddData("Neutralizer Entry Horizontal Shift, m",  NAME(NeutrBiasInHor), NeutrBiasInHor = 0, 1);
+	AddData("Neutralizer Exit Horizontal Shift, m",  NAME(NeutrBiasOutHor), NeutrBiasOutHor = 0, 1);
 
 	AddData("RID Channels number",  NAME(RIDChannels), RIDChannels = 4, 0);//4
 	AddData("RID Entry Coord. X, m",  NAME(RIDInX), RIDInX = 5.3, 1);
@@ -1629,7 +1645,7 @@ void CBTRDoc:: FormDataText(bool fullinfo)// full - for config file, not full - 
 		else s0.Format("\t Gas Profile: < %s > NOT SET \n", GasFileName);
 		m_Text += s0;
 	
-		s0.Format("\t Add Surf geom file :  < %s > \n", AddSurfName);
+		s0.Format("\t Add Surf file or DIR(\\ ended):  < %s > \n", AddSurfName);
 		m_Text += s0;
 
 		if (FWdataLoaded) s0.Format("\t Tokamak FW geom: file  < %s >\n", FW2DFileName);
@@ -1935,10 +1951,10 @@ int CBTRDoc:: SetOption(CString & Line)
 	if (name.Find("Add") >= 0 && name.Find("Surf") >= 0 ) {
 		pos1 = valstr.Find("<");
 		if (pos1 >= 0) {
-			CString filename = valstr.Mid(pos1+1);
-			pos2 = filename.Find(">");
+			CString name = valstr.Mid(pos1+1);
+			pos2 = name.Find(">");
 			if (pos2>=0) {
-				AddSurfName = filename.Left(pos2);
+				AddSurfName = name.Left(pos2);
 				AddSurfName.Trim();
 			}
 		}
@@ -4406,8 +4422,9 @@ void  CBTRDoc::SetPlatesDuctFull()// not called
 
 	X = Duct8X;
 	DuctExitX = Max(X, DuctExitX);
-	if (DuctExitX < 0 && PlasmaXmin > 0) // if duct not loaded
-		DuctExitX = PlasmaXmin;//PlasmaEmitter;
+	
+	//if (DuctExitX < 0 && PlasmaXmin > 0) // if duct not loaded
+		//DuctExitX = PlasmaXmin;//PlasmaEmitter;
 
 	DuctExitYmin = -Duct8W * 0.5 + Duct8BiasHor;
 	DuctExitYmax = Duct8W * 0.5 + Duct8BiasHor;
@@ -4434,7 +4451,8 @@ void  CBTRDoc::SetPlatesDuctFull()// not called
 	 pPlate->Comment = S;
 	 bool added = AddCond(pPlate);//PlatesList.AddTail(pPlate);
 
-	// if (added) PlasmaEmitter = pPlate->Number; // else - keep AreaLimit
+	 if (added) DuctExit = pPlate->Number;
+		 //PlasmaEmitter = pPlate->Number; // else - keep AreaLimit
 	 
 }
 
@@ -4990,8 +5008,10 @@ void  CBTRDoc::SetPlatesNBI() // NBI config
 
 	pPlate = new CPlate(); // Exit 
 	//PlateCounter++;  pPlate->Number = PlateCounter; // -> in AddCond
-	 p0 = C3Point(CalOutX + 0.01, -CalOutW * 0.5 - 0.5, -CalH * 0.5 - 0.5);
-	 p3 = C3Point(CalOutX + 0.01, CalOutW * 0.5 + 0.5,  CalH * 0.5 + 0.5);
+	 //p0 = C3Point(CalOutX + 0.1, -CalOutW * 0.5 - 0.15, -CalH * 0.5 - 0.1);
+	 //p3 = C3Point(CalOutX + 0.1, CalOutW * 0.5 + 0.15,  CalH * 0.5 + 0.1);
+	 p0 = C3Point(CalOutX + 0.1, AreaHorMin, AreaVertMin);
+	 p3 = C3Point(CalOutX + 0.1, AreaHorMax, AreaVertMax);
 	 pPlate->OrtDirect = -1;
 	 pPlate->SetFromLimits(p0, p3); 
 	 //pPlate->Shift(0, RIDBiasOutHor, VShiftRID + RIDBiasOutVert);
@@ -5014,13 +5034,39 @@ void  CBTRDoc::SetPlatesNBI() // NBI config
 //  ------------- PLASMA ------------------------------------
 	 SetPlasmaGeom(); //if (!FWdataLoaded) 	InitFWarray();
 
-	// Movable Target Planes ---set if size > 0 and within area
+	// Injection and Movable Target Planes ---set if size > 0 and within area
 	double Ymin, Ymax, Zmin, Zmax;
 	double shiftY, shiftZ;
 	double dY, dZ, size;//size
 	C3Point P;
 	double eps = 1.e-4;
-
+	 if (AreaLong > TorCentreX) {
+		 if (DuctExit > 0) PlasmaEmitter = DuctExit;
+		 else { // create new PlasmaEmitter
+			double Rmax = PlasmaMajorR + PlasmaMinorR;
+			double dx = sqrt(Rmax * Rmax - TorCentreY * TorCentreY);
+			double Xinj = TorCentreX - dx;
+			//P = GetBeamFootLimits(Xinj, Ymin, Ymax, Zmin, Zmax);
+			//dY = 0.15; dZ = 0.1;
+			//Ymin = Ymin - dY; Ymax = Ymax + dY;
+			//Zmin = Zmin - dZ; Zmax = Zmax + dZ;
+			pPlate = new CPlate();
+			//PlateCounter++;	pPlate->Number = PlateCounter;
+			p0 = C3Point(Xinj-0.1, AreaHorMin, AreaVertMin);
+			p3 = C3Point(Xinj-0.1, AreaHorMax, AreaVertMax);
+			pPlate->OrtDirect = -1;
+			pPlate->SetFromLimits(p0, p3); 
+			pPlate->Solid = FALSE;
+			pPlate->Visible = FALSE;
+			S.Format("Plasma Emitter X = %g m", Xinj);
+			pPlate->Comment = S;
+			// pPlate->Fixed = 1; // side view
+			AddCond(pPlate);// PlatesList.AddTail(pPlate);
+			PlasmaEmitter = pPlate->Number;
+		 }
+	 } // AreaLong > TorCentreX
+	 //else (AreaLong < TorCentreX) - PlasmaEmitter = Area Limit [#1]
+	
 	//if (!OptBeamInPlasma) return;
 
 	dY = MovHor; dZ = MovVert;
@@ -5302,7 +5348,7 @@ void CBTRDoc::AppendAddPlates() // append free surf to the main PlatesList
 	CString S;
 	
 	S.Format("Adding %d free surf...\n to %d existing\n", add, PlateCounter);// PlateCounter - total plates
-	AfxMessageBox(S);
+	//AfxMessageBox(S);
 	logout << S;
 	
 	int clones = 0; // found, not added
@@ -5332,8 +5378,9 @@ void CBTRDoc::AppendAddPlates() // append free surf to the main PlatesList
 		AddCond(pPlate); //PlatesList.AddTail(pPlate);
 	}
 	if (clones > 0) {
-		S.Format("%d surf clones found (not added)", clones);
-		AfxMessageBox(S);
+		S.Format("%d surf clones found (not added)\n", clones);
+		//AfxMessageBox(S);
+		logout << S;
 	}
 	S.Format("%d surf total in the PlatesList\n", PlateCounter);
 	AfxMessageBox(S);
@@ -5685,8 +5732,9 @@ int CBTRDoc::OnDataGet() // load config;
 	}
 	*/
 	InitAddPlates(); // Remove AddPlatesList, set AddPlatesNumber = 0;
-	SetAddPlates();//ReadAddPlates(AddSurfName);
 	SetPlates();//SetPlasma is called from SetPlatesNBI
+	SetAddPlates();//ReadAddPlates(AddSurfName);
+	if (AddPlatesNumber > 0)	AppendAddPlates();
 	SetStatus();
 	
 	if (NofActiveChannels < 1) {
@@ -5973,6 +6021,7 @@ void CBTRDoc:: OnShow()
 	
 	pDataView->OnDataActive();//OnDataActive();
 	
+	ShowProfiles = FALSE;
 	pLoadView->Load = NULL;
 	pLoadView->ShowLoad = FALSE;
 	pLoadView->InvalidateRect(NULL, TRUE);
@@ -10969,7 +11018,6 @@ void CBTRDoc::OnResultsReadall()
 	WIN32_FIND_DATA FindFileData; //fData;
 	HANDLE hFind;
 	// LPTSTR DirSpec = (LPTSTR)"*.dat";
-
 	char name[1024];
 	CString  sn;
 
@@ -16242,15 +16290,31 @@ void  CBTRDoc:: SetStopArrays(C3Point P0, C3Point P1, double dL)
 	StopArray.Add(C3Point(Pgl.X, Npower0, IonPower));
 }
 
-double CBTRDoc:: GetDecay(C3Point P)
-// get atoms Decay along axis X
+double CBTRDoc:: GetDecay(C3Point P0, C3Point P1, double dL) //each ray decay
+// set start point always at Plasma start - PlasmaXmin
+{
+	double decay = 1;
+	if (P1.X < PlasmaXmin || P0.X > PlasmaXmax) return decay;
+	if (!OptBeamInPlasma) return decay;//1
+	//// double CPlasma::GetPowerDecay(C3Point P0, C3Point P1, double dL)
+	//decay = exp(-SumThickness); // total neutrals decay along the path
+	// set P0 at PlasmaXmin plane
+	C3Point dP = P1 - P0;
+	C3Point V = dP / ModVect(dP); 
+	double dX2 = P1.X - PlasmaXmin;
+	double dt = dX2 / V.X;
+	C3Point P0new = P1 - V * dt;
+	decay = pPlasma->GetPowerDecay(P0new, P1, dL);
+	return decay;
+}
+
+double CBTRDoc:: GetDecay(C3Point P) // get atoms Decay along axis X
 {
 	double decay = 1;
 	if (P.X < PlasmaXmin) return decay;
 	if (!OptBeamInPlasma) return decay;//1
 
 	//if (GetDistBetween(P0, P1) < StepPath) return decay;
-		
 	//decay = GetDecayBetween(P0, P1); // not called any more
 	/*double PathLen = ModVect(P1 - P0);
 	int Npath = 1000;
@@ -16258,8 +16322,7 @@ double CBTRDoc:: GetDecay(C3Point P)
 	//pPlasma->SetPath(P0, P1, StepL);
 	//pPlasma->SetDecayArrays();// thin ray
 	//pPlasma->AddDecayArrays();// BAD - Tracers will overlap!! (Nrays++)*/
-
-	//test
+//test
 	//double L0 = 5;
 	//double L = GetDistBetween(P0, P1);
 	//decay = exp(-L / L0);
@@ -16267,7 +16330,6 @@ double CBTRDoc:: GetDecay(C3Point P)
 	//return decay;
 
 //------ use StopArray (X, Neutr, PosCurr)-- similar to Reion/Neutr arrays
-	
 	double power = 1, power0, power1;
 	double X0, X1;
 	int Nmax = StopArray.GetUpperBound();
@@ -16283,27 +16345,12 @@ double CBTRDoc:: GetDecay(C3Point P)
 			 return power;
 		 } // if
 	 } // for
-	
 	return power;
 
-/*	if (!PlasmaLoaded || !OptBeamInPlasma) return 1;
-	double power = 1, power0, power1;
-	C3Point P0, P1;
-	int Nmax = DecayArray.GetUpperBound();
-	if (P.X > DecayPathArray[Nmax].X) return DecayArray[Nmax].Z;
-	if (P.X < DecayPathArray[0].X) return 1;
-	for (int i = 0; i < Nmax; i++) {
-		 P0 = DecayPathArray[i];  P1 = DecayPathArray[i+1];
-		 if (P.X >= P0.X && P.X < P1.X) {
-			 power0 = DecayArray[i].Z; power1 = DecayArray[i+1].Z;
-			 power = power0 + (power1 - power0) * (P.X - P0.X) / (P1.X - P0.X);
-			 return power;
-		 } //if
-	 } // for
-	return power;*/
+
 }
 
-double CBTRDoc::GetDecayBetween(C3Point P0, C3Point P1) 
+double CBTRDoc::GetDecayBetween(C3Point P0, C3Point P1) // old
 // calculate decay - not filling arrays
 														
 {
@@ -18104,6 +18151,96 @@ void CBTRDoc:: WriteAddPlates(char * name)
 
 }
 
+int CBTRDoc:: ReadAddPlatesDir(char * dirname) // read all surf files from folder
+{
+	int totfiles = 0;
+	CString S;
+	CString FullPath = CurrentDirName + "\\" + dirname;
+
+	::SetCurrentDirectory(FullPath);
+	//logout << "Set Folder " << FullPath << "\n";
+
+	DWORD error = ::GetLastError();
+	//if (error != 0) { AfxMessageBox("AddSurf Dir not found"); return 0;}
+
+	S.Format(">>>> Reading AddSurf Folder: %s ...\n", FullPath);
+	logout << S;
+
+	BeginWaitCursor(); 
+	WIN32_FIND_DATA FindFileData; //fData;
+	HANDLE hFind;
+	
+	char name[1024];
+	CString  sn;
+	FILE * fin;
+	char buf[1024];
+	CString line;
+	int pos;
+	int added = 0; // plates
+
+/*	char OpenDirName[1024];
+	::GetCurrentDirectory(1024, OpenDirName);
+	//::SetCurrentDirectory(OpenDirName);
+	SetTitle(OpenDirName);// + TaskName);*/
+
+  // Find the first file in the directory.
+   hFind = FindFirstFile("*.txt", &FindFileData);
+
+   if (hFind == INVALID_HANDLE_VALUE)//   AfxMessageBox("Invalid surf-file handle");
+	   { AfxMessageBox("NO txt-file found"); return 0;}
+   else  { // valid handle
+	   sn = (CString) (FindFileData.cFileName);
+	  /* if (sn.Find("load", 0) >= 0) {
+		strcpy(name, sn);
+		ReadLoad(name);}*/
+	   
+		strcpy(name, sn);
+		fin = fopen(name, "r");
+		if (fin == NULL) { AfxMessageBox("AddSurf file error"); return 0;}
+		if (fgets(buf, 1024, fin) == NULL)	return 0;
+		line = buf;
+		fclose(fin);
+		line.MakeUpper();
+		pos = line.Find("SURF");
+		if (pos >= 0) {
+			added += ReadAddPlates(name);
+			totfiles++;// file read 
+		}
+  
+      while (FindNextFile(hFind, &FindFileData) != 0) 
+      {
+          sn = (CString) (FindFileData.cFileName);
+		 /* if (sn.Find("load", 0) >= 0) {
+			  strcpy(name, sn);
+			  ReadLoad(name);} // if*/
+		  
+		  strcpy(name, sn);
+		  fin = fopen(name, "r");
+		  if (fin == NULL) continue; // { AfxMessageBox("AddSurf file error"); return totfiles;}
+		  if (fgets(buf, 1024, fin) == NULL) continue;	//return totfiles;
+		  line = buf;
+		  fclose(fin);
+		  line.MakeUpper();
+		  pos = line.Find("SURF");
+		  if (pos >= 0) { // return totfiles;
+			 added += ReadAddPlates(name);
+			 totfiles++;// file read 
+		  }
+      } // while next txt-file found
+   } //valid handle
+     // dwError = GetLastError();
+    FindClose(hFind);
+	EndWaitCursor();
+
+	S.Format(" - %d Surf Files found with %d surfaces\n", totfiles, added);
+	logout << S;// << std::endl;
+	S.Format(">> result AddPlatesNumber - %d\n", AddPlatesNumber);// added in Addplate
+	logout << S;
+
+	::SetCurrentDirectory(CurrentDirName);
+	return totfiles;
+}
+
 int CBTRDoc:: ReadAddPlates(char * name)
 {
 	char buf[1024];
@@ -18128,7 +18265,7 @@ int CBTRDoc:: ReadAddPlates(char * name)
 			return 0;
 		}
 
-		S.Format("Reading AddSurf file: %s ...\n",name);
+		S.Format("Reading AddSurf file: %s \n",name);
 		logout << S;
 
 		total = 0;  
@@ -18166,19 +18303,13 @@ int CBTRDoc:: ReadAddPlates(char * name)
 			plate->Fixed = -1; // to define
 			plate->Number = -1; // to define when adding to PlatesList
 			AddPlate(plate);		
-			//AddPlatesList.AddTail(plate);//	AddPlate(plate);
-			//AddPlatesNumber++;
-			// separated - moved to AppendAddplates
-			//PlateCounter++;
-			//plate->Number = PlateCounter;//AddPlatesNumber;
-			//PlatesList.AddTail(plate);
 			total++;// addded	
 			//if (total > 27) break;
 		}// feof
 		fclose(fin);
 	S.Format(" - Scanned %d Surf \n",	total);
 	logout << S;// << std::endl;
-	S.Format(">> result AddPlatesNumber - %d\n", AddPlatesNumber);
+	S.Format(">>>> result AddPlatesNumber - %d\n", AddPlatesNumber);
 	logout << S; // "\t result AddPlatesNumber - " << AddPlatesNumber << std::endl; 
 	//ShowFileText(name);
 	//ModifyArea(FALSE);
@@ -18186,7 +18317,7 @@ int CBTRDoc:: ReadAddPlates(char * name)
 
 }
 
-int CBTRDoc:: ReadAddPlates()
+int CBTRDoc:: ReadAddPlates()// read from selected file
 {
 	char name[1024];
 	CString Name;
@@ -20596,6 +20727,7 @@ void CBTRDoc::ShowPlasmaCutDiagonal() // not called
 
 void CBTRDoc::OnBeaminplasmaVerticalplane()
 {
+	OnShow();
 	if (pPlasma->Nrays < 1 && TracksCalculated == 0) StartAtomsFromEmitter();// trace atoms in plasma
 			//CalculateTracks();//fill Plasma Cut-planes
 			//ShowPlasmaCut(1);// vertical
@@ -20604,6 +20736,7 @@ void CBTRDoc::OnBeaminplasmaVerticalplane()
 
 void CBTRDoc::OnBeaminplasmaHorizontalplane()
 {
+	OnShow();
 	if (pPlasma->Nrays < 1 && TracksCalculated == 0) StartAtomsFromEmitter();// trace atoms in plasma
 	ShowPlasmaCut(0); //  0- horiz along X, 1- vert along X, 2 - YZ, 3 - RZ, 4 - psi-Z
 }
@@ -20611,6 +20744,7 @@ void CBTRDoc::OnBeaminplasmaHorizontalplane()
 
 void CBTRDoc::OnBeaminplasmaPoloidalRz()
 {
+	OnShow();
 	if (pPlasma->Nrays < 1 && TracksCalculated == 0) StartAtomsFromEmitter();// trace atoms in plasma
 	ShowPlasmaCut(3); //  0- horiz along X, 1- vert along X, 2 - YZ, 3 - RZ, 4 - psi-Z
 }
@@ -20618,6 +20752,7 @@ void CBTRDoc::OnBeaminplasmaPoloidalRz()
 
 void CBTRDoc::OnBeaminplasmaPoloidalPsiZ()
 {
+	OnShow();
 	if (pPlasma->Nrays < 1 && TracksCalculated == 0) StartAtomsFromEmitter();// trace atoms in plasma
 	ShowPlasmaCut(4); //  0- horiz along X, 1- vert along X, 2 - YZ, 3 - RZ, 4 - psi-Z
 }

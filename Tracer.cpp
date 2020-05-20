@@ -1543,9 +1543,11 @@ double CTracer::GetAtomDecay(C3Point P1, C3Point P2)
 	
 	//if (pDoc->OptReionAccount) 	
 	rei_decay = pDoc->GetReionDecay(P2); // to change!
+	
 	pl_decay = 1;
+	double dL = 0.05;
 	if (pDoc->AreaLong > pDoc->TorCentreX) 
-		pl_decay = pDoc->GetDecay(P2);
+		pl_decay = pDoc->GetDecay(P1, P2, dL);// pDoc->GetDecay(P2);
 	
 	Decay = neutr_decay * rei_decay * pl_decay;
 	if (Decay < 0 || Decay > 1) AfxMessageBox("GetAtomDecay: got invalid decay");
@@ -3762,7 +3764,8 @@ C3Point CTracer:: GetAtomSolidFall(const C3Point P1, const C3Point P2) const
 			neutr_decay = pDoc->GetNeutrDecay(P1, Pend);
 		if (pDoc->OptReionAccount) 
 			rei_decay = pDoc->GetReionDecay(Pend);
-		pl_decay = pDoc->GetDecay(Pend);
+		pl_decay = 1;
+		pl_decay = pDoc->GetDecay(Pend);// not used now (4.5)
 		decay = neutr_decay * rei_decay * pl_decay;
 		if (decay < 0 || decay > 1) AfxMessageBox("GetAtomSolidFall:\n invalid decay");
 
@@ -3860,7 +3863,7 @@ void CTracer:: GetAtomFallsBetween(const C3Point P1, const C3Point P2) const
 						neutr_decay = pDoc->GetNeutrDecay(P1, Pcross);
 					if (pDoc->OptReionAccount)
 						rei_decay = pDoc->GetReionDecay(Pcross);
-					pl_decay = pDoc->GetDecay(Pcross);
+					pl_decay = pDoc->GetDecay(Pcross);// not used now (4.5)
 					decay = neutr_decay * rei_decay * pl_decay;
 					if (decay < 0 || decay > 1) AfxMessageBox("GetAtomFallsBetween: \n Invalid decay");
 										

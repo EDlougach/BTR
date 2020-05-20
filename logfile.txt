@@ -1,6 +1,6 @@
 start NewDocument
 Set Beam - done
-MEM : BTR takes 6968 of 537800 available
+MEM : BTR takes 6880 of 433800 available
 CUT-OFF LIMIT: BOTTOM - MAP SKIPPED 
 CUT-OFF LIMIT: TOP - MAP SKIPPED 
 CUT-OFF LIMIT: RIGHT - MAP SKIPPED 

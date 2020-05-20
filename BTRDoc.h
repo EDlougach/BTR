@@ -147,6 +147,7 @@ public:
 	CString BeamFileName;
 	//CString MFManFileName;
 	CString FW2DFileName;
+	CString AddSurfDir;
 	CString AddSurfName; // single file in config
 	CString LogFilePath;
 	CString LogFileName;// = "LOG_BTR5.txt"; //short name
@@ -287,7 +288,8 @@ public:
 	CPlate * pBeamHorPlane;
 	CPlate * pBeamVertPlane;
 	int     EmitterNumber;// plate for next beam start
-	int		PlasmaEmitter; // DuctExit for trace in plasma
+	int		PlasmaEmitter; // DuctExit or AreaLimit for trace in plasma
+	int		DuctExit;// if defined
 	
 	int     DecilType;
 //	int 	NofChannelsHor,	NofChannelsVert, NofBeamletsHor, NofBeamletsVert; // Beam Source
@@ -720,7 +722,8 @@ public:
 	double GetSigmaExchange(int A, double EkeV);//
 	double GetSigmaIon(int A, double EkeV);//
 	double GetSigmaElectron(int A, double EkeV, double TkeV);
-	double GetDecay(C3Point P);
+	double GetDecay(C3Point P);// simplified - by StopArray along X
+	double GetDecay(C3Point P0, C3Point P1, double dL); // real for each ray
 	double GetFillDecayBetween(C3Point P0, C3Point P1, double Power);
 	double GetDecayBetween(C3Point P0, C3Point P1);
 	double GetSigmaEkeV(double EkeV);
@@ -765,6 +768,7 @@ public:
 	void CorrectFile(char * name);
 	int  ReadAddPlates();
 	int  ReadAddPlates(char * name);
+	int  ReadAddPlatesDir(char * name);
 	void WriteAddPlates(char * name);
 	CLoad* ReadPDPLoadTable(char * name);
 	void ReadEQDSKtable(char * name);

@@ -3938,6 +3938,7 @@ void CPlasma::WritePathThin() // plasma parameters along path - without SIGMA !
 
 CArray<double, double> * CPlasma::GetPowerDecayArray(C3Point P0, C3Point P1, double dL) 
 // return power arr along path P0,P1 with step dL
+// called by doc->SetStopArrays along beam axis
 {
 	double decay = 1;
 	
@@ -3993,8 +3994,10 @@ CArray<double, double> * CPlasma::GetPowerDecayArray(C3Point P0, C3Point P1, dou
 	return Parr;// Npower final
 }
 
-double CPlasma::GetPowerDecay(C3Point P0, C3Point P1, double dL) // get result decay between 2 points
+double CPlasma::GetPowerDecay(C3Point P0, C3Point P1, double dL) 
+// get result decay between 2 points
 // used for tracers - no arrays / no path
+// called by doc->GetDecay 
 {
 	double decay = 1;
 	C3Point Pgl = P1;

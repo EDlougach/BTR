@@ -94,8 +94,10 @@ void CSetView::OnDraw(CDC* pDC)
 	CRect rect;
 	GetClientRect(rect);
 	pDC->Rectangle(rect);*/
-	
-	ShowStatus();
+	CBTRDoc* pDoc = (CBTRDoc*)GetDocument();
+	if (pDoc->ShowProfiles) ShowProfiles(); 
+	else ShowStatus();
+
 	return;
 
 ////////////////////////////////////////////////////////
