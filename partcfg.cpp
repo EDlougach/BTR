@@ -4052,8 +4052,8 @@ void CPlasma::SetDecayArrays() //thin ray decay - typically called after SetPath
 
 	//Nrays = 1;
 	double decay = 1;
-	double Npower = 1;
-	double IonPower = 0;
+	double Npower0, Npower = 1;
+	double IonPower = 0;// Npower  - Npower0
 	double dth, SumThickness = 0;
 	//int ipsi;// ipath;
 	double r;//, rnorm = 1, Rtor, Ztor;
@@ -4088,8 +4088,11 @@ void CPlasma::SetDecayArrays() //thin ray decay - typically called after SetPath
 		dth = Density * sigma * StepL;
 		SumThickness += dth; 
 		decay = exp(-SumThickness); // total neutrals decay along the path
-		IonPower = Npower * dth;//ions generation rate  = neutral flux decay along stepL
+		//IonPower = Npower * dth;//generate ions before Npower decay
+		Npower0 = Npower;
 		Npower = decay;// = Npower-IonPower= Npower0 * decay - result neutral flux after stepL
+		//IonPower = Npower * dth;//generate ions after Npower decay
+		IonPower = Npower0 - Npower;
 
 		Power.Add(Npower);
 		NL.Add(psi);// (Density);
@@ -4101,9 +4104,9 @@ void CPlasma::SetDecayArrays() //thin ray decay - typically called after SetPath
 	}
 	//fclose(fout);
 
-	double Npower0 = Power[0];
-	double Npower1 = Npower;
-	if (Npower0 > 1.e-12)	RayDecay = (1 - Npower1 / Npower0);
+	Npower0 = Power[0];
+	//double Npower1 = Npower;
+	if (Npower0 > 1.e-12)	RayDecay = (1 - Npower / Npower0);
 	else RayDecay = 0;
 }
 

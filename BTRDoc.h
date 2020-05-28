@@ -18,8 +18,10 @@ using namespace std;
 #define   MaxThreadNumber		21
 #define   NofPlasmaImpurMax		16
 
-#define   BTRVersion   5.0 
-// default to change
+#define   BTRVersion			5.0 
+#define   MAXSCENLIMIT			32
+#define   MAXLOADLIMIT			1024
+// defaults to change
 
 class CAskDlg;
 class CBtrDoc;
@@ -91,14 +93,14 @@ protected: // create from serialization only
 private:
 	int  Run_BTR_Fast();
 	void InitTracer(int thread, CTracer * pTracer);
-	void  InitTracers();
+	void InitTracers();
 	
 	static UINT ThreadFunc(LPVOID pParam);// called by Run_BTR_Fast
 	static UINT _ThreadFunc(LPVOID pParam);// not used
 	void SuspendTracer(int iIndex, bool bRun);
 	void SuspendAll(bool bRun);
 	void ClearArrays();
-	
+			
 // Attributes
 private:
 	CArray<CWinThread *, CWinThread *> m_ThreadArray; // new
@@ -123,7 +125,6 @@ public:
 	// tracked params across scens
 	CArray<C3Point> PowSolid; // power on solids for scen(1,2,3 - RUNs)
 	CArray<double> PowInjected; // power on DuctExit (or AreaLimit)
-
 
 	PtrList  PlatesList;
 	PtrList  AddPlatesList;
@@ -151,7 +152,7 @@ public:
 	CString AddSurfName; // single file in config
 	CString LogFilePath;
 	CString LogFileName;// = "LOG_BTR5.txt"; //short name
-	
+	double ** ScenLoadSummary; // for final EXCEL(csv) table (PL)
 	CStringArray ScenData[21]; // list of options for each scenario
 	CStringArray SkipSurfClass; // list of substrings to find in plate Comment
 	CStringArray ExceptSurf; // exceptions in skip
@@ -588,6 +589,9 @@ public:
 	void  SetFields();
 	void  InitOptions();
 	void  InitTrackArrays();
+	void  CreateScenLoadTracks();
+	void  ClearScenLoadTracks();// set zero tracks
+	//void  InitScenLoadTrack(int Nscen, int Nload);
 	void  InitBeam();
 	void  InitNBI();
 	void  InitTokamak();
@@ -802,8 +806,11 @@ public:
 	BOOL SetDefaultMesh();
 	void SetNullLoads(); // init maps for all "interesting" plates
 
+	double GetNeutrPower();
 	double GetInjectedPowerW(); // calculate Atom power at Duct Exit
-	double GetTotSolidPower(); // sum power falled on solids
+	double GetTotSolidPower(); // sum power falled on solids // Area Exit excluded
+	int  GetCompSolid(CStringArray & keys, double & SumPower, double & MaxPD);
+	void GetCompTransparent(CStringArray & keys, double & Pentry, double & Pexit);
 	
 	void WriteExitVector();
 	void WriteFallVector();
@@ -825,6 +832,7 @@ public:
 	void CompleteRun();
 	void CompleteScen();
 	void InitRun(int run);
+	CString GetScenName(int scen);
 	void CreateScenFolder();
 	void InitScen();
 	void InitScenOpt(int & optA, int & optRes, int & optRei);
@@ -835,6 +843,9 @@ public:
 	void SaveRUNSummary(CString name); // create single RUN summary
 	void CollectRUNSummary(CString SUMname, CStringArray & names);// merge diff RUN summaries to a single file SCEN#_SUMloads 
     void ResumeData();
+	void WriteScenTracks();
+	void WriteReport(CString ext);
+	
 /*
 protected:
 	friend UINT _Threadfunc(LPVOID param);

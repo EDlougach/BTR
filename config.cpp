@@ -333,25 +333,35 @@ void CLoad:: SetSumMax()
 	iMaxBound = 0;
 	iMaxVal = -1; jMaxVal = -1;
 	double val;
+	double cell = StepX * StepY;
 	int i, j;
 	if (Nx == 0 && Ny == 0)  return; 
 	for (i = 0; i <= Nx; i++) {
 		for (j = 0; j <= Ny; j++) {
+		
+			/*	if (i == Nx) { 
+				if (j == Ny) cell = 0.25 * StepX * StepY;
+				else cell = 0.5 * StepX * StepY;
+			}
+			else {// i < Nx
+				if (j == Ny) cell = 0.5 * StepX * StepY;
+				else cell = StepX * StepY;
+			} */
+
 			val = Val[i][j]; // density
-			sum += val * StepX * StepY; // power
+			sum += val * cell;// * StepX * StepY; // power
 			if (val>=MaxVal) {
 				MaxVal = val;
 				iMaxVal = i; iProf =  i;
 				jMaxVal = j; jProf =  j;
-				//iProf = i;		jProf = j;
-				//MaxVal = Max(MaxVal, val); // density
+				
 			}
 			
 		}
 	}
 	if (MaxVal < 1.e-16) { SetProf(1000,1000); return;} 
 
-	for (i = 0; i <= Nx; i++) {
+	for (i = 0; i <= Nx; i++) { // define map "bound"
 		for (j = 0; j <= Ny; j++) {
 			val = Val[i][j]; // density
 			if (val > 0.01 * MaxVal) iMaxBound = Max(i, iMaxBound);
@@ -517,10 +527,18 @@ void CLoad:: Copy(CLoad * load)
 
 void CLoad:: Distribute(double xloc, double yloc, double power)  //
 {
-	CCriticalSection cs;
+	//CCriticalSection cs;
+	if (Nx * Ny < 2) { // NO MAP
+		Sum += power;
+		MaxVal = 0;
+		return;
+	}
+
+	double x, y, p, dp;
 
 	if (xloc < -0.0001 || xloc >= Xmax + 0.0001 || yloc < -0.0001 || yloc > Ymax + 0.0001) 
-		return;
+		return;// out of bound 
+	//on bound
 	if (xloc < 0) xloc = 0;
 	if (xloc > Xmax) xloc = Xmax;
 	if (yloc < 0) yloc = 0;
@@ -528,31 +546,56 @@ void CLoad:: Distribute(double xloc, double yloc, double power)  //
 
 	int i = (int)floor(xloc/StepX);
 	int j = (int)floor(yloc/StepY);
-	
-	double cell = StepX * StepY;
+	if (i<0 || j<0 || i>Nx || j>Ny) {
+		AfxMessageBox("Error in Load->Distribute"); return;
+	}
+	double cell = StepX * StepY;// cell square
 
 	double a = xloc - i * StepX;
-	if (a < 0){ i--; a = xloc - i * StepX; }
-	if (a > StepX) {i++; a = xloc - i * StepX; }
+	//if (a < 0){ i--; a = xloc - i * StepX; }
+	//if (a > StepX) {i++; a = xloc - i * StepX; }
 	double b = StepX - a;
 	double c = yloc - j * StepY;
-	if (c < 0) { j--; c = yloc - j * StepY; }
-	if (c > StepY) {j++; c = yloc - j * StepY; }
-	if (i<0 || j<0 || i>Nx || j>Ny) return;
+	//if (c < 0) { j--; c = yloc - j * StepY; }
+	//if (c > StepY) {j++; c = yloc - j * StepY; }
+	//if (i<0 || j<0 || i>Nx || j>Ny) return;
 	double d = StepY - c;
-	
-	double x, y, p, dp;
+	/*
+	dp = power * b*d / cell / cell; // * 1.e-4; // density
+	Val[i][j] += dp;   
+	Sum += dp;*/
 
-	//cs.Lock();
-		dp = power * b*d / cell / cell; // * 1.e-4; // density
-		Val[i][j] += dp;   
+	if (i < Nx) {
+		if (j < Ny) { // common - inner - case
+			Val[i][j] += power * b*d / cell / cell;    
+			Val[i+1][j] += power * a*d / cell / cell;
+			Val[i][j+1] += power * b*c / cell / cell; 
+			Val[i+1][j+1] += power * a*c / cell / cell;
+		}
+		else { // j = Ny  upper bound 
+			Val[i][j] += power * b / StepX / cell;    
+			Val[i+1][j] += power * a / StepX / cell;
+		}// j = Ny
+	}// i < Nx          //a+b = StepX  c+d = StepY
+				
+	else { // i = Nx right bound
+		if (j < Ny) { // right bound
+			Val[i][j] += power * d / StepY / cell;  
+			Val[i][j+1] += power * c / StepY / cell; 
+		}
+		else { // j = Nx right-upper corner
+			Val[i+1][j+1] += power / cell / cell;
+		}
+	} // i = Nx
+
+	Sum += power;
+	return;
+
+	/*	dp = power * a*d / cell / cell; // * 1.e-4;
+		Val[i+1][j] += dp; 
 		Sum += dp;
-		if (i < Nx) {
-			dp = power * a*d / cell / cell; // * 1.e-4;
-			Val[i+1][j] += dp; 
-			Sum += dp;
 			if (i+1 == Nx) {
-				Val[i+1][j] += dp; Sum += dp; }
+			Val[i+1][j] += dp; Sum += dp; }
 		}
 		else {// i = Nx
 			dp = 2* power * a *d / cell / cell; // * 1.e-4;
@@ -590,9 +633,8 @@ void CLoad:: Distribute(double xloc, double yloc, double power)  //
 		}
 		//Sum += power;
 		//cs.Unlock();
-		return;
+		return;*/
 
-	//cs.Unlock();
 }
 
 
@@ -2166,7 +2208,7 @@ BOOL CPlate:: WithinPoly(C3Point P, C3Point p1, C3Point p2, C3Point p3, C3Point 
 BOOL CPlate:: WithinPoly(C3Point Ploc)
 {
 	C3Point p1, p2, p3, p4;
-	double eps = -1.e-12;
+	double eps = 1.e-12;
 	p1 = GetLocal(Corn[0]);
 	p2 = GetLocal(Corn[1]); 
 	p3 = GetLocal(Corn[2]); 

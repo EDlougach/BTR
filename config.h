@@ -83,6 +83,7 @@ inline void Message_NotSelected()  {AfxMessageBox("NO plate selected!", MB_ICONI
 	float PowerW; // 4 bytes 3.4E +/- 38 (7 digits)
 	unsigned short Nfall; // 2 bytes 0 ...65535
 	signed char Charge; // 1 byte -128...127
+	unsigned char run; // 1-atoms, 2-residuals, 3-reions
 
 	minATTR() {}
 
@@ -94,9 +95,10 @@ inline void Message_NotSelected()  {AfxMessageBox("NO plate selected!", MB_ICONI
 		PowerW = t.PowerW;
 		Nfall = t.Nfall;
 		Charge = t.Charge;
+		run = t.run;
 	}
 	
-	minATTR(C3Point pos, double ax, double ay, double power, int nfall, int charge)
+	minATTR(C3Point pos, double ax, double ay, double power, int nfall, int charge, int r)
 	{
 		double X = pos.X * 1000;
 		if (X < 0) X = 0.0;
@@ -110,6 +112,7 @@ inline void Message_NotSelected()  {AfxMessageBox("NO plate selected!", MB_ICONI
 		Nfall = (unsigned short)nfall;
 		if (Nfall <= 0) Nfall = 0;
 		Charge = (signed char)charge;
+		run = r;
 	}
 };
 

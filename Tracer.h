@@ -251,12 +251,14 @@ private:
 	double m_Power, m_StartPower;
 	double m_NeutrPower, m_ReionPower;
 	double m_NL; //sum thickness for neutralisation 
+	double m_AtomPower1, m_AtomPower2, m_AtomPower3;
 	COLORREF m_Color;
 	int m_State; //NEGION, POSION, REION, ATOM
 	int m_Mode; // THIN or THICK
 	BOOL m_Draw; // show particles
 	int m_Falls; // number of solid falls for reflected ions
 	int m_ID; // thread personal Number
+	int m_Run; // 1,2,3
 		
 public :
 	CArray<ATTRIBUTES, ATTRIBUTES> * pAttr; // current bml rays Attr Array
@@ -314,6 +316,7 @@ public:
 	void TraceAll();
 	void DumpArrays();
 	void ClearArrays();
+	void CorrectFallsPower();
 	void ShowBeamlet(int isource);
 	void ShowProgress(int Ncalc);// static loads
 	void ShowProgressFalls(int Ncalc);// falls 

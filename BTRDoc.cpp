@@ -393,9 +393,8 @@ void CBTRDoc:: InitData()
 	
 	LogFileName = "LOG_BTR5.txt"; //short name
 	InitOptions();
-	InitTrackArrays();
-	//std::cout << "InitOptions done" << std::endl;
-
+	CreateScenLoadTracks();
+	
 //	AppertRadius = 0.007; // m
 //	AppertCurrDensity = 203.; //A/m2 D-
 	AreaLongMax = 40;
@@ -473,6 +472,8 @@ void CBTRDoc:: InitData()
 
 	SetPlates();// calls AdjustAreaLimits();
 	//std::cout << "SetPlates done" << std::endl;
+	
+	//InitTrackArrays();// trackin Sum Loads for EXCEL(csv): SCEN = 1 loads = PlateCounter
 
 	FormDataText(FALSE); //without internal names
 	//std::cout << "FormDataText done" << std::endl;
@@ -651,13 +652,42 @@ void CBTRDoc:: InitOptions()
 	OptAddDuct = TRUE;//FALSE;
 	PlasmaEmitter = -1;
 	DuctExit = -1;
-
 }
 
 void CBTRDoc:: InitTrackArrays()
 {
+	ClearScenLoadTracks();//set zero tracks
+	//InitScenLoadTrack(MAXSCEN, PlateCounter);//PlatesList.GetSize());
+	logout << "Set zero Scen Track arrays \n"; 
+}
+
+void CBTRDoc:: ClearScenLoadTracks()// set zero tracks
+{
 	PowSolid.RemoveAll();
 	PowInjected.RemoveAll();
+	for (int i = 0; i <= MAXSCEN; i++) {// Scen = 0 reserved  
+			PowInjected.Add(0);
+			PowSolid.Add(C3Point(0,0,0));// X - run1 Y - run2 Z - run3
+	}
+	for (int i = 0; i < MAXSCENLIMIT; i++) {
+		//ScenLoadSummary[i] = new double[Nl];
+		for (int j = 0; j < MAXLOADLIMIT; j++) // 0-load for tot bml/power calculated
+			ScenLoadSummary[i][j] = 0;
+	}
+	logout << "Set zero Scen load Track array \n";
+}
+
+void CBTRDoc::CreateScenLoadTracks()
+{
+	int Ns = MAXSCENLIMIT;
+	int Nl = MAXLOADLIMIT;
+	ScenLoadSummary = new double *[Ns];
+	for (int i = 0; i < Ns; i++) {
+		ScenLoadSummary[i] = new double[Nl];
+		for (int j = 0; j < Nl; j++) // 0-load for tot bml/power calculated
+			ScenLoadSummary[i][j] = 0;
+	}
+	logout << "Created Load Track arrays \n";
 }
 
 void CBTRDoc:: InitBeam()
@@ -1294,7 +1324,7 @@ void  CBTRDoc::ReadScenFile() // read scenario data
 			//AfxMessageBox("MAXSCEN = 0 (NO SCEN DATA)");
 			return;
 		}
-
+		
 		MAXSCEN = maxscen; // only if > 0!!!
 
 		int scen = 0;
@@ -1356,12 +1386,9 @@ void  CBTRDoc::ReadScenFile() // read scenario data
 		logout << S; //config << Sopt << std::endl ;
 		//AfxMessageBox("Scenario data\n" + Sconfig + Sopt);
 		
-		// Set Track Arrays
-		InitTrackArrays();// remove all
-		for (int i = 0; i <= MAXSCEN; i++) {// Scen = 0 reserved  
-			PowInjected.Add(0);
-			PowSolid.Add(C3Point(0,0,0));// X - run1 Y - run2 Z - run3
-		}
+		// Clear Track Arrays
+		InitTrackArrays();// remove all, PowInjected.Add(0), PowSolid.Add(C3Point(0,0,0))
+				
 	} // file dlg DoModal = OK
 
 	else {
@@ -5495,9 +5522,7 @@ void CBTRDoc:: ClearAllPlates() // clear loads
 		plate->AtomPower = 0;
 		plate->NegPower = 0;
 		plate->PosPower = 0;
-		plate->AtomPower = 0;
-		plate->NegPower = 0; 
-		plate->PosPower = 0;
+		
 	}
 
 	pBeamHorPlane->Load->Clear(); // created in SetPlatesNBI
@@ -5693,8 +5718,8 @@ int CBTRDoc::OnDataGet() // load config;
 	ActiveRow.SetSize(10);
 	//CString S = m_Text;
 	//InitFields(); // empty MF + GAS called from InitOptions
-	InitOptions(); // empty AddSurfName, Set default tracing options
-	InitTrackArrays();
+	InitOptions(); //MAXSCEN = 1  empty AddSurfName, Set default tracing options
+	InitTrackArrays();// clear 
 	
 	UpdateDataArray(); // m_Text -> SetData SetOption CheckData 
 	TaskName += "\n -> " + GetTitle();
@@ -5976,7 +6001,8 @@ void CBTRDoc::OnDataStore() // Update + save (v5) actual Config
 	//SetDecayInPlasma();
 
 	ClearArrays();// attr vectors
-
+	ClearScenLoadTracks();// clear tracked arrays
+	
 	SetStatus(); // NofBeamlets, Nofactive channels, InitTracers
 	ShowStatus();
 	logout << "-- Config is Updated by User [OnDataStore] ---\n"; 
@@ -6032,7 +6058,7 @@ void CBTRDoc:: OnShow()
 	pMainView->InvalidateRect(NULL, TRUE);
 	
 	S.Format("  [SHOW]\n");
-	SetTitle(S);
+	//SetTitle(S);//causes error!
 	logout << S;// << std::endl;
 }
 
@@ -7632,8 +7658,16 @@ void CBTRDoc::DeleteContents()
 	PlasmaImpurA.RemoveAll();
 	PlasmaImpurW.RemoveAll();
 		
-	//for (int i = 0; i <= MAXSCEN; i++)	ScenData[i].RemoveAll();
-	
+	ClearArrays();//skip ClearScenLoadTracks(); 
+	if (MAXSCEN > 0) {
+		for (int i = 0; i <= MAXSCEN; i++)	ScenData[i].RemoveAll();
+		ClearScenLoadTracks(); 
+		for (int i = 0; i < MAXSCENLIMIT; i++) delete[] ScenLoadSummary[i];
+		delete[] ScenLoadSummary;
+	}
+	PowSolid.RemoveAll();
+	PowInjected.RemoveAll();
+		
 	//if (ParticlesFile != NULL) fclose(ParticlesFile);
 	CDocument::DeleteContents();
 }
@@ -11418,7 +11452,7 @@ void CBTRDoc::CollectRUNSummary(CString SUMname, CStringArray & names) // merge 
 	double pow, PDmax, stepX, stepY;
 	char * text;// string part not used: incl steps, sort, definition
 	char buf[1024];
-		
+	
 	int Num[1000];// surf number
 	double Pow_A[1000];// atoms
 	double Pow_Resid[1000];// resid
@@ -11508,7 +11542,10 @@ void CBTRDoc::CollectRUNSummary(CString SUMname, CStringArray & names) // merge 
 
 	} // kmax total list-files ////////////////////// 
 
-	strcpy(name, SUMname); // create SUMMARY file
+	//ofstream csvf; // EXCEL format
+	//csvf.open(SUMname + ".csv");
+
+	strcpy(name, SUMname + ".txt"); // create SUMMARY file
 	fout = fopen(name, "w");
 	fprintf(fout, "Scen Loads Summary \n");
 	S = "Summary Options: ";
@@ -11518,18 +11555,27 @@ void CBTRDoc::CollectRUNSummary(CString SUMname, CStringArray & names) // merge 
 	S += "\n";
 	fprintf(fout, S);
 	fprintf(fout, " Num   A_Power  Resid_Power  Reion_Power     SUM[W]     A_Max[W/m2]  Resid_Max  Reion_Max    Comment\n");
+	
+	//csvf << " Num ; A_Power ; Resid_Power ; Reion_Power ; SUM[W] ; A_Max[W/m2] ; Resid_Max ; Reion_Max ; Comment" << endl;
 	for (int i = 0; i <= nmax; i++) {
 		if (Num[i] > 0) {
+			n = Num[i];
 			plate = GetPlateByNumber(Num[i]);
 			Scomm = plate->Comment;
-			if (SumPow[i] > 1.e-6) {// write NIN-ZERO!!
+			if (SumPow[i] > 1.e-6) {// write NON-ZERO!!
 				fprintf(fout, "%3d  %0.3le  %0.3le  %0.3le    %0.3le    %0.3le  %0.3le  %0.3le \t%s\n",
 					Num[i], Pow_A[i], Pow_Resid[i], Pow_Reion[i], SumPow[i], 
 					Max_A[i], Max_Resid[i], Max_Reion[i], Scomm);
+				//csvf << Num[i] << ";" << Pow_A[i] << ";" << Pow_Resid[i] << ";"
+					//<< Pow_Reion[i] << ";" << SumPow[i] << ";" << Max_A[i] << ";"
+					//<< Max_Resid[i] << ";" << Max_Reion[i] << ";" << Scomm << endl;
+				//ScenLoadSummary[i][n];// 1st index - scen
+				ScenLoadSummary[SCEN][n] = SumPow[i];// 1st index - scen, 2nd - Surf
 			}
 		}
 	}
 	fclose(fout);
+	//csvf.close();
 }
 
 int  CBTRDoc::GetPrefFiles(CString pref, CStringArray & names) 
@@ -12014,13 +12060,17 @@ void CBTRDoc::CompleteRun() // calculate, save loads, re-init arrays
 	
 	if (RUN == 1) {
 		PowInjected[SCEN] = GetInjectedPowerW();
-		PowSolid[SCEN].X = GetTotSolidPower();
+		PowSolid[SCEN].X = GetTotSolidPower();// Area Exit excluded
 	}
 	if (RUN == 2) PowSolid[SCEN].Y = GetTotSolidPower();
 	if (RUN == 3) PowSolid[SCEN].Z = GetTotSolidPower();
 
+	S.Format("--- SCEN %d RUN %d :: Pinj=%g  Psolid %g /%g /%g \n", 
+		 SCEN, RUN, PowInjected[SCEN], PowSolid[SCEN].X, PowSolid[SCEN].Y,PowSolid[SCEN].Z);  
+	logout << S;
+
 	::SetCurrentDirectory(OldDir); // back to SCEN
-	S.Format("-- back to %s \n", OldDir);
+	S.Format("--- back to %s \n", OldDir);
 	logout << S; //std::cout << S;
 
 	CTime t1 = CTime::GetCurrentTime();
@@ -12046,7 +12096,7 @@ void CBTRDoc::CompleteScen() // Scen consists of 1-3 runs
 	for (int i = 0; i < n; i++) S += "  " + SRCnames[i] + "\n";
 	logout << S; //std::cout << S;// << std::endl;//////////
 	
-	SUMname.Format("SCEN%d_SUMloads.txt", SCEN);
+	SUMname.Format("SCEN%d_SUMloads", SCEN);
 	CollectRUNSummary(SUMname, SRCnames); // merge load list SUMMARY results + delete RUN summary files
 
 	S.Format(">>>> MERGE Scen %d Results SUMMARY: >>>> %s <<<< \n", SCEN, SUMname);
@@ -12127,9 +12177,28 @@ void CBTRDoc::InitScenOpt(int & optA, int & optRes, int & optRei) // 0 - stop, 1
 						SCEN, optA, optRes, optRei);
 		logout << S; //std::cout << S;// std::endl;
 	}
-		
 }
 
+CString CBTRDoc::GetScenName(int scen)
+{
+	if (scen > MAXSCEN) return "UNDEF";
+	int maxdata = ScenData[scen].GetSize();
+	int pos;
+	CString S, SCEN_NAME;
+	SCEN_NAME.Format("SCEN_%03d", scen); // default name
+	
+	if (maxdata > 1) { // find scen name
+		S = ScenData[scen][1];
+		if (S.Find("NAME", 0) >= 0) {
+			pos = S.Find("=");
+			SCEN_NAME = S.Mid(pos + 1);
+			SCEN_NAME.Trim();
+		}
+		else SCEN_NAME.Format("SCEN_%03d", scen); // default name
+	}
+	return SCEN_NAME;
+}
+							
 void CBTRDoc::CreateScenFolder() // create folder, copy input files, write scen options - set it as current dir!!!
 {
 	LPSECURITY_ATTRIBUTES  sec = NULL;//SEC_ATTRS;
@@ -12138,23 +12207,11 @@ void CBTRDoc::CreateScenFolder() // create folder, copy input files, write scen 
 	
 	FILE * fout;
 	CString name;
-	CString S, sn, SCEN_NAME;
+	CString S;
 	int pos;
-	
 	int maxdata = ScenData[SCEN].GetSize();
-	SCEN_NAME.Format("SCEN_%03d", SCEN); // default name
-	
-	if (maxdata > 1) { // find scen name
-		S = ScenData[SCEN][1];
-		if (S.Find("NAME", 0) >= 0) {
-			pos = S.Find("=");
-			SCEN_NAME = S.Mid(pos + 1);
-			SCEN_NAME.Trim();
-		}
-		else SCEN_NAME.Format("SCEN_%03d", SCEN); // default name
-	}
+	CString ScenDirName = GetScenName(SCEN);// SCEN_NAME; 	//set  ScenDirName
 	// Create SCEN Folder
-	CString ScenDirName = SCEN_NAME; 	//set  ScenDirName
 	::CreateDirectory(ScenDirName, sec);
 	::SetCurrentDirectory(ScenDirName); //dont change CurrentDirName!
 
@@ -12272,12 +12329,247 @@ void CBTRDoc::InitRun(int run)
 	logout << S; //std::cout << S << "\n";
 }
 
+void CBTRDoc::WriteScenTracks()
+{
+	CString S;
+	int i;
+	logout << "----- TRACKED PARAMETERS --------\n"; 
+	for (i = 1; i <= MAXSCEN; i++) {
+		// Area Exit excluded from Solid loads!!!
+			double Pinj = PowInjected[i];
+			double Psum = PowSolid[i].X + PowSolid[i].Y + PowSolid[i].Z;
+			
+			S.Format("SCEN %d\n Injected %g[W]  Total Deposited %g[W]: \n", 
+							i,    Pinj,   Psum);// - Pinj);// Area Exit excluded
+			logout << S;
+			S.Format("\t   Atoms %g[W] Residuals %g[W] Reions %g[W]\n", 
+						PowSolid[i].X, PowSolid[i].Y, PowSolid[i].Z);
+			logout << S;
+		} // i
+	
+	ofstream csvf; // EXCEL format
+	csvf.open("_ALL_SCEN_LOADS.csv");
+	ofstream txtf;
+	txtf.open("_ALL_SCEN_LOADS.TXT");
+	logout << "\nWriting ALL_SCEN_LOADS.csv at HOME\n";
+
+	//logout << "\n Surf";
+	csvf << " Surf"; 
+	txtf << "Surf";
+	CString ScenName, SurfName;
+	for (i = 1; i <= MAXSCEN; i++)  {
+		ScenName = GetScenName(i);
+		logout << "  " << ScenName;
+		csvf << " , " << ScenName;//csvf << " ; " << ScenName;
+		txtf << " \t " << ScenName;
+	}
+	logout << "\t Comment .......... \n"; 
+	csvf << " , Comment \n";//csvf << " ; Comment \n";
+	txtf << " \t Comment \n";
+
+//fprintf(fout, "%d   %-4.3f   %-4.3f   %-4.3f     %-4.3f    %-10.3le  %-10.3le  %-10.3le   %-10.3le  %-10.3le  %d\n",
+//  i,  Path[i].X, Path[i].Y, Path[i].Z, psi[i], dens[i], sigma[i], sumthick[i], decay[i], rate[i], locstate);
+
+	for (int n = 1; n <= PlateCounter; n++) {
+		//logout << "  " << n;
+		S.Format("%5d", n);
+		csvf << " " << n;
+		txtf << S; //" " << n;
+		SurfName = GetPlateByNumber(n)->Comment;
+		for (i = 1; i <= MAXSCEN; i++) {
+			S.Format("%-10.2le", ScenLoadSummary[i][n]);
+			//logout << "\t" << ScenLoadSummary[i][n];// 1st index - scen
+			//csvf << " ; " << ScenLoadSummary[i][n];// 1st index - scen
+			csvf << " , " << ScenLoadSummary[i][n];// 1st index - scen
+			txtf << "\t" << S; //ScenLoadSummary[i][n];// 1st index - scen
+		}
+		//logout << "\t" << SurfName << "\n";
+		csvf << " , " << SurfName << "\n";//csvf << " ; " << SurfName << "\n";
+		txtf << "\t" << SurfName << "\n";
+	}
+	csvf.close();
+	txtf.close();
+}
+
+void CBTRDoc:: WriteReport(CString ext)
+{
+	//logout << "----- TRACKED PARAMETERS -------\n"; 
+	CStringArray Keys;
+	CString S;
+	ofstream f;
+	CString sep;
+	S = ext.MakeUpper();
+	if (S.Find("CSV", 0) > -1) sep = ";";
+	else if (S.Find("TXT", 0) > -1) sep = "\t";
+	CString name = "_REPORT_." + ext;
+	f.open(name);
+	f << "<<<<< R E P O R T >>>>>>\n";
+	logout << "\nWriting REPORT " << ext << " at HOME\n";
+
+	double Sum = -1, MaxPD = -1;
+	int n;
+	double Pentry = -1, Pexit = -1;
+	double Pn = GetNeutrPower();
+	double Pinj = GetInjectedPowerW();
+	double SolidPower = GetTotSolidPower();// Area Exit excluded
+	
+	CString sf = "%-30s"; // comment field format
+	//CString vf = "\t%-12.3le\n";// txt
+	CString vf = sep + " %-12.3le \n"; // data field format
+	CString sdf = "%-25s (%d)";// comment field with surf count (n)
+
+	S.Format(sf,"Neutralized, W"); f << S;
+	S.Format(vf, Pn); f << S;
+	S.Format(sf,"Injected, W"); f << S;
+	S.Format(vf, Pinj); f << S; 
+	S.Format(sf,"Solid, W"); f << S;
+	S.Format(vf, SolidPower); f << S;
+	
+	f << "\n___CUT-OFF_LIMITS___\n"; // before Neutr
+	Keys.RemoveAll(); Keys.Add("CUT"); 
+	Sum = -1, MaxPD = -1;
+	n = GetCompSolid(Keys, Sum, MaxPD);
+	S.Format(sdf, "Total Power, W", n); f << S;
+	S.Format(vf, Sum);  f << S;
+
+	f << "\n___NEUTRALISER____\n";	
+	Keys.RemoveAll(); Keys.Add("NEUTR"); //Keys.Add("WALL");
+	Sum = -1; MaxPD = -1;	
+	n = GetCompSolid(Keys, Sum, MaxPD);
+	S.Format(sdf, "Total Power, W", n); f << S;
+	S.Format(vf, Sum);  f << S;
+	
+	Keys.RemoveAll(); Keys.Add("NEUTR"); Keys.Add("WALL");
+	Sum = -1; MaxPD = -1;	
+	n = GetCompSolid(Keys, Sum, MaxPD);
+	S.Format(sdf,"Walls Power, W", n); f << S;
+	S.Format(vf, Sum);  f << S;
+	S.Format(sf, "Walls MaxPD, W/m2");  f << S;
+	S.Format(vf, MaxPD); f << S;
+	
+	Keys.RemoveAll(); Keys.Add("NEUTR"); Keys.Add("LEAD");
+	Sum = -1; MaxPD = -1;	
+	n = GetCompSolid(Keys, Sum, MaxPD);
+	S.Format(sdf, "Faces Power, W", n); f << S;
+	S.Format(vf, Sum);  f << S;
+	S.Format(sf, "Faces MaxPD, W/m2");  f << S;
+	S.Format(vf, MaxPD); f << S;
+
+	Keys.RemoveAll(); Keys.Add("NEUTR");
+	Pentry = -1; Pexit = -1;
+	GetCompTransparent(Keys, Pentry, Pexit);
+	S.Format(sf,"  Start Power, W");  f << S;
+	S.Format(vf, Pentry);  f << S;
+	S.Format(sf,"  Exit Power, W");   f << S;
+	S.Format(vf, Pexit);   f << S;
+		
+	f << "\n_____RID______\n"; 
+	Keys.RemoveAll(); Keys.Add("RID"); 
+	Sum = -1, MaxPD = -1;
+	n = GetCompSolid(Keys, Sum, MaxPD);
+	S.Format(sdf, "Total Power, W", n); f << S;
+	S.Format(vf, Sum);  f << S;
+	
+	Keys.RemoveAll(); Keys.Add("RID"); Keys.Add("WALL");
+	Sum = -1; MaxPD = -1;	
+	n = GetCompSolid(Keys, Sum, MaxPD);
+	S.Format(sdf,"Walls Power, W", n); f << S;
+	S.Format(vf, Sum);  f << S;
+	S.Format(sf, "Walls MaxPD, W/m2");  f << S;
+	S.Format(vf, MaxPD); f << S;
+	
+	Keys.RemoveAll(); Keys.Add("RID"); Keys.Add("LEAD");
+	Sum = -1; MaxPD = -1;	
+	n = GetCompSolid(Keys, Sum, MaxPD);
+	S.Format(sdf, "Faces Power, W", n); f << S;
+	S.Format(vf, Sum);  f << S;
+	S.Format(sf, "Faces MaxPD, W/m2");  f << S;
+	S.Format(vf, MaxPD); f << S;
+
+	Keys.RemoveAll(); Keys.Add("RID");
+	Pentry = -1; Pexit = -1;
+	GetCompTransparent(Keys, Pentry, Pexit);
+	S.Format(sf,"  Exit Power, W");   f << S;
+	S.Format(vf, Pexit);   f << S;
+
+	f << "\n__CALORIMETER___\n"; 
+	Keys.RemoveAll(); Keys.Add("CALORIM"); 
+	Sum = -1, MaxPD = -1;
+	n = GetCompSolid(Keys, Sum, MaxPD);
+	S.Format(sdf, "Total Power, W", n); f << S;
+	S.Format(vf, Sum);  f << S;
+	S.Format(sf, "MaxPD, W/m2");  f << S;
+	S.Format(vf, MaxPD); f << S;
+		
+	Keys.RemoveAll(); Keys.Add("CALORIM");
+	Pentry = -1; Pexit = -1;
+	GetCompTransparent(Keys, Pentry, Pexit);
+	S.Format(sf,"  Exit Power, W");   f << S;
+	S.Format(vf, Pexit);   f << S;
+
+	f << "\n____SCRAPER_____\n"; 
+	Keys.RemoveAll(); Keys.Add("SCRAP"); 
+	Sum = -1, MaxPD = -1;
+	n = GetCompSolid(Keys, Sum, MaxPD);
+	S.Format(sdf, "Total Power, W", n); f << S;
+	S.Format(vf, Sum);  f << S;
+	S.Format(sf, "MaxPD, W/m2");  f << S;
+	S.Format(vf, MaxPD); f << S;
+
+	f << "\n____ABS VALVE____\n"; 
+	Keys.RemoveAll(); Keys.Add("AV"); 
+	Sum = -1, MaxPD = -1;
+	n = GetCompSolid(Keys, Sum, MaxPD);
+	S.Format(sdf, "Total Power, W", n); f << S;
+	S.Format(vf, Sum);  f << S;
+	S.Format(sf, "MaxPD, W/m2");  f << S;
+	S.Format(vf, MaxPD); f << S;
+
+	f << "\n____DUCT_____\n"; 
+	Keys.RemoveAll(); Keys.Add("DUCT"); 
+	Sum = -1, MaxPD = -1;
+	n = GetCompSolid(Keys, Sum, MaxPD);
+	S.Format(sdf, "Total Power, W", n); f << S;
+	S.Format(vf, Sum);  f << S;
+	S.Format(sf, "MaxPD, W/m2");  f << S;
+	S.Format(vf, MaxPD); f << S;
+	Pentry = -1; Pexit = -1;
+	GetCompTransparent(Keys, Pentry, Pexit);
+	S.Format(sf,"  Exit Power, W");   f << S;
+	S.Format(vf, Pexit);  f << S;
+
+	f << "\n__ADDITIONAL (SOLID)__\n"; 
+	Keys.RemoveAll(); Keys.Add("ADD"); 
+	Sum = -1, MaxPD = -1;
+	n = GetCompSolid(Keys, Sum, MaxPD);
+	S.Format(sdf, "Total Power, W", n); f << S;
+	S.Format(vf, Sum);  f << S;
+	S.Format(sf, "MaxPD, W/m2");  f << S;
+	S.Format(vf, MaxPD); f << S;
+	Pentry = -1; Pexit = -1;
+	GetCompTransparent(Keys, Pentry, Pexit);
+	S.Format(sf,"  Exit Power, W");   f << S;
+	S.Format(vf, Pexit);  f << S;
+
+	f << "\n___AREA_BOUNDS____\n"; 
+	Keys.RemoveAll(); Keys.Add("AREA"); 
+	Sum = -1, MaxPD = -1;
+	n = GetCompSolid(Keys, Sum, MaxPD);
+	S.Format(sdf, "Total Power, W", n); f << S;
+	S.Format(vf, Sum);  f << S;
+	Pentry = -1; Pexit = -1;
+	GetCompTransparent(Keys, Pentry, Pexit);
+	S.Format(sf,"  Exit Power, W");   f << S;
+	S.Format(vf, Pexit);  f << S;
+		
+	f.close();
+}
+
 void CBTRDoc::RunScen(int iopt[3]) // - current scenario, multi-run trace options
 {
 	CString S;
 	//int opt[3] = { iopt[0], iopt[1], iopt[2] };// { ATOMS, Resid, Reions }
-												  // now can be changed by each scenario!!
-
+										  // now can be changed by each scenario!!
 	logout << "\n GO back HOME ->> " << CurrentDirName << "\n";
 	ResumeData(); // back to initial config
 
@@ -12339,23 +12631,14 @@ void CBTRDoc::RunScen(int iopt[3]) // - current scenario, multi-run trace option
 		logout << "BTR" << BTRVersion << "--- ALL is DONE (last run shown)----\n";
 		logout << S << "\n";
 
-		logout << "----- TRACKED PARAMETERS --------\n"; 
-		for (int i = 1; i <= MAXSCEN; i++) {
-			double Pinj = PowInjected[i];
-			double Psum = PowSolid[i].X + PowSolid[i].Y + PowSolid[i].Z;
-			S.Format("SCEN %d\n Injected %5.3le[W]  Total Deposited %5.3le[W]: \n", 
-							i, Pinj, Psum - Pinj);
-			logout << S;
-			S.Format("\t   Atoms %5.3le[W] Residuals %5.3le[W] Reions %5.3le[W]\n", 
-						PowSolid[i].X - Pinj, PowSolid[i].Y, PowSolid[i].Z);
-			logout << S;
-		} // i
-
+		//----- TRACKED PARAMETERS -------- 
+		WriteScenTracks();// parameters, loads summary
+		
 		CTime t0 = StartTime0; // from global start!!!
 		CTime t1 = StopTime;
 		CTimeSpan dt = t1 - t0;
 		Time.Format("%02d:%02d:%02d", dt.GetHours(), dt.GetMinutes(), dt.GetSeconds());
-		S.Format("+++ ALL SCENs Running Time %s \n", Time);
+		S.Format("\n+++ ALL SCENs Running Time %s \n", Time);
 		logout << S;
 		
 		CTimeSpan dst = DataSaveTime;
@@ -18590,6 +18873,7 @@ void CBTRDoc::SetNullLoads() // init maps for all "interesting" plates
 	PtrList & List = PlatesList;
 	CPlate * plate;
 	//SetDefaultMesh();// removed for multi-run 
+	ClearAllPlates();// delete all loads
 	SetLoadArray(NULL, FALSE); // Load_Arr.RemoveAll();	LoadSelected = 0;
 	POSITION pos = List.GetHeadPosition();
 	OptCombiPlot = -1; //no map selected
@@ -18664,11 +18948,42 @@ void CBTRDoc::CalculateAllLoads() // called after each RUN or on User request
 double CBTRDoc::GetInjectedPowerW() // calculate Atom power at Duct Exit
 {
 	double Pinj = 0;
+	CString S;
 	int n = PlasmaEmitter;
 	CPlate * plate = GetPlateByNumber(n);
 	if (plate != NULL) Pinj = plate->AtomPower;
+	//else AfxMessageBox("PlasmaEmitter = NULL");
 
+	if (Pinj < 1.e-6) { // no data
+		n = DuctExit; // try another
+		plate = GetPlateByNumber(n);
+		if (plate != NULL) { 
+			Pinj = plate->AtomPower;
+			PlasmaEmitter = DuctExit;
+		}
+		if (Pinj < 1.e-6) {
+			S.Format("Scen %d Run %d \n- failed to get Pinj\n", SCEN, RUN);
+			AfxMessageBox(S);
+			logout << "!!!  " << S;
+		}
+	}
 	return Pinj;
+}
+
+double CBTRDoc::GetNeutrPower() // calculate neutral power at Neutralizer Exit
+{
+	double Pn = 0;
+	CString S;
+	int n = 7; //Neutr exit
+	CPlate * plate = GetPlateByNumber(n);
+	if (plate != NULL) Pn = plate->AtomPower;
+	
+	if (Pn < 1.e-6) { // no data
+		S.Format("Scen %d Run %d \n- failed to get Neutralized power\n", SCEN, RUN);
+		AfxMessageBox(S);
+			logout << "!!!  " << S;
+		}
+	return Pn;
 }
 
 double CBTRDoc::GetTotSolidPower() // sum power falled on solids
@@ -18676,12 +18991,14 @@ double CBTRDoc::GetTotSolidPower() // sum power falled on solids
 	double Ptot = 0;
 	PtrList & List = PlatesList;
 	CPlate * plate;
-	double Pow;
+	double Pow = 0;
 	POSITION pos = List.GetHeadPosition();
 	//CWaitCursor wait;
 	while (pos != NULL) {
 		plate = List.GetNext(pos);
-		if (plate->Loaded == FALSE) continue;
+		if (plate->Number == 1 || plate->Number == PlasmaEmitter) continue; 
+		// skip AreaExit from solids
+		//if (plate->Loaded == FALSE) continue;
 		if (plate->Touched && plate->Solid) { // only non-zero loads on solids
 			//Ptot += plate->Load->Sum;
 			Pow = plate->AtomPower + plate->NegPower + plate->PosPower;
@@ -18691,7 +19008,80 @@ double CBTRDoc::GetTotSolidPower() // sum power falled on solids
 	return Ptot;
 }
 
+int CBTRDoc::GetCompSolid(CStringArray & keys, double & SumPower, double & MaxPD)
+{
+	SumPower = 0;
+	MaxPD = 0;
+	double Pow = 0;
+	double Ptot = 0;
+	double PDmax = 0;
+	
+	PtrList & List = PlatesList;
+	CPlate * plate;
+	CString S;
+		
+	POSITION pos = List.GetHeadPosition();
+	int kmax = keys.GetSize();
+	int found = -1;
+	int count = 0; // surf found
+	
+	while (pos != NULL) {
+		plate = List.GetNext(pos);
+		S = plate->Comment.MakeUpper();
+		for (int k = 0; k < kmax; k++) {
+			found = S.Find(keys[k],0);
+			if (found < 0) break; //for
+		}
+		if (found < 0) continue; // while pos
+		// else - scan solid surf
 
+		if (plate->Touched && plate->Solid) { // only non-zero loads on solids
+			//Ptot += plate->Load->Sum;// for MAP only
+			Pow = plate->AtomPower + plate->NegPower + plate->PosPower;//include NOMAP surf
+			Ptot += Pow;
+			if (plate->MAP) PDmax = max(PDmax, plate->Load->MaxVal);
+			count++;
+		}
+	}// while
+	
+	SumPower = Ptot;
+	MaxPD = PDmax;
+	return count;
+}
+
+void CBTRDoc::GetCompTransparent(CStringArray & keys, double & Pentry, double & Pexit)
+{
+	Pentry = 0;
+	Pexit = 0;
+
+	double Pow = 0;
+	PtrList & List = PlatesList;
+	CPlate * plate;
+	POSITION pos = List.GetHeadPosition();
+	int kmax = keys.GetSize();
+	int found = -1;
+	CString S;
+	
+	while (pos != NULL) {
+		plate = List.GetNext(pos);
+		S = plate->Comment.MakeUpper();
+		for (int k = 0; k < kmax; k++) {
+			found = S.Find(keys[k],0);
+			if (found < 0) break; //for
+		}
+		if (found < 0) continue; // while pos
+		// else - scan transp surf
+
+		if (plate->Touched && !(plate->Solid)) { // only transparent
+			//Ptot += plate->Load->Sum;// for MAP only!
+			Pow = plate->AtomPower + plate->NegPower + plate->PosPower;//include NOMAP surf
+			if (S.Find("ENTR",0) > -1) Pentry = Pow;
+			else if (S.Find("EXIT",0) > -1) Pexit = Pow;
+		}
+	}// while
+}
+
+////////////////// PDP /////////////////////////////////////////
 int OldPDPexe(char * name)
 {
 	CString S;
@@ -18902,7 +19292,7 @@ void CBTRDoc::StartAtomsFromEmitter()// trace atoms in plasma
 
 	C3Point Pgl, Ploc, Vat, Vgl;
 	double power;
-	double stepL = (pPlasma->Rmax - pPlasma->Rmin) / pPlasma->Nx / 2;
+	double stepL = 0;// (pPlasma->Rmax - pPlasma->Rmin) / pPlasma->Nx / 2;
 	if (stepL < 1.e-6) stepL = 0.01;
 	int found = 0;// count atoms
 	//double Mass = pDoc->TracePartMass;
@@ -20031,7 +20421,7 @@ void CBTRDoc::OnUpdatePlotReionPower(CCmdUI *pCmdUI)
 	pCmdUI->Enable(Sum > 1.e-12);
 }
 
-void CBTRDoc::ClearArrays()
+void CBTRDoc::ClearArrays() //called by DeleteContents <- OnNewDocument!!!
 {
 	for (int i = 0; i < ThreadNumber; i++) {
 		m_AttrVector[i].clear();
@@ -20053,7 +20443,10 @@ void CBTRDoc::ClearArrays()
 	Exit_Array.RemoveAll();
 	SetLoadArray(NULL, FALSE);
 
+	//ClearScenLoadTracks(); // not works when called by NewDocument!!!
 }
+
+
 bool CBTRDoc::AddLog(std::vector<CString> * log)
 {
 	vector<CString>::iterator it = m_GlobalLog.end();
@@ -20069,9 +20462,9 @@ bool CBTRDoc::AddLog(std::vector<CString> * log)
 }
 
 bool CBTRDoc::AddFallsToFalls(int tid, int isrc, std::vector<minATTR> * tattr)
-// append to plate->falls array
+// append vector to plate.Falls array
 {
-	if (RUN > 1 && RUN !=13) return TRUE; // keep only atoms (multi or single run)
+	if (RUN !=13) return TRUE; // keep only atoms in SINGLE run)
 	if (Attr_Array.GetSize() > 3003) return true; // max size for falls - 24.5e+6
 	
 	//return TRUE; // switched OFF now !!!!!!!!!!!!
@@ -20094,14 +20487,7 @@ bool CBTRDoc::AddFallsToFalls(int tid, int isrc, std::vector<minATTR> * tattr)
 		TRY {
 			//fall = tattr->at(i);
 			plate->Falls.Add(fall);
-
-		//m_GlobalVector.reserve(NewArrSize);
-		//it = m_GlobalVector.end();
-		//m_GlobalVector.insert(it, tattr->begin(), tattr->end());//append Bml to global vect
-		
 		} CATCH (CMemoryException, e) {
-		//S.Format("Thread %d\n FAILED to add Falls! \n");// Last bml -  %d\n",tid, NofCalculated);
-		//AfxMessageBox(S);
 			S.Format("\n ******* FAILED to ADD Falls to Emitter! *******\n");
 			logout << S;
 			//ArrSize = m_GlobalVector.size();
@@ -20110,6 +20496,8 @@ bool CBTRDoc::AddFallsToFalls(int tid, int isrc, std::vector<minATTR> * tattr)
 			return FALSE;
 		} END_CATCH;
 	} // i
+
+	ArrSize++;
 	return TRUE;
 }
 
@@ -20199,6 +20587,7 @@ void CBTRDoc:: InitTracers()
 	int Nmin, Nmax;// BML limits for each tracer
 	
 	ClearArrays();//Global arrays size -> 0
+	
 	SetNullLoads();//clear loads
 	NofCalculated = 0;
 
@@ -20386,8 +20775,8 @@ void CBTRDoc:: P_CalculateLoad(CPlate * plate)
 void CBTRDoc:: P_CalculateLoad(CPlate * plate, vector<minATTR> * parr)
 {
 	if (plate == NULL) return;// -1;
-	if (plate->Loaded == FALSE) return;
-	if (plate->Touched == FALSE) return;
+	//if (plate->Loaded == FALSE) return;
+	//if (plate->Touched == FALSE) return;
 	CLoad * L = plate->Load;
 	pSetView->Load = L;
 	//vector<minATTR> & arr = m_GlobalVector;// m_AttrVector[MaxThreadNumber - 1];
@@ -20399,22 +20788,28 @@ void CBTRDoc:: P_CalculateLoad(CPlate * plate, vector<minATTR> * parr)
 			minATTR &tattr = parr->at(i);
 			if (tattr.Nfall == plate->Number) {
 				if (!OptAtomPower && tattr.Charge == 0) continue;
-				if (!OptNegIonPower && tattr.Charge < 0 ) continue;
+				if (!OptNegIonPower && tattr.Charge < 0) continue;
 				if (!OptPosIonPower && tattr.Charge > 0) continue;
 				//Pgl.X = tattr.X; Pgl.Y = tattr.Y; Pgl.Z = tattr.Z;
-				power = tattr.PowerW;
+				power = (double)tattr.PowerW;
 				Ploc.X = tattr.Xmm * 0.001;// plate->GetLocal(Pgl);
 				Ploc.Y = tattr.Ymm * 0.001;
 				Ploc.Z = 0;
-				if (plate->WithinPoly(Ploc)) 
-					plate->Load->Distribute(Ploc.X, Ploc.Y, power);
+				//if (plate->WithinPoly(Ploc)) 
+				
+				plate->Load->Distribute(Ploc.X, Ploc.Y, power);
+
 				if (tattr.Charge == 0)	plate->AtomPower += power;
 				if (tattr.Charge < 0)	plate->NegPower += power;
 				if (tattr.Charge > 0)	plate->PosPower += power;
 			} // Nfall == plate Num
 		} // i
 	
-	plate->Load->SetSumMax();
+	if (plate->Loaded) plate->Load->SetSumMax();
+	else { 
+		plate->Load->Sum = plate->AtomPower + plate->NegPower + plate->PosPower;
+		plate->Load->MaxVal = 0;
+	}
 	S1 = ""; S2 = ""; S3 = "";
 	if (OptAtomPower) S1 = "A";
 	if (OptNegIonPower) S2 = "N";
