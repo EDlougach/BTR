@@ -112,7 +112,7 @@ inline void Message_NotSelected()  {AfxMessageBox("NO plate selected!", MB_ICONI
 		Nfall = (unsigned short)nfall;
 		if (Nfall <= 0) Nfall = 0;
 		Charge = (signed char)charge;
-		run = r;
+		run = (unsigned char)r;
 	}
 };
 
@@ -125,8 +125,8 @@ inline void Message_NotSelected()  {AfxMessageBox("NO plate selected!", MB_ICONI
 	 double Xmax, Ymax;
 	 double CrossX, CrossY, CrossZ; // for Sheet draw
 	 double ** Val;
-	 double ** wh;
-	 double ** wv;
+	// double ** wh;
+	 //double ** wv;
 	 double Sum, MaxVal, MaxProf;
 	 int  iMaxVal, jMaxVal, iProf, jProf, iMaxBound;
 	 int SmoothDegree;

@@ -131,6 +131,7 @@ void CLoadView::OnDraw(CDC* pDC)
 			ShowFWdata();
 
 		//ShowPlateBound(pDC);
+		Plate->DrawPlateBound();
 		//EndWaitCursor();
 		//pDC->SelectObject(pOldFont);
 

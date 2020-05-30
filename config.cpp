@@ -187,6 +187,8 @@ CLoad ::CLoad()
 	Nx = 0;
 	Ny = 0;
 	Comment = "";
+	Sum = 0;
+	MaxVal = 0;
 	
 }
 
@@ -238,7 +240,10 @@ CLoad ::CLoad(double xmax, double ymax)
 	Val = new double * [Nx+1];
 	for (i = 0; i <= Nx; i++) {
 		Val[i] = new double [Ny+1];
+		for (int j = 0; j <=Ny; j++) Val[i][j] = 0;
 	}
+	Sum = 0;
+	MaxVal = 0;
 	/*
 	wh = new double * [Nx+1];
 	wv = new double * [Nx+1];
@@ -270,14 +275,16 @@ CLoad ::CLoad(double xmax, double ymax, double stepx, double stepy)
 	Val = new double * [Nx+1];
 	for (i = 0; i <= Nx; i++) {
 		Val[i] = new double [Ny+1];
+		for (int j = 0; j <=Ny; j++) Val[i][j] = 0;
 	}
-	
-	wh = new double * [Nx+1];
+	Sum = 0;
+	MaxVal = 0;
+	/*wh = new double * [Nx+1];
 	wv = new double * [Nx+1];
 	for (i = 0;  i <= Nx; i++) {
 		wh[i] = new double [Ny+1];
 		wv[i] = new double [Ny+1];
-	} // i
+	} // i*/
 
 	Clear();
 	SmoothDegree = 0;
@@ -335,7 +342,8 @@ void CLoad:: SetSumMax()
 	double val;
 	double cell = StepX * StepY;
 	int i, j;
-	if (Nx == 0 && Ny == 0)  return; 
+	if (Nx < 2 && Ny < 2)  return; 
+
 	for (i = 0; i <= Nx; i++) {
 		for (j = 0; j <= Ny; j++) {
 		
@@ -522,6 +530,8 @@ void CLoad:: Copy(CLoad * load)
 			Val[i][j] = load->Val[i][j]; // density
 		}
 	}
+	Sum = load->Sum;
+	MaxVal = load->MaxVal;
 //	pLoad->SetSumMax();
 }
 
@@ -529,8 +539,7 @@ void CLoad:: Distribute(double xloc, double yloc, double power)  //
 {
 	//CCriticalSection cs;
 	if (Nx * Ny < 2) { // NO MAP
-		Sum += power;
-		MaxVal = 0;
+		//Sum += power;	MaxVal = 0;
 		return;
 	}
 
@@ -552,19 +561,10 @@ void CLoad:: Distribute(double xloc, double yloc, double power)  //
 	double cell = StepX * StepY;// cell square
 
 	double a = xloc - i * StepX;
-	//if (a < 0){ i--; a = xloc - i * StepX; }
-	//if (a > StepX) {i++; a = xloc - i * StepX; }
 	double b = StepX - a;
 	double c = yloc - j * StepY;
-	//if (c < 0) { j--; c = yloc - j * StepY; }
-	//if (c > StepY) {j++; c = yloc - j * StepY; }
-	//if (i<0 || j<0 || i>Nx || j>Ny) return;
 	double d = StepY - c;
-	/*
-	dp = power * b*d / cell / cell; // * 1.e-4; // density
-	Val[i][j] += dp;   
-	Sum += dp;*/
-
+	
 	if (i < Nx) {
 		if (j < Ny) { // common - inner - case
 			Val[i][j] += power * b*d / cell / cell;    
@@ -590,50 +590,6 @@ void CLoad:: Distribute(double xloc, double yloc, double power)  //
 
 	Sum += power;
 	return;
-
-	/*	dp = power * a*d / cell / cell; // * 1.e-4;
-		Val[i+1][j] += dp; 
-		Sum += dp;
-			if (i+1 == Nx) {
-			Val[i+1][j] += dp; Sum += dp; }
-		}
-		else {// i = Nx
-			dp = 2* power * a *d / cell / cell; // * 1.e-4;
-			Val[i][j] += dp; 
-			Sum += dp;
-		}
-		if (j < Ny) {
-			dp = power * b*c / cell / cell; // * 1.e-4;  
-			Val[i][j+1] += dp;
-			Sum += dp;
-			if (j+1 == Ny) {
-				Val[i][j+1] += dp;	Sum += dp; }
-		}
-		else { // j = Ny
-			dp = 2* power * b*c / cell / cell; // * 1.e-4;  
-			Val[i][j] += dp;
-			Sum += dp;
-		}
-		if (i < Nx) {// && j < Ny)  { // i=Nx && j=Ny not considered
-			dp = power * a*c / cell / cell; // * 1.e-4;
-			if (j < Ny) Val[i+1][j+1] += dp;
-			else Val[i+1][j] += dp;
-			Sum += dp;
-			if (j+1 == Ny) {
-				Val[i+1][j+1] += dp; Sum += dp; }		
-
-		}
-		else { // i = Nx
-			dp = power * a *c / cell / cell; // * 1.e-4;
-			if (j < Ny) Val[i][j+1] += dp;
-			else Val[i][j] += dp;
-			Sum += dp;
-			if (j+1 == Ny) {
-				Val[i][j+1] += dp; Sum += dp;	}
-		}
-		//Sum += power;
-		//cs.Unlock();
-		return;*/
 
 }
 
@@ -2272,11 +2228,11 @@ void  CPlate:: CoverByParticle(double power, double diffY, double diffZ,
 	C3Point P;
 	int i, j;
 
-	for (i = 0;  i <= Load-> Nx; i++) 
+/*	for (i = 0;  i <= Load-> Nx; i++) 
 	for (j = 0; j <= Load->Ny; j++) {
 			Load->wh[i][j] = 0; Load->wv[i][j] = 0;
 		} // j
-
+*/
 	int TotCells = 0;
 	double TotWeight = 0;
 	C3Point PP0;
@@ -2325,8 +2281,8 @@ void  CPlate:: CoverByParticle(double power, double diffY, double diffZ,
 
 				ratio = (x - xa) / (xb - xa);
 
-				Load->wh[i][j] = 1. - 0.5*diffY + ratio*diffY;
-				if (Load->wh[i][j] < 1.e-16) Load->wh[i][j] = 0;
+			/*	Load->wh[i][j] = 1. - 0.5*diffY + ratio*diffY;
+				if (Load->wh[i][j] < 1.e-16) Load->wh[i][j] = 0;*/
 				
 				// x - P0->P2
 				x  = ScalProd(PP0, v02/mod2); 
@@ -2337,10 +2293,9 @@ void  CPlate:: CoverByParticle(double power, double diffY, double diffZ,
 				
 				ratio = (x - xa) / (xb - xa);
 
-				Load->wv[i][j] = 1. - 0.5*diffZ + ratio*diffZ;
+			/*	Load->wv[i][j] = 1. - 0.5*diffZ + ratio*diffZ;
 				if (Load->wv[i][j] < 1.e-16) Load->wv[i][j] = 0;
-
-				TotWeight += Load->wh[i][j] * Load->wv[i][j];
+				TotWeight += Load->wh[i][j] * Load->wv[i][j];*/
 				
 				TotCells++;
 			} // within poly
@@ -2381,8 +2336,8 @@ void  CPlate:: CoverByParticle(double power, double diffY, double diffZ,
 	double CellPower;
 	for (i = 0;  i <= Load-> Nx; i++) {
 		for (j = 0; j <= Load->Ny; j++) { 
-			if (Load->wv[i][j] + Load->wh[i][j] < 1.e-16) continue;
-			CellPower = Load->wh[i][j] * Load->wv[i][j] * power / TotWeight;
+		/*	if (Load->wv[i][j] + Load->wh[i][j] < 1.e-16) continue;
+			CellPower = Load->wh[i][j] * Load->wv[i][j] * power / TotWeight;*/
 			
 		//	Load->Val[i][j] += CellPower/Cell;
 		//	Load->Sum += CellPower;//power;

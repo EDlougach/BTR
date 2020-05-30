@@ -125,6 +125,7 @@ public:
 	// tracked params across scens
 	CArray<C3Point> PowSolid; // power on solids for scen(1,2,3 - RUNs)
 	CArray<double> PowInjected; // power on DuctExit (or AreaLimit)
+	CArray<double> PowNeutral;
 
 	PtrList  PlatesList;
 	PtrList  AddPlatesList;
@@ -752,7 +753,7 @@ public:
 	CLoad * ReadLoad(char * name);
 	void  ReadLoadInfo(CString & Text, int & Nx, int & Ny, double & StepX, double & StepY);
 	BOOL  ReadPlateInfo(char* name, CPlate * Plate);
-	void  ReadLoadArray(char* name, CLoad* Load, bool isfree);
+	int  ReadLoadArray(char* name, CLoad* Load, bool isfree);
 	void  RotateVert(double angle, double & X,  double & Y,  double & Z);
 	void  RotateHor(double angle, double & X,  double & Y,  double & Z);
 	C3Point   CentralCS(C3Point  P0, int segmHor, int segmVert); //returns appert pos in Central CS
@@ -769,6 +770,7 @@ public:
 	void ShowBPdata(int n, int lines, int pos, int angle, int power);
 	void ShowBPdata(int n, int lines);
 	void ShowLogFile(int lines);
+	void ShowReport();
 	void CorrectFile(char * name);
 	int  ReadAddPlates();
 	int  ReadAddPlates(char * name);
@@ -838,11 +840,13 @@ public:
 	void InitScenOpt(int & optA, int & optRes, int & optRei);
 	void RunScen(int iopt[3]);
 	int  GetPrefFiles(CString pref, CStringArray & names);
+	int  GetFilesSubstr(CString substr, CStringArray & fnames); 
 	void SaveRUNLoads(); // create RUN folder with load results
 	void CollectRUNLoads(); // add load for each surf -> create folder with merged loads
 	void SaveRUNSummary(CString name); // create single RUN summary
 	void CollectRUNSummary(CString SUMname, CStringArray & names);// merge diff RUN summaries to a single file SCEN#_SUMloads 
-    void ResumeData();
+    void AddAllScenLoads();// add runs 1,2,3 on each plate
+	void ResumeData();
 	void WriteScenTracks();
 	void WriteReport(CString ext);
 	

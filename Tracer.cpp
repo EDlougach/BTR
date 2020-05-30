@@ -1290,7 +1290,7 @@ void CTracer::TestMem()
 			tat0.PowerW = float (m_Power);
 			tat0.AXmrad = short (m_V.Y / V * 1000);
 			tat0.AYmrad = short (m_V.Z / V * 1000);
-			tat0.Nfall = is+1;// NofCalculated + 1;
+			tat0.Nfall = unsigned short(is+1);// NofCalculated + 1;
 
 
 			for (int k = 0; k < Kmax; k++) { //  imitaion of FALLS
@@ -1867,12 +1867,16 @@ bool CTracer::GenerateReions(int jray)
 	double AtomPart, ReionPart;// = REionStep * Dens * Sigma; 
 	double AtomPower, AtomPower0 = m_Power * pDoc->NeutrPart;// before reionization
 	
-	m_AtomPower3 += AtomPower0;
-		//if (m_Run == 1) m_AtomPower1 += power;
-		//if (m_Run == 2) m_AtomPower2 += power;
-		//if (m_Run == 3) m_AtomPower3 += power;
+	///////////// TRACE ATOM - to get AtomPower /////////////////////
+		//if (!m_Stopped && pDoc->OptTraceAtoms) {//  as only residuals can be traced next
+		m_Power = AtomPower0;//m_Power * (pDoc->NeutrPart);
+		//m_State = ATOM;	m_Charge = 0;
+		m_Pos = PiStart;
+		m_V = Vgen;
+		done = TraceAtom();
 
-	//m_State = REION;// 
+	m_AtomPower3 += AtomPower0;
+		
 	m_Charge = 1;// used in TraceIon
 	
 	int n = pDoc->ReionArray.GetSize();//Pgen.GetSize();
@@ -1894,8 +1898,7 @@ bool CTracer::GenerateReions(int jray)
 		m_Pos = AtomPos; // Ion Pos  =  AtomPos moved with m_V = Vgen - no change
 		done = TraceIon(m_Charge, m_Pos, m_V, m_Power);//-> m_Step = pDoc->GetIonStep(m_Pos.X);
 		if (!done) break;
-		//AtomPower -= m_Power;// decrease by reion part
-			
+	
 	}
 		
 	if (!done || pDoc->STOP) {
@@ -2023,8 +2026,9 @@ bool CTracer:: TraceBeamletReions(int isource) // called by TraceAll - for SINGL
 	return TRUE;
 }
 
-bool CTracer:: TraceBeamletResIons(int isource) // called by TraceAll after TraceBeamletAtoms  - for SINGLE RUN 
-												// also called by TraceAllResIons(is) - for MULTI-run
+bool CTracer:: TraceBeamletResIons(int isource) 
+// called by TraceAll after TraceBeamletAtoms  - for SINGLE RUN 
+// also called by TraceAllResIons(is) - for MULTI-run
 // calls GeneratePosIon(ray) / TraceNegIon(ray)
 // number of BML rays is changed -> Attr_Array_Resid
 {
@@ -2085,16 +2089,34 @@ bool CTracer:: TraceBeamletResIons(int isource) // called by TraceAll after Trac
 		else 	PiStart = MakeStepToX(NeutrX); // Make (no falls) one straight step (ATOM) 
 
 		if (m_Stopped) { // met solid
-			continue; // next ray
+			continue; // GO TO next ray
 		}
-
-		m_AtomPower2 += RayPower * (pDoc->NeutrPart);
-		//if (m_Run == 1) m_AtomPower1 += power;
-		//if (m_Run == 2) m_AtomPower2 += power;
-		//if (m_Run == 3) m_AtomPower3 += power;
-
-	// TRACE POS ray ---> GeneratePosIon
+///////////// TRACE ATOM - to get AtomPower /////////////////////
+		//if (!m_Stopped && pDoc->OptTraceAtoms) {//  as only residuals can be traced next
+		m_Power = RayPower * (pDoc->NeutrPart);
+		m_State = ATOM;	
+		m_Charge = 0;
+		m_Pos = PiStart;
+		m_V = Vstart;
+		done = TraceAtom();
 		
+		m_AtomPower2 += RayPower * (pDoc->NeutrPart);
+
+		if (!done || pDoc->STOP) {
+			stopped = TRUE;
+			jstop = jray;
+			S.Format("TracePosIon {%d} interrupted\n Src %d ray %d\n", m_ID, m_iSource, jray);
+			AfxMessageBox(S);
+			logout << S;
+			break;
+		} //done = GeneratePosIon(jray); 
+			
+		if (stopped) {// interrupted
+			SetContinue(FALSE);
+			return FALSE;
+		}
+		
+///////////// TRACE POS ray ---> GeneratePosIon
 		m_Power = RayPower * (pDoc->PosIonPart);
 		m_State = POSION;
 		m_Charge = 1;
@@ -2116,8 +2138,7 @@ bool CTracer:: TraceBeamletResIons(int isource) // called by TraceAll after Trac
 			return FALSE;
 		}
 
-	// TRACE NEG ray ---> GenerateNegIon
-				
+///////////// TRACE NEG ray ---> GenerateNegIon
 		m_Power = RayPower * (1. - pDoc->NeutrPart - pDoc->PosIonPart);//m_Power = m_Power * (pDoc->PosIonPart);
 		m_State = SRCION;
 		m_Charge = -1;
@@ -2164,8 +2185,9 @@ bool CTracer:: TraceBeamletResIons(int isource) // called by TraceAll after Trac
 	return TRUE;
 }
 
-bool CTracer:: TraceBeamletAtoms(int isource)// called by TraceAll-SINGLE RUN (replaced Draw)
-											// also called by TraceAllAtoms-MULTI-RUN
+bool CTracer:: TraceBeamletAtoms(int isource)
+// called by TraceAll-SINGLE RUN (replaced Draw)
+// also called by TraceAllAtoms-MULTI-RUN
 {
 	CString S, Slog;
 	m_Run = 1;// pDoc->RUN=13 for SINGLE mode
@@ -2188,7 +2210,8 @@ bool CTracer:: TraceBeamletAtoms(int isource)// called by TraceAll-SINGLE RUN (r
 		if (pDoc->STOP) {
 			stopped = TRUE;
 			jstop = jray;
-			S.Format("TraceBeamletAtoms {%d} interrupted\n Src %d ray %d", m_ID, isource, jray);
+			S.Format("TraceBeamletAtoms {%d} interrupted\n Src %d ray %d", 
+				m_ID, isource, jray);
 			AfxMessageBox(S);
 			break;
 		}
@@ -2212,52 +2235,7 @@ bool CTracer:: TraceBeamletAtoms(int isource)// called by TraceAll-SINGLE RUN (r
 	if (stopped) 	SetContinue(FALSE);
 	
 	return TRUE;//not stopped
-
-	// ----- TAMPON --- imitate rays to push falls ----------------------------------
-	/*	SetStartVP(jray);
-		double V = GetVstart();
-		int Kmax = 5;
-		long sz;
-		minATTR tat0(C3Point(0, 0, 0), 0, 0, 0, 1, 1);
-		tat0.Xmm = unsigned short(fabs(m_Pos.Y) * 1000);
-		tat0.Ymm = unsigned short(fabs(m_Pos.Z) * 1000);
-		tat0.Charge = signed char(m_Charge);
-		tat0.PowerW = float(m_Power);
-		tat0.AXmrad = short(m_V.Y / V * 1000);
-		tat0.AYmrad = short(m_V.Z / V * 1000);
-		tat0.Nfall = isource + 1;// NofCalculated + 1;
-
-		for (int k = 0; k < Kmax; k++) { //  imitaion of FALLS
-			if (pDoc->STOP) {
-				stopped = TRUE;
-				break;
-			}
-			TRY{ // add fall 
-				tattr->push_back(tat0); // add Fall to current array
-			} CATCH(CMemoryException, e) { //	(std::bad_alloc error) {
-				stopped = TRUE;
-				sz = tattr->size();
-				S.Format("Thread %d\n Failed to push element\n Current size %ld", m_ID, sz);
-				AfxMessageBox(S);
-				break;
-			} END_CATCH;
-
-			Slog.Format("{%d} Src %4d/%4d\t Fall%2d\t Pos %4d,%4d\t Vy/V %4d\t Vz/V %4d\t pow %6.2fW\t Q %2d\n",
-				m_ID, tat0.Nfall, jray + 1, k + 1, tat0.Xmm, tat0.Ymm, tat0.AXmrad, tat0.AYmrad, tat0.PowerW, tat0.Charge);
-			TRY{ // add record to tracer log
-				logarr->push_back(Slog);
-			} CATCH(CMemoryException, e) { //	(std::bad_alloc error) {
-				stopped = TRUE;
-				sz = tattr->size();
-				S.Format("Thread %d\n Failed to push log\n Current size %ld", m_ID, sz);
-				AfxMessageBox(S);
-				break;
-			} END_CATCH;
-			if (stopped) break;
-
-		} // Kmax falls */
-		// ------------------ tampon end ----------------------------------
-		
+	
 	/*	Slog.Format("{%d} Src %4d Ray %4d (tot%4d)\t Pos %.2f,%.2f,%.2f\t Vel %9.2e,%9.2e,%9.2e\t Q[%d] - OK\n",
 					m_ID, isource + 1, jray + 1, Nattr, m_Pos.X, m_Pos.Y, m_Pos.Z, m_V.X, m_V.Y, m_V.Z,  m_Charge);
 		TRY{ // add record to tracer log
@@ -2723,9 +2701,9 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 		S.Format("\t[%d]------ TraceALL for SCEN %d -------- \n", m_ID, pDoc->SCEN);
 		logout << S;
 
-		m_AtomPower1 = 0;
-		m_AtomPower2 = 0;
-		m_AtomPower3 = 0;
+		m_AtomPower1 = 0;// not used for MULTI
+		m_AtomPower2 = 0;// not used for MULTI
+		m_AtomPower3 = 0;// not used for MULTI
 
 		if (done && pDoc->OptTraceAtoms)
 			done = TraceAllAtoms(); // calls TraceBeamletAtoms(is)
@@ -2777,9 +2755,9 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 		m_iSource = is;
 		istop = is;
 		done = TRUE;
-		m_AtomPower1 = 0;
-		m_AtomPower2 = 0;
-		m_AtomPower3 = 0;
+		m_AtomPower1 = 0; // set in GetFalls for SINGLE
+		m_AtomPower2 = 0; // set in TreceBMLResIons for SINGLE
+		m_AtomPower3 = 0; // set in GenerateReions for SINGLE
 
 		if (done) // && pDoc->OptTraceAtoms) //----- TRACE ATOMS with decay --------------
 			done = TraceBeamletAtoms(is); 
@@ -2801,19 +2779,20 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 		// ADD BML FALLS (SINGLE)///////////////////
 									//CSingleLock cs_lock(&cs, TRUE);
 
-		CorrectFallsPower(); // to fit balance with run1
+		//CorrectFallsPower(); //to fit balance with run1
+		// called before Loads Calculations
+		// uses m_AtomPowers to correct all tattr.power
 		
 		cs.Lock();
 		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);
 		bool added = pDoc->AddFallsToFalls(m_ID, is + 1, tattr);
+		
 		/*bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
-		cs.Unlock();
 		if (!added) {
 			SetContinue(FALSE);// m_Continue = FALSE;
-			stopped = TRUE;
-			break;
-		}
-		cs.Unlock();	cs.Lock();*/
+			stopped = TRUE;	break;
+		}*/
+
 		NofCalculated++;	// - if not stopped	
 		int Ncalc = NofCalculated;
 		if (NofCalculated == pDoc->NofBeamletsTotal)  
@@ -2874,7 +2853,7 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 	//pDoc->ShowStatus();//  breaks sometimes
 }
 
-void CTracer:: CorrectFallsPower()
+void CTracer:: CorrectFallsPower()// for SINGLE
 {
 	double Coeff, power;
 	int run;
@@ -2891,7 +2870,7 @@ void CTracer:: CorrectFallsPower()
 		if (run == 2) Coeff = Coeff2;
 		if (run == 3) Coeff = Coeff3;
 
-		tattr->at(i).PowerW  = power * Coeff;
+		tattr->at(i).PowerW  = (float)(power * Coeff);
 	}
 }
 void CTracer::DumpArrays()
@@ -3085,8 +3064,8 @@ void CTracer:: ShowProgressFalls(int Ncalc)
 	long long MEM_BTR_kB = GetMemUsedkB();//pDoc->MemUsed;// kb
 	long long MemFreeKB = GetMemFreekB();//pDoc->MemFree;// kb
 	//long Falls = GetGlobFalls();//pDoc->ArrSize; // Global falls array size
-	long FallsBML;// falls per BML
-	long MemBML; // bytes per BML
+	long long FallsBML;// falls per BML
+	long long MemBML; // bytes per BML
 	long long TotMemB;//(memb) bytes - all falls
 	long long leftBML; // 
 	int MemFallB = sizeof(minATTR);// bytes per 1 fall = 16..20b

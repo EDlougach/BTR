@@ -1,7 +1,7 @@
 start NewDocument
 Created Load Track arrays 
 Set Beam - done
-MEM : BTR takes 7544 of 479876 available
+MEM : BTR takes 8840 of 446476 available
 CUT-OFF LIMIT: BOTTOM - MAP SKIPPED 
 CUT-OFF LIMIT: TOP - MAP SKIPPED 
 CUT-OFF LIMIT: RIGHT - MAP SKIPPED 
