@@ -151,6 +151,10 @@ BOOL F_GotThrough(C3Point P1, C3Point P2);
 CString  GetMachine();
 CString  GetUser();
 
+double AtomPower1;
+double AtomPower2;
+double AtomPower3;
+
 BOOL InvUser;
 //////////////////////////////////////////////////////////////////////////////////////////////
 // CBTRDoc
@@ -500,10 +504,11 @@ void CBTRDoc::InitFields() // MF + GAS
 	
 }
 
-void CBTRDoc::SetFields() // if find MF + GAS
+void CBTRDoc::SetFields() // if found MF + GAS
 {
 	char name[1024];
 	int res = 0;
+	double NegIonPart;
 	if (MagFieldFileName.GetLength() > 3) { // MF file defined
 		strcpy(name, MagFieldFileName);
 		res = BField->ReadData(name);
@@ -517,7 +522,7 @@ void CBTRDoc::SetFields() // if find MF + GAS
 		}
 		else  {
 			FieldLoaded = FALSE;
-			logout << " - MF in not read from " + MagFieldFileName + "\n";
+			logout << " - MF in NOT read  " + MagFieldFileName + "\n";
 		}
 	}
 
@@ -532,15 +537,27 @@ void CBTRDoc::SetFields() // if find MF + GAS
 			GasCoeff = 1;
 			OptReionAccount = TRUE;//automatic when gas loaded
 			//OptThickNeutralization = TRUE; // not automatic 
+			logout << " + GAS is set from " + GasFileName + "\n";
 			SetReionPercent();
 			SetNeutrCurrents();
-			logout << " + GAS is set from " + GasFileName + "\n";
 		}
 
 		else {
 			PressureLoaded = FALSE;
-			logout << " - GAS in not read from " + GasFileName + "\n";
+			logout << " - GAS in NOT read  " + GasFileName + "\n";
+			logout << "Neutral fraction         " << NeutrPart << "\n";
+			logout << "Positive ions fraction   " << PosIonPart << "\n";
+			//NeutrPart = 1 - NegIonPart - PosIonPart;
+			NegIonPart = 1. - NeutrPart - PosIonPart;
+			logout << "Negative ions fraction   " << NegIonPart << "\n";
 		}
+	}// // GAS file defined
+	else { // NO gas file
+		logout << " - GAS in NOT defined \n";
+		logout << "Neutral fraction         " << NeutrPart << "\n";
+		logout << "Positive ions fraction   " << PosIonPart << "\n";
+		NegIonPart = 1. - NeutrPart - PosIonPart;
+		logout << "Negative ions fraction   " << NegIonPart << "\n";
 	}
 }
 
@@ -589,6 +606,9 @@ void CBTRDoc:: InitOptions()
 	//DataLoaded = FALSE;
 	PressureDim = 0;
 	MagFieldDim = 0;
+	AtomPower1 = 0;
+	AtomPower2 = 0;
+	AtomPower3 = 0;
 
 	OptThickNeutralization = FALSE;
 	OptReionAccount = FALSE;
@@ -1355,7 +1375,7 @@ void  CBTRDoc::ReadScenFile() // read scenario data
 				}
 
 				datsize = Sdata.GetSize();
-				if (datsize > 1) {
+				if (datsize > 0) {
 					ScenData[scen].RemoveAll();
 					ScenData[scen].Append(Sdata);
 				} // scen data set
@@ -5810,7 +5830,10 @@ void CBTRDoc::ResumeData()
 	}
 	fclose(fin);
 	UpdateDataArray(); // SetData, SetOptions // CheckData
+	
+	SetFields(); // if found MF + GAS
 	CheckData();
+
 	//FormDataText();
 	logout << " + config data resumed\n";
 	//std::cout << m_Text << std::endl;
@@ -7268,7 +7291,7 @@ void CBTRDoc:: ShowPlatePoints(bool draw)
 
 	if (Nfalls < 1) { // show power
 		//plate->Load->SetSumMax();
-		S.Format("ATOMS %9.2g,  NEG %9.2g,  POS %9.2g [W}    ", 
+		S.Format("ATOMS %10.3g,  NEG %10.3g,  POS %10.3g [W]     ", 
 			plate->AtomPower, plate->NegPower, plate->PosPower);
 		x = pLV->OrigX + 10;
 		y = pLV->OrigY + 20; 
@@ -9858,6 +9881,7 @@ void CBTRDoc:: SetReionPercent()
 //	fclose(fout);
 
 	ReionPercent = 100 * (1 - P.Z);
+	logout << "Reionization loss  " << ReionPercent << "%\n";
 }
 
 void CBTRDoc:: SetNeutrCurrents()
@@ -9919,6 +9943,10 @@ void CBTRDoc:: SetNeutrCurrents()
 	PosIonPart = PosCurr; // (1 - ((NeutrSigma)*exp(-SummaPos) - (ReionSigma)*exp(-SummaNeg)) / (NeutrSigma - ReionSigma));
 	NeutrPart = 1 - NegIonPart - PosIonPart;
 	NeutrPower = IonBeamPower * (NeutrPart);
+
+	logout << "Neutral fraction         " << NeutrPart << "\n";
+	logout << "Positive ions fraction   " << PosIonPart << "\n";
+	logout << "Negative ions fraction   " << NegIonPart << "\n";
 }
 
 C3Point CBTRDoc:: GetCurrentRate(double x, double NL, bool getRate) // 0 - currents, 1 - rates
@@ -10682,7 +10710,7 @@ int CBTRDoc:: ReadLoadArray(char* name, CLoad* Load, bool isfree)
 	if ( (fin = fopen(name, "r")) == NULL) {
 		CString S = "Can't find/open ";
 		S +=  name;
-		logout << S << "\n";
+		//logout << S << "\n";
 		//AfxMessageBox(S, MB_ICONSTOP | MB_OK);
 		return 0;
 	}
@@ -10883,9 +10911,9 @@ void CBTRDoc::SaveRUNSummary(CString name)
 	Srun.Format("RUN  #%d  Options: %s\n", RUN, Sopt);
 
 	//FILE * fout = fopen("LoadsList.txt", "w");
-	fprintf(fout, Scapt);
-	fprintf(fout, Sscen);
-	fprintf(fout, Srun);
+	fprintf(fout, Scapt);//1
+	fprintf(fout, Sscen);//2
+	fprintf(fout, Srun);//3
 
 	// write TRACKED POWER param
 	double Pn = GetNeutrPower();// at Neutr Exit plane
@@ -10904,11 +10932,11 @@ void CBTRDoc::SaveRUNSummary(CString name)
 					SCEN, RUN, Pn, Pinj, Psolid);  
 	logout << S;
 
-	fprintf(fout, "Neutral power, W  = %10.2g\n", Pn);
-	fprintf(fout, "Injected power, W = %10.2g\n", Pinj);
-	fprintf(fout, "Solid power, W    = %10.2g\n", Psolid);
+	fprintf(fout, "Neutral power, W  = %10.2g\n", Pn);//4
+	fprintf(fout, "Injected power, W = %10.2g\n", Pinj);//5
+	fprintf(fout, "Solid power, W    = %10.2g\n", Psolid);//6
 	
-	fprintf(fout, "Surf      Total, W     Max, W/m2     GridSteps,m\n");
+	fprintf(fout, "Surf      Total, W     Max, W/m2     GridSteps,m\n");//7
 	CPlate * plate;
 		
 	int k;
@@ -11464,7 +11492,8 @@ void CBTRDoc::OnStop() // stop (or suspend - commented) threads
 	//SwapMouseButton(TRUE);
 	
 }
-void CBTRDoc::CollectRUNSummary(CString SUMname, CStringArray & names) // merge load list results
+void CBTRDoc::CollectRUNSummary(CString SUMname, CStringArray & names) 
+// merge load list results
 {
 	FILE * fin;
 	FILE * fout;
@@ -11513,7 +11542,7 @@ void CBTRDoc::CollectRUNSummary(CString SUMname, CStringArray & names) // merge 
 		optReion = FALSE;
 
 		for (int i = 0; i < 2; i++) {// skip caption "Scen loads Summary"
-			fgets(buf, 1024, fin);
+			fgets(buf, 1024, fin);//1st 2 lines
 		}
 		
 		fgets(buf, 1024, fin); // 3rd line - options
@@ -11533,7 +11562,7 @@ void CBTRDoc::CollectRUNSummary(CString SUMname, CStringArray & names) // merge 
 		double Pn, Pinj, Psolid;
 		CString vs;
 		for (int i = 0; i < 3; i++) { 
-			fgets(buf, 1024, fin); 
+			fgets(buf, 1024, fin); //4,5,6
 			S.Format("%s", buf);
 			if ((pos = S.Find("=", 0)) > 1) {
 				vs = S.Mid(pos+1);
@@ -11543,14 +11572,11 @@ void CBTRDoc::CollectRUNSummary(CString SUMname, CStringArray & names) // merge 
 			} // "=" found
 		}// i
 
-		fgets(buf, 1024, fin); // 5th line - options
-		S.Format("%s", buf);
-
-		fgets(buf, 1024, fin); // 6th line - options
+		fgets(buf, 1024, fin); // 7th line - column names
 		S.Format("%s", buf);
 
 		//READ load sum data --------------------
-		fgets(buf, 1024, fin); // 7th line - column names
+		
 		line = 0;
 		while (!feof(fin)) {
 			int result = fscanf(fin, "%d  %le  %le  %le  %le", &n, &pow, &PDmax, &stepX, &stepY);
@@ -11600,14 +11626,13 @@ void CBTRDoc::CollectRUNSummary(CString SUMname, CStringArray & names) // merge 
 	S += "\n";
 	fprintf(fout, S);
 
-	S.Format("Neutral Power (RUN 1), W = %g\n", PowNeutral[SCEN]);
+	/*S.Format("Neutral Power (RUN 1), W = %g\n", PowNeutral[SCEN]);
 	fprintf(fout, S);
 	S.Format("Injected Power (RUN 1), W = %g\n", PowInjected[SCEN]);
 	fprintf(fout, S);
 	S.Format("Deposited Power Atoms / Resid / Reion, W = %g / %g / %g \n", 
 			PowSolid[SCEN].X, PowSolid[SCEN].Y, PowSolid[SCEN].Z);
-	fprintf(fout, S);
-
+	fprintf(fout, S); */
 
 	fprintf(fout, " Num   A_Power  Resid_Power  Reion_Power     SUM[W]     A_Max[W/m2]  Resid_Max  Reion_Max    Comment\n");
 	
@@ -11725,31 +11750,34 @@ void CBTRDoc::SaveRUNLoads() // create RUN Loads-storage in current SCEN dir
 	::CreateDirectory(LoadsDirName, sec);
 	::SetCurrentDirectory(LoadsDirName);
 
+	double Coeff=1, Coeff2=1, Coeff3=1;
+	if (AtomPower2 > 1e-3) Coeff2 = AtomPower1 / AtomPower2;
+	if (AtomPower3 > 1e-3) Coeff3 = AtomPower1 / AtomPower3;
+
+	if (RUN == 1) Coeff = 1;
+	else if (RUN == 2) Coeff = Coeff2;
+	else if (RUN == 3) Coeff = Coeff3;
+
 	CString S;
 	S.Format(">>>> SAVE Scen %d Run %d Loads to %s (created) ....\n", SCEN, RUN, LoadsDirName);
 	logout << S;// << std::endl;
+	S.Format("AtomPower1 = %g, AtomPower2 = %g, AtomPower3 = %g\n", 
+			 AtomPower1, AtomPower2, AtomPower3);
+	logout << S;
+	S.Format("\t RUN Power multiplication COEFFICIENT = %g\n", Coeff);
+	logout << S;
 	
 	FILE * fout;
 	CString name;
 	CString  sn;
 	long totfilesize = 0;
 	// Save Loads --------------------------------
-	/*if (free) { // ALL plates
-		POSITION pos = PlatesList.GetHeadPosition();
-		while (pos != NULL) {
-			plate = PlatesList.GetNext(pos);
-			sn.Format("%d", plate->Number);
-			name = "load" + sn + ".txt";
-			fout = fopen(name, "w");
-			plate->WriteLoadAdd(fout); // free
-			plate->filename = name;
-			fclose(fout);
-		}
-	} // free*/
-	//else { //standard // touched plates only
 		for (int i = 0; i < LoadSelected; i++) {
 			plate = Load_Arr[i];
 			if (plate->Touched == FALSE) continue; // skip zero load
+			
+			plate->CorrectLoad(Coeff);
+
 			sn.Format("%d", plate->Number);
 			name = "load_" + sn + ".txt";
 			fout = fopen(name, "w");
@@ -12121,10 +12149,10 @@ void CBTRDoc::CollectRUNLoads() //called by CompleteScen
 	logout << S;//std::cout << S;
 }
 
-void CBTRDoc:: AddAllScenLoads()// add runs 1,2,3 on each plate
-// normalize load (to run 1 Pneutr)- to fit power balance!!!
+void CBTRDoc:: AddAllScenLoads()//called by CompleteScen
+// add power from runs 1,2,3 to each plate
 {
-	logout << "\n ------ Adding Loads from RUNs with Normalization ----------\n";
+	logout << "\n ------ Adding Loads from RUNs (Normalized) ----------\n";
 	char buf[1024];
 	::GetCurrentDirectory(1024, buf); // SCEN folder
 	CString ScenDir = CString(buf);
@@ -12136,66 +12164,24 @@ void CBTRDoc:: AddAllScenLoads()// add runs 1,2,3 on each plate
 //	FILE * fout = fopen("loads.txt", "w"); // loads statistic
 
 	SetNullLoads();// init all maps (incl NOMAP)
-
-	double AtomPower1=0, AtomPower2=0, AtomPower3=0;
+	
 	double xmax, ymax, stepx, stepy;
 	double TotSum; // Load Sum from all Runs
 	CString S, Sname, Sfull;
 	char name[1024];
 	CPlate * plate;
 	int res; // result of reading load array
-	
-	// find NeutrPower from Runs 1,2,3
-	int n = 7; // Neutr Exit plane
-	Sname.Format("load_%d.txt", n);
-	plate = GetPlateByNumber(n);
-	xmax = plate->Load->Xmax;
-	ymax = plate->Load->Ymax;
-	stepx = plate->Load->StepX;
-	stepy = plate->Load->StepY;
-	CLoad * Load7 = new CLoad(xmax, ymax, stepx, stepy);
+	int tot = 0; // plates found
+	/*	
 	Sfull = Srun[0] + Sname;// run 1
-	strcpy(name, Sfull);
-	Load7 = new CLoad(xmax, ymax, stepx, stepy);
-	res = ReadLoadArray(name, Load7, FALSE); // not free
-	Load7->SetSumMax();
-	AtomPower1 = Load7->Sum;
-
 	Sfull = Srun[1] + Sname;// run 2
-	strcpy(name, Sfull);
-	res = ReadLoadArray(name, Load7, FALSE); // not free
-	Load7->SetSumMax();
-	AtomPower2 = Load7->Sum;
-
-	Sfull = Srun[2] + Sname;// run 3
-	strcpy(name, Sfull);
-	res = ReadLoadArray(name, Load7, FALSE); // not free
-	Load7->SetSumMax();
-	AtomPower3 = Load7->Sum;
-	delete Load7;
-
-	S.Format(" Neutral power: 1 - %5.2g, 2 - %5.2g, 3 - %5.2g\n", 
-				AtomPower1, AtomPower2, AtomPower3);
-	//AfxMessageBox(S);
-	logout << S;
-	
-	double Coeff2 = 1;
-	if (AtomPower2 > 1e-6) Coeff2 = AtomPower1 / AtomPower2;
-	S.Format(" Normalizing coeff for RUN2 - %f\n", Coeff2);
-	logout << S;
-	
-	double Coeff3 = 1;
-	if (AtomPower3 > 1e-6) Coeff3 = AtomPower1 / AtomPower3;
-	S.Format(" Normalizing coeff for RUN3 - %f\n", Coeff3);
-	logout << S;
-
-	return;//stop here
-
+	Sfull = Srun[2] + Sname;// run 3*/
+		
 	CLoad * Load1;// = new CLoad(xmax, ymax, stepx, stepy);
 	CLoad * Load2;// = new CLoad(xmax, ymax, stepx, stepy);
 	CLoad * Load3;// = new CLoad(xmax, ymax, stepx, stepy);
 	
-	// add loads, normalize them
+/////// add ALL RUNs loads (normalized already in SaveRUN loads)
 	POSITION pos = PlatesList.GetHeadPosition();
 	while (pos != NULL) {
 		plate = PlatesList.GetNext(pos);
@@ -12225,11 +12211,21 @@ void CBTRDoc:: AddAllScenLoads()// add runs 1,2,3 on each plate
 		if (res > 0) Load3->SetSumMax();
 		
 		TotSum = Load1->Sum + Load2->Sum + Load3->Sum;
-		if (TotSum > 1.e-3) plate->Touched = TRUE;// checked in SaveLoad() !!!
+
+		if (TotSum > 1.e-3) {
+			tot++;
+			plate->Touched = TRUE;// checked in SaveLoad() !!!
+			plate->AddLoads(Load1, Load2, Load3);// + SetSumMax called
+			plate->AtomPower = Load1->Sum;
+			plate->PosPower = Load2->Sum + Load3->Sum;
+			plate->NegPower = 0;
+		}
 	}
 
 	delete Load1; delete Load2; delete Load3; 
 
+	S.Format("SCEN %d LOADS (%d) SUCCESSFULLY ADDED!\n", SCEN, tot);
+	logout << S;
 	::SetCurrentDirectory(ScenDir); // return from LoadDir
 	S.Format("_____BACK to SCEN folder____ %s\n", ScenDir);
 	logout << S;
@@ -12249,16 +12245,16 @@ void CBTRDoc::CompleteRun() // calculate, save loads, re-init arrays
 		
 	sn.Format("%d_run%d_", SCEN, RUN);
 	name = "SCEN" + sn + "loads.txt";
-	
-	SaveRUNSummary(name);// + write Pn, Pinj, Psolid for this Run
-	// write RUN summary to current SCEN folder (Surf   Total, W  Max, W/m2  GridSteps,m)
-	
+			
 	SaveRUNLoads(); //create RUN-folder in current SCEN-folder and Save RUN net Loads in it
-	// the loads need to be normalized next after all runs - in CompleteScen()
+	// the loads are normalized after runs 2,3 
 
 	::SetCurrentDirectory(OldDir); // back to SCEN
 	S.Format("--- back to %s \n", OldDir);
 	logout << S; //std::cout << S;
+
+	SaveRUNSummary(name);// + write Pn, Pinj, Psolid for this Run
+	// write RUN summary to current SCEN folder (Surf   Total, W  Max, W/m2  GridSteps,m)
 
 	CTime t1 = CTime::GetCurrentTime();
 	CTimeSpan dt = t1 - t0; //GetElapse(t0, t1);
@@ -12268,7 +12264,22 @@ void CBTRDoc::CompleteRun() // calculate, save loads, re-init arrays
 			
 }
 
+void CBTRDoc::CorrectRunPower()//not called - included to SaveRUNloads
+//to fit balance with RUN 1 - before merging RUN-Loads 
+{
+	double Coeff, power;
+	double Coeff2 = 1;
+	if (AtomPower2 > 1e-3) Coeff2 = AtomPower1 / AtomPower2;
+	double Coeff3 = 1;
+	if (AtomPower3 > 1e-3) Coeff3 = AtomPower1 / AtomPower3;
+}
+
 void CBTRDoc::CompleteScen() // Scen consists of 1-3 runs 
+//merge runs SUM-loads
+//add all run loads with corrected coeff
+//write 3/6col loads
+//write Reports
+//back to home dir, resume config
 {
 	STOP = TRUE; // stop threads, STOP >> TRUE
 	int n; // count files found
@@ -12293,8 +12304,12 @@ void CBTRDoc::CompleteScen() // Scen consists of 1-3 runs
 	AddAllScenLoads();
 	
 	// MERGE each SURF load  folders: Loads1_run1, Loads1_run2 \ load_7.txt
-	CollectRUNLoads(); // READ load for each surf -> WRITE FOLDER with merged loads
+	CollectRUNLoads(); // READ load for each surf -> WRITE FOLDER with merged loads(3/6)
 	
+	// SHOW TRACKED INFO - SINGLE //
+	WriteReport("TXT");
+	WriteReport("CSV");
+
 	CTime t1 = CTime::GetCurrentTime();
 	CTimeSpan dt = t1 - t0; //GetElapse(t0, t1);
 	DataSaveTime += dt;
@@ -12463,13 +12478,14 @@ void CBTRDoc::InitScen() // set data + opt for current SCEN
 	CreateScenFolder();
 }
 
-void CBTRDoc::InitRun(int run)
+void CBTRDoc::InitRun(int run)// set options which are used in TraceALL!! (MULTI)
+// only one Trace Option must be set per each RUN (Atoms or Resid or REion)
 {
 	StartTime = CTime::GetCurrentTime();// RUN start
 	CString S = "    RUN trace opt : ";
 	
 	switch (run) { // 0,1,2
-	case 0: // only atoms traced, only atoms deposed
+	case 0: // RUN 1 - only atoms traced and deposed + count AtomPower1
 		OptTraceAtoms = TRUE;// trace atoms
 		OptNeutrStop = TRUE; // stop residuals
 		OptReionStop = TRUE; // stop reions
@@ -12483,8 +12499,8 @@ void CBTRDoc::InitRun(int run)
 		
 		S += "Atoms with/without ionization (for gas+plasma On/Off)";
 		break;
-	case 1: // trace Residuls, depose Ions, count Atoms 
-		OptTraceAtoms = TRUE;// changed!!! - to count Pn
+	case 1: //RUN 2 - trace Residuls, depose Ions, + count AtomPower2 
+		OptTraceAtoms = FALSE;// stop
 		OptNeutrStop = FALSE; // trace residuals
 		OptReionStop = TRUE; // stop reions
 
@@ -12497,8 +12513,8 @@ void CBTRDoc::InitRun(int run)
 		
 		S += "Residual ions after Neutraliser(+/-)";
 		break;
-	case 2: // trace Reions, depose Ions, count Atoms
-		OptTraceAtoms = TRUE;// changed!!! - to count Pn
+	case 2: //RUN 3 trace Reions, depose Ions, + count AtomPower3
+		OptTraceAtoms = FALSE;// stop 
 		OptNeutrStop = TRUE; // stop residuals
 		OptReionStop = FALSE;// trace reions
 
@@ -12534,23 +12550,23 @@ void CBTRDoc::WriteScenTracks()
 {
 	CString S;
 	int i;
-	logout << "----- TRACKED PARAMETERS --------\n"; 
+	logout << "----- TRACKED INFO (for debug)--------\n"; 
 	for (i = 1; i <= MAXSCEN; i++) {
 		// Area Exit excluded from Solid loads!!!
 		double Pn = PowNeutral[i];// run 1
 		double Pinj = PowInjected[i]; // run 1
 		double Psum = PowSolid[i].X + PowSolid[i].Y + PowSolid[i].Z;
 			
-		S.Format("SCEN %d\n Neutralized %g[W] Injected %g[W]  Total Deposited %g[W]: \n", 
+		S.Format("SCEN %d\n Neutralized %g[W]\n Injected %g[W]\n Total Deposited %g[W]: \n", 
 							i, Pn,  Pinj,  Psum);// - Pinj);// Area Exit excluded
 		logout << S;
-		S.Format("\t   Atoms %g[W] Residuals %g[W] Reions %g[W]\n", 
+		S.Format("\t Atoms %g[W]\n\t Residuals %g[W]\n\t Reions %g[W]\n", 
 						PowSolid[i].X, PowSolid[i].Y, PowSolid[i].Z);
 		logout << S;
 	} // i
 	
 	ofstream csvf; // EXCEL format
-	csvf.open("_ALL_SCEN_LOADS.csv");
+	csvf.open("_ALL_SCEN_LOADS.CSV");
 	ofstream txtf;
 	txtf.open("_ALL_SCEN_LOADS.TXT");
 	logout << "\nWriting ALL_SCEN_LOADS.csv at HOME\n";
@@ -12602,7 +12618,7 @@ void CBTRDoc:: WriteReport(CString ext)
 	
 	CString sep;// separator
 	S = ext.MakeUpper();
-	if (S.Find("CSV", 0) > -1) sep = ";";
+	if (S.Find("CSV", 0) > -1) sep = ",";// ";";
 	else if (S.Find("TXT", 0) > -1) sep = "\t";
 	
 	if (MAXSCEN == 1) S = "_00."; //SINGLE
@@ -12616,23 +12632,39 @@ void CBTRDoc:: WriteReport(CString ext)
 	double Sum = -1, MaxPD = -1;
 	int n;
 	double Pentry = -1, Pexit = -1;
-	double Pn = GetNeutrPower();
-	double Pinj = GetInjectedPowerW();
-	double SolidPower = GetTotSolidPower();// Area Exit excluded
-	
+	double Pn = GetNeutrPower();//  AtomPower1
+	double Presid;
+	if (NeutrPart > 1.e-3) Presid = Pn * (1.- NeutrPart) / NeutrPart;
+	else Presid  = 1; // Pn = 0
+	double Preion = Pn * ReionPercent * 0.01;
+	double Pinj = GetInjectedPowerW(); //Plasma Emitter AtomPower
+	double SolidPower = GetTotSolidPower();// Atom + Ion Power at solids excl Area Exit	
 	CString sf = "%-30s"; // comment field format
 	//CString vf = "\t%-12.3le\n";// txt
 	CString vf = sep + " %-12.3le \n"; // data field format
 	CString sdf = "%-25s (%d)";// comment field with surf count (n)
+	CString sff = "%-22s (%4.3f)";// comment field with fraction
 
-	S.Format(sf,"Neutralized, W"); f << S;
+	S.Format(sff, "Neutralized , W", NeutrPart);  f << S;
 	S.Format(vf, Pn); f << S;
-	S.Format(sf,"Injected, W"); f << S;
-	S.Format(vf, Pinj); f << S; 
-	S.Format(sf,"Solid, W"); f << S;
+
+	S.Format(sff, "Resid Ions, W", (1.- NeutrPart)); f << S;
+	S.Format(vf, Presid); f << S;
+
+	S.Format(sff, "Reionized, W", ReionPercent * 0.01); f << S;
+	S.Format(vf, Preion); f << S;
+
+	S.Format(sf, "Injected, W"); f << S;
+	if (Pinj < 1e-6) f << sep + "  NAN\n";
+	else { S.Format(vf, Pinj); f << S; }
+
+	S.Format(sf, "Solid Surf, W"); f << S;
 	S.Format(vf, SolidPower); f << S;
+
+	S.Format(sf, "Injected + Solid, W"); f << S;
+	S.Format(vf, (Pinj + SolidPower)); f << S;
 	
-	f << "\n___CUT-OFF_LIMITS___\n"; // before Neutr
+	f << "\n__CUT-OFF_LIMITS__\n"; // before Neutr
 	Keys.RemoveAll(); Keys.Add("CUT"); 
 	Sum = -1, MaxPD = -1;
 	n = GetCompSolid(Keys, Sum, MaxPD);
@@ -12799,7 +12831,7 @@ void CBTRDoc:: WriteReport(CString ext)
 	f.close();
 }
 
-void CBTRDoc::RunScen(int iopt[3]) // - current scenario, multi-run trace options
+void CBTRDoc::RunScen(int iopt[3]) // - current scenario with default run-options
 {
 	CString S;
 	//int opt[3] = { iopt[0], iopt[1], iopt[2] };// { ATOMS, Resid, Reions }
@@ -12808,13 +12840,13 @@ void CBTRDoc::RunScen(int iopt[3]) // - current scenario, multi-run trace option
 	ResumeData(); // back to initial config
 
 	STOP = FALSE;//started = TRUE
-	int optA = iopt[0];
-	int optRes = iopt[1];
-	int optRei = iopt[2];
-	InitScenOpt(optA, optRes, optRei); // CHANGE basic options (IF DIFF from all scens)
+	int optA = iopt[0]; //default
+	int optRes = iopt[1];//default
+	int optRei = iopt[2];//default
+	InitScenOpt(optA, optRes, optRei); // reset default options if spec in SCEN_PARAM 
 	InitScen();// SetData, SetBeam.. for current SCEN, create SCEN Folder
 	
-	int scopt[3] = { optA, optRes, optRei };//SCEN can have specific run opts - basic opts not changed!!!
+	int scopt[3] = { optA, optRes, optRei };//final SCEN run opts (DEFAULT are not changed)
 	//MAXRUN = runs[0] + runs[1] + runs[2];
 	CString Date, Time;
 	///////Set New StartTime!!!
@@ -12825,10 +12857,18 @@ void CBTRDoc::RunScen(int iopt[3]) // - current scenario, multi-run trace option
 
 	ArrSize = 0;
 	RUN = 0;// count actual runs 1..3 
+	
+	// reset global counters before each SCEN - for MULTI mode
+	// for SINGLE - before each BML
+	AtomPower1 = 0;//  MULTI
+	AtomPower2 = 0;//  MULTI
+	AtomPower3 = 0;//  MULTI
+
 	for (int irun = 0; irun < 3; irun++) { //0,1,2
+		
 		RUN++;	//::MessageBox(NULL, S, "BTR 5 RunScen", 0);//AfxMessageBox(S, MB_ICONEXCLAMATION | MB_OK);
 		
-		if (scopt[irun] == 0) 
+		if (scopt[irun] == 0) //scopt[3] - final SCEN run opts = {optA, optRes, optRei} 
 			continue; // this trace option - OFF
 		else 
 			InitRun(irun); // set single trace for this run: Atoms or Resid or Reions + Power deposited and saved! 
@@ -12844,14 +12884,22 @@ void CBTRDoc::RunScen(int iopt[3]) // - current scenario, multi-run trace option
 		SetPlasmaTarget(); //init plasma object, Geometry, Nray = -1, clear arrays
 		//ShowStatus();//show active data on views
 
-		success = Run_BTR_Fast();// calls ClearArrays, Starts&Deletes NEW Threads, InitTracers 
+		success = Run_BTR_Fast();
+		// calls ClearArrays, Starts&Deletes NEW Threads, InitTracers 
+
 		CompleteRun(); // save loads list
 		if (success == 0) break; // CompleteScen
 	}
 	InitScenOpt(optA, optRes, optRei); // GET SCEN options - needed for CompleteScen merging!
 	
-	CompleteScen();  // Resume Config after SCEN //ShowLogFile(0);
+	//CorrectLoadsPower(); //to fit balance with RUN 1 - before merging RUN-Loads 
+	//CorrectFallsPower(); //called for SINGLE after each BML before Loads Calculations
 	
+	CompleteScen(); //merge runs SUM-loads
+					//add all run loads with corrected coeff
+					//write 3/6col loads
+					//write Reports
+					//back to home dir, Resume Config after SCEN
 	OnStop();//	STOP = TRUE;
 	
 	SCEN++;	//S.Format("  Scen %d set \n", SCEN); std::cout << S;
@@ -12863,10 +12911,10 @@ void CBTRDoc::RunScen(int iopt[3]) // - current scenario, multi-run trace option
 		//Date.Format("%02d-%02d-%04d", tm.GetDay(), tm.GetMonth(), tm.GetYear());
 		Time.Format("%02d:%02d:%02d", tm.GetHour(), tm.GetMinute(), tm.GetSecond());
 		S.Format(" +++++ Date %s  Time %s +++++ \n", Date, Time);
-		logout << "BTR" << BTRVersion << "--- ALL is DONE (last run shown)----\n";
+		logout << "BTR" << BTRVersion << "--- ALL is DONE (last SCEN shown)----\n";
 		logout << S << "\n";
 
-		//----- TRACKED PARAMETERS -------- 
+		//----- TRACKED INFO -------- 
 		WriteScenTracks();// Pinj, Psolid, ALL_SCEN_LOADS
 		
 		CTime t0 = StartTime0; // from global start!!!
@@ -12885,7 +12933,7 @@ void CBTRDoc::RunScen(int iopt[3]) // - current scenario, multi-run trace option
 		ShowStatus();
 		OnShow();
 		SetTitle("DONE");
-		AfxMessageBox("BTR 5 multi is DONE!\n  LAST RUN is shown");
+		AfxMessageBox("BTR 5 multi is DONE!\n  LAST SCEN is shown");
 	}
 		
 	//for (int i = 0; i <= MAXSCEN; i++)	ScenData[i].RemoveAll();
@@ -12895,7 +12943,6 @@ void CBTRDoc::RunScen(int iopt[3]) // - current scenario, multi-run trace option
 
 	//begin/resume/suspend thread with Tracer obj and ThreadFunc
 	//SuspendAll(TRUE); // run = TRUE 
-	
    //for (k = 0; k < ThreadNumber; k++) 	WaitForSingleObject(m_pTraceThread[k]->m_hThread, INFINITE);
 		
 }
@@ -12941,8 +12988,7 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 	
 	SuspendedSpan = 0;
 	DataSaveTime = 0;
-	
-	
+		
 	StartTime0 = CTime::GetCurrentTime();// Global start
 	StartTime = StartTime0; // //Reset time for current RUN start
 	// RESET LOG for append
@@ -12970,27 +13016,25 @@ void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BT
 	if (MAXSCEN > 1) { // multi-run, v5.0 /////////////////////////
 		//if (SetDefaultMesh()) {  // set surf resolution - before all runs = TRUE
 			
-			S.Format("\n\t *********** Start MULTI-RUN ***********\n");
-			SetTitle(S);
-			logout << S; // << std::endl;///////////////
+		S.Format("\n\t *********** Start MULTI-RUN ***********\n");
+		SetTitle(S);
+		logout << S; // << std::endl;///////////////
 
-			//CBTRApp theApp;///COLLAPSE MAIN VIEW on start /////////////////////////////
-			pMW->ShowWindow(SW_SHOWMINIMIZED);
-			pMW->UpdateWindow();///////////////////////////////////////////////////
+		//CBTRApp theApp;///COLLAPSE MAIN VIEW on start /////////////////////////////
+		pMW->ShowWindow(SW_SHOWMINIMIZED);
+		pMW->UpdateWindow();///////////////////////////////////////////////////
 
-			while (SCEN <= MAXSCEN) 
-				RunScen(runs); 
-				// SCEN is +1 after each run-set is complete -> CompleteScen()
+		while (SCEN <= MAXSCEN) 
+			RunScen(runs); // default runs are set in current Config
+								// each SCEN can reset them in SCEN_PARAM
+							// SCEN is +1 after each run-set is complete -> CompleteScen()
 		
-		//} // Set Mesh for multi-run 
-
 		//pMW->ShowWindow(SW_SHOWMAXIMIZED);
 		pMW->FlashWindow(FALSE);//>UpdateWindow();
 		
 		ResetLogFile();//if (OptLogSave) CloseLogFile(); // after ALL SCENS
 		
 		return;
-
 	} // if  MAXSCEN > 1 -> run Multi//////////////////////////////////////
 	
 //  else -> RUN SINGLE run old version (allows manual stop)/////////////////////////
@@ -19199,7 +19243,7 @@ double CBTRDoc::GetInjectedPowerW() // calculate Atom power at Duct Exit
 		}
 		if (Pinj < 1.e-6) {
 			S.Format("Scen %d Run %d \n- failed to get Pinj\n", SCEN, RUN);
-			AfxMessageBox(S);
+			//AfxMessageBox(S);
 			logout << "!!!  " << S;
 		}
 	}
@@ -19216,7 +19260,7 @@ double CBTRDoc::GetNeutrPower() // calculate neutral power at Neutralizer Exit
 	
 	if (Pn < 1.e-6) { // no data
 		S.Format("Scen %d Run %d \n- failed to get Neutralized power\n", SCEN, RUN);
-		AfxMessageBox(S);
+		//AfxMessageBox(S);
 			logout << "!!!  " << S;
 		}
 	return Pn;
@@ -21054,19 +21098,22 @@ void CBTRDoc:: P_CalculateLoad(CPlate * plate, vector<minATTR> * parr)
 
 			if (tattr.Nfall == plate->Number) {
 				//count
-				if (tattr.Charge == 0) plate->AtomPower += power;// keep in all runs
-				if (tattr.Charge == 0 && run !=1 )  continue; // not deposit Map
-				
-				//if (tattr.Charge < 0) plate->NegPower += power;
-				//if (tattr.Charge > 0) plate->PosPower += power;
-
+				if (MAXSCEN == 1) { // SINGLE mode: keep Apow from run1 only! 
+					if (tattr.Charge == 0 && run == 1) plate->AtomPower += power;//
+					if (tattr.Charge == 0 && run !=1 )  continue; // no Map
+					if (tattr.Charge < 0) plate->NegPower += power;
+					if (tattr.Charge > 0) plate->PosPower += power;
+				}
+				else { // MULTI: keep Apow for each RUN - to normalize to Pn
+					if (tattr.Charge == 0) plate->AtomPower += power;//
+					if (tattr.Charge == 0 && run !=1 ) continue; // no Map
+					if (tattr.Charge < 0) plate->NegPower += power;
+					if (tattr.Charge > 0) plate->PosPower += power;
+				}
 				//if (tattr.Charge == 0 && !OptAtomPower)  continue; // not deposit
 				//if (tattr.Charge < 0 && !OptNegIonPower) continue; // not deposit
 				//if (tattr.Charge > 0 && !OptPosIonPower) continue; // not deposit
-				
-				if (MAXSCEN == 1 && tattr.Charge == 0 && run != 1) continue; // not deposit
-				//atoms in runs 2,3 are traced for total count only
-				
+								
 				//rest - Deposit power
 				Ploc.X = tattr.Xmm * 0.001;// plate->GetLocal(Pgl);
 				Ploc.Y = tattr.Ymm * 0.001;

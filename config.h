@@ -249,6 +249,8 @@ inline void Message_NotSelected()  {AfxMessageBox("NO plate selected!", MB_ICONI
 	void  DrawPlateBound();//NEW:polygon, called from MainView LBdown
 	void  ShowEmptyLoad();
 	void  CorrectLoad(); // clear extra spots at the area exit plane
+	void  CorrectLoad(double Coeff);// multiply to fit balance
+	void  AddLoads(CLoad * L1, CLoad * L2, CLoad * L3);
 	void  WriteLoad(FILE * fout);
 	void  WriteLoadAdd(FILE * fout);
 	void  WriteProfiles();

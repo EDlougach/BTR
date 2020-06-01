@@ -833,6 +833,7 @@ public:
 	
 	void CompleteRun();
 	void CompleteScen();
+	void CorrectRunPower();//fit balance before merge runs 
 	void InitRun(int run);
 	CString GetScenName(int scen);
 	void CreateScenFolder();

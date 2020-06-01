@@ -12,8 +12,12 @@
 //#include <iostream>
 //#include "geom_util.h"
 
-// CTracer
+// global counters
 extern int NofCalculated;
+extern double AtomPower1;
+extern double AtomPower2;
+extern double AtomPower3;
+
 extern CArray <RECT_DIA, RECT_DIA> Dia_Array; // diaphragms array
 extern CArray<double, double> SumReiPowerX; // array for Reion sum power deposited within StepX
 extern CArray<double, double> SumAtomPowerX; // array for Reion sum power deposited within StepX
@@ -24,6 +28,7 @@ extern double SumPowerAngleStep;// degrees, step for angular profile
 
 extern logstream logout;
 
+// CTracer
 CTracer::CTracer() 
 : 
 tattr(NULL),
@@ -1869,11 +1874,12 @@ bool CTracer::GenerateReions(int jray)
 	
 	///////////// TRACE ATOM - to get AtomPower /////////////////////
 		//if (!m_Stopped && pDoc->OptTraceAtoms) {//  as only residuals can be traced next
-		m_Power = AtomPower0;//m_Power * (pDoc->NeutrPart);
-		//m_State = ATOM;	m_Charge = 0;
+/*		m_Power = AtomPower0;//m_Power * (pDoc->NeutrPart);
+		m_State = ATOM;	
+		m_Charge = 0;
 		m_Pos = PiStart;
 		m_V = Vgen;
-		done = TraceAtom();
+		done = TraceAtom();*/
 
 	m_AtomPower3 += AtomPower0;
 		
@@ -2083,22 +2089,24 @@ bool CTracer:: TraceBeamletResIons(int isource)
 
 		if (pDoc->FieldLoaded && fabs(pDoc->MFcoeff) > 1.e-6) { // Move Ion
 			//m_State = SRCION; m_Charge = -1;
-			m_Pos = P0start;
+			//m_Pos = P0start;
 			PiStart = MoveIonToX(NeutrX); // Move (no falls) Source ions to Reions start point
 		}
 		else 	PiStart = MakeStepToX(NeutrX); // Make (no falls) one straight step (ATOM) 
+
+		C3Point Vn0 = m_V; // at NeutrX
 
 		if (m_Stopped) { // met solid
 			continue; // GO TO next ray
 		}
 ///////////// TRACE ATOM - to get AtomPower /////////////////////
 		//if (!m_Stopped && pDoc->OptTraceAtoms) {//  as only residuals can be traced next
-		m_Power = RayPower * (pDoc->NeutrPart);
+		/*m_Power = RayPower * (pDoc->NeutrPart);
 		m_State = ATOM;	
 		m_Charge = 0;
 		m_Pos = PiStart;
-		m_V = Vstart;
-		done = TraceAtom();
+		m_V = Vn0;//Vstart;
+		done = TraceAtom();*/
 		
 		m_AtomPower2 += RayPower * (pDoc->NeutrPart);
 
@@ -2121,7 +2129,7 @@ bool CTracer:: TraceBeamletResIons(int isource)
 		m_State = POSION;
 		m_Charge = 1;
 		m_Pos = PiStart;
-		m_V = Vstart;
+		m_V = Vn0;//Vstart;
 		done = TraceIon(m_Charge, m_Pos, m_V, m_Power); // get falls
 
 		if (!done || pDoc->STOP) {
@@ -2143,7 +2151,7 @@ bool CTracer:: TraceBeamletResIons(int isource)
 		m_State = SRCION;
 		m_Charge = -1;
 		m_Pos = PiStart;
-		m_V = Vstart;
+		m_V = Vn0;//Vstart;
 		done = TraceIon(m_Charge, m_Pos, m_V, m_Power); // get falls
 
 		if (!done || pDoc->STOP) {
@@ -2294,7 +2302,7 @@ void CTracer::TraceAlltest() // replace old Draw(); based on TestMem
 	return; // test
 }
 
-bool CTracer::TraceAllAtoms() // from ALL beamlets // no memory reserve test
+bool CTracer::TraceAllAtoms()//MULTI - run ALL beamlets // no memory reserve test
 {							// TraceAlltest();// TEST trace //
 	CString S, Slog;
 	S.Format("\t[%d]--- TraceAllAtoms start bml %d ... %d\n",m_ID, m_Min, m_Max);
@@ -2316,6 +2324,8 @@ bool CTracer::TraceAllAtoms() // from ALL beamlets // no memory reserve test
 		ClearArrays();	//CVectorCleanup tattr_cleanup(tattr);//tattr->clear();
 		m_iSource = is;
 		istop = is;
+		m_AtomPower1 = 0; // set in GetFalls for SINGLE
+				// - added to global counters after each BML RUN
 		
 		done = TraceBeamletAtoms(is);//----- TRACE ATOMS with decay + Write LOG --------
 		
@@ -2326,9 +2336,11 @@ bool CTracer::TraceAllAtoms() // from ALL beamlets // no memory reserve test
 		}
 
 		// ADD BML FALLS 
-		cs.Lock();
+		cs.Lock();//------------
 		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);
 		bool added = pDoc->AddFallsToFalls(m_ID, is + 1, tattr);
+		
+		AtomPower1 += m_AtomPower1;
 
 		/*bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
 		cs.Unlock();
@@ -2340,11 +2352,11 @@ bool CTracer::TraceAllAtoms() // from ALL beamlets // no memory reserve test
 		cs.Lock();*/
 		NofCalculated++;	// - if not stopped	
 		int Ncalc = NofCalculated;
-		cs.Unlock();
+		cs.Unlock();//----------------
 
 		if (!added) logout << "!!!!! Falls not added !!!!!!!!!!!!!!\n";
 
-		ClearArrays();// clear last BML tattr
+		//ClearArrays();// clear last BML tattr
 		//pDoc->ShowStatus();// not working for multi-run!!!
 		
 		if (!m_Draw) ShowBeamlet(is);// locked inside
@@ -2380,7 +2392,7 @@ bool CTracer::TraceAllResIons() // from ALL beamlets
 	bool log = TRUE;// write log
 	bool stopped = FALSE;
 	bool done = TRUE;
-
+	
 	//------Trace beamlets--- rewrite the tattr-vector and log for each beamlet --------------
 	// skip memory reservation !!!
 	int istop = -1;
@@ -2388,7 +2400,8 @@ bool CTracer::TraceAllResIons() // from ALL beamlets
 		ClearArrays();	//CVectorCleanup tattr_cleanup(tattr);//tattr->clear();
 		m_iSource = is;
 		istop = is;
-		
+		m_AtomPower2 = 0; // set in TreceBMLResIons for SINGLE
+					// - added to global counters after each BML RUN
 		done = TraceBeamletResIons(is);//----- TRACE Residuals
 						//TraceBeamletAtoms(is);//----- TRACE ATOMS with decay 
 		if (!done || pDoc->STOP) {
@@ -2398,9 +2411,11 @@ bool CTracer::TraceAllResIons() // from ALL beamlets
 		}
 
 		// ADD BML FALLS 
-		cs.Lock();
+		cs.Lock();//-----------------
 		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);
 		bool added = TRUE;// pDoc->AddFallsToFalls(m_ID, is + 1, tattr);
+
+		AtomPower2 += m_AtomPower2;
 
 		/*bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
 		cs.Unlock();
@@ -2412,7 +2427,7 @@ bool CTracer::TraceAllResIons() // from ALL beamlets
 		cs.Lock();*/
 		NofCalculated++;	// - if not stopped	
 		int Ncalc = NofCalculated;
-		cs.Unlock();
+		cs.Unlock();//------------------
 
 		if (!added) logout << "!!!!! Falls not added !!!!!!!!!!!!!!\n";
 
@@ -2528,7 +2543,7 @@ bool CTracer::TraceAllReions() // from ALL beamlets
 	bool log = TRUE;// write log
 	bool stopped = FALSE;
 	bool done = TRUE;
-
+	
 	//------Trace beamlets--- rewrite the tattr-vector and log for each beamlet --------------
 	// skip memory reservation !!!
 	int istop = -1;
@@ -2536,7 +2551,8 @@ bool CTracer::TraceAllReions() // from ALL beamlets
 		ClearArrays();	//CVectorCleanup tattr_cleanup(tattr);//tattr->clear();
 		m_iSource = is;
 		istop = is;
-		
+		m_AtomPower3 = 0; // set in GenerateReions for SINGLE
+				// - added to global counters after each BML RUN
 		done = TraceBeamletReions(is);// Trace REIONS
 					//TraceBeamletResIons(is);//----- TRACE Residuals
 						//TraceBeamletAtoms(is);//----- TRACE ATOMS with decay 
@@ -2547,9 +2563,11 @@ bool CTracer::TraceAllReions() // from ALL beamlets
 		}
 
 		// ADD BML FALLS 
-		cs.Lock();
+		cs.Lock();//-----------------------
 		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);
 		bool added = TRUE; //pDoc->AddFallsToFalls(m_ID, is + 1, tattr);
+
+		AtomPower3 += m_AtomPower3;
 
 		/*bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
 		cs.Unlock();
@@ -2561,7 +2579,7 @@ bool CTracer::TraceAllReions() // from ALL beamlets
 		cs.Lock();*/
 		NofCalculated++;	// - if not stopped	
 		int Ncalc = NofCalculated;
-		cs.Unlock();
+		cs.Unlock();//----------------------
 
 		if (!added) logout << "!!!!! Falls not added !!!!!!!!!!!!!!\n";
 
@@ -2695,15 +2713,16 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 	// TraceAlltest();// TEST trace 
 
 	int MaxScen = pDoc->MAXSCEN;
+
+	m_AtomPower1 = 0; // set in GetFalls for SINGLE
+	m_AtomPower2 = 0; // set in TreceBMLResIons for SINGLE
+	m_AtomPower3 = 0; // set in GenerateReions for SINGLE
+	// they are added to global counters after each BML RUN
 	
 	if (MaxScen > 1) { ////////// MULTI //////////////////////////////////
 		
 		S.Format("\t[%d]------ TraceALL for SCEN %d -------- \n", m_ID, pDoc->SCEN);
 		logout << S;
-
-		m_AtomPower1 = 0;// not used for MULTI
-		m_AtomPower2 = 0;// not used for MULTI
-		m_AtomPower3 = 0;// not used for MULTI
 
 		if (done && pDoc->OptTraceAtoms)
 			done = TraceAllAtoms(); // calls TraceBeamletAtoms(is)
@@ -2712,7 +2731,7 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 		if (done && !(pDoc->OptReionStop))
 			done = TraceAllReions(); // calls TraceBeamletReions(is)
 				
-		SetContinue(FALSE);// thread m_Continue = FALSE; - ????
+		SetContinue(FALSE);// thread m_Continue = FALSE; 
 		return;
 
 	} // MULTI-SCEN  ///////////////////////////////////////////////////////
@@ -2776,12 +2795,11 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 			break;
 		}
 
-		// ADD BML FALLS (SINGLE)///////////////////
+	// ADD BML FALLS (SINGLE)///////////////////
 									//CSingleLock cs_lock(&cs, TRUE);
 
-		//CorrectFallsPower(); //to fit balance with run1
-		// called before Loads Calculations
-		// uses m_AtomPowers to correct all tattr.power
+		CorrectFallsPower(); //to fit balance with run1 before Loads Calculations
+				// uses m_AtomPowers to correct all tattr.power
 		
 		cs.Lock();
 		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);

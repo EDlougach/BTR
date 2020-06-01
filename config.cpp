@@ -2333,7 +2333,7 @@ void  CPlate:: CoverByParticle(double power, double diffY, double diffZ,
 	// double Cell = Load->StepX * Load->StepY; 
 	// double AvCellPower = power / TotCells;
 //	double power0 = power * (1 - 0.5 * diffY) * (1 - 0.5 * diffZ);
-	double CellPower;
+	double CellPower = 0;
 	for (i = 0;  i <= Load-> Nx; i++) {
 		for (j = 0; j <= Load->Ny; j++) { 
 		/*	if (Load->wv[i][j] + Load->wh[i][j] < 1.e-16) continue;
@@ -2895,6 +2895,35 @@ void CPlate::  WriteLoadAdd(FILE * fout)
 			S.Format(" \t\t PARAMETERS  (Plate  %d)  \n", Number);
 			fprintf(fout, Comment + S); 
 		}
+}
+
+void  CPlate::CorrectLoad(double Coeff)
+{
+	//CLoad * L = Load;
+	for (int i = 0; i <= Load->Nx; i++) {
+		for (int j = 0; j <= Load->Ny; j++) {
+			//double x = i*Load->StepX;
+			//double y = j*Load->StepY;
+			double oldval = Load->Val[i][j];
+			Load->Val[i][j] = oldval * Coeff;
+		} // i.j
+	}
+
+	double sum = Load->Sum;
+	Load->Sum = sum * Coeff;
+	double maxval = Load->MaxVal;
+	Load->MaxVal = maxval * Coeff;
+
+}
+
+void  CPlate::AddLoads(CLoad * L1, CLoad * L2, CLoad * L3)
+{
+	for (int i = 0; i <= Load->Nx; i++) {
+		for (int j = 0; j <= Load->Ny; j++) {
+			Load->Val[i][j] = L1->Val[i][j] + L2->Val[i][j] + L3->Val[i][j];
+		} // i.j
+	}
+	Load->SetSumMax();
 }
 
 void  CPlate:: WriteLoad(FILE * fout)
