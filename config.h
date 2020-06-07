@@ -159,6 +159,7 @@ inline void Message_NotSelected()  {AfxMessageBox("NO plate selected!", MB_ICONI
 	 void  DrawLoadProfiles(CView * pView, CDC* pDC); // on sheet view
 	 void  DrawLoadPoint(int x, int y, int rx, int ry, COLORREF color, CDC* pDC);
 	 void   SmoothLoad(int degree);
+	 CLoad * Smoothed(int smdegree);
 	 double GetVal(double x, double y);
 	 C3Point GetValGrad(double x, double y);
 	 void  WriteProfiles(int num, double X, double dHor, double dVert);

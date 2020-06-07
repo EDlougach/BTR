@@ -152,6 +152,7 @@
 #define HID_BEAMINPLASMA_POLOIDALPSI            0x180AF
 #define HID_BEAMINPLASMA_POL_PSIZ               0x180B0
 #define HID_PLOT_PSI                            0x180B1
+#define HID_RESULTS_READSCEN                    0x180B2
  
 // Prompts (IDP_*) 
  

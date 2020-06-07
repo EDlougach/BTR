@@ -1448,6 +1448,7 @@ BEGIN
         BEGIN
             MENUITEM "Tabular",                     ID_RESULTS_PDPOUTPUT_TABLE
         END
+        MENUITEM "Read SCEN",                   ID_RESULTS_READSCEN
     END
     POPUP "Plot"
     BEGIN
@@ -1869,6 +1870,11 @@ END
 STRINGTABLE 
 BEGIN
     ID_PLOT_ANGULARDISTR    "Big Particles data \n BP data"
+END
+
+STRINGTABLE 
+BEGIN
+    ID_RESULTS_READSCEN     "Read SCEN results"
 END
 
 #endif    // English (U.S.) resources

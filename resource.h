@@ -448,6 +448,7 @@
 #define ID_BEAMINPLASMA_POLOIDALPSI     32943
 #define ID_BEAMINPLASMA_POL_PSIZ        32944
 #define ID_PLOT_PSI                     32945
+#define ID_RESULTS_READSCEN             32946
 
 // Next default values for new objects
 // 
@@ -455,7 +456,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        184
-#define _APS_NEXT_COMMAND_VALUE         32946
+#define _APS_NEXT_COMMAND_VALUE         32947
 #define _APS_NEXT_CONTROL_VALUE         1359
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

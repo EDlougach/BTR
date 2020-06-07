@@ -1284,18 +1284,22 @@ void CMainView::OnPlateZoomout()
 	//	InvalidateRect(RectSide, TRUE);
 }
 
-
-
 void CMainView::OnPlateLoad() 
 {
 	CBTRDoc* pDoc = (CBTRDoc*)GetDocument();
+	CPlate * plate = pDoc->pMarkedPlate;
+	//if (plate == NULL) return; 
+	//if (plate->Loaded == FALSE) return;
+	pDoc->OnPlotLoadmap();
+	return;
 
+	///////////////////// NOT CALLED ////////////////
 	if (pDoc->OptCombiPlot == -1) { // no plate selected
 		//|| !(pDoc->pMarkedPlate->Loaded)) {
 		Message_NotSelected();
 		pDoc->ShowStatus(); return;
 	}
-	CPlate * plate = pDoc->pMarkedPlate;
+	//CPlate * plate = pDoc->pMarkedPlate;
 	if (pDoc->OptCombiPlot == 0) { //is calculated
 		pDoc->OnPlotLoadmap();
 		return;
@@ -1438,7 +1442,11 @@ void CMainView::OnPlate3dplot()
 void CMainView::OnPlateMaxprofiles() 
 {
 	CBTRDoc* pDoc = (CBTRDoc*)GetDocument();
-	if (pDoc->pMarkedPlate == NULL) return;
+	//if (pDoc->pMarkedPlate == NULL) return;
+	pDoc->OnPlotMaxprofiles();
+	return;
+
+/////////// NOT CALLED /////////////////////
 	if (pDoc->OptCombiPlot == -1) { // not selected
 		//|| !(pDoc->pMarkedPlate->Loaded)) {
 		//Message_NotSelected();
@@ -1468,7 +1476,6 @@ void CMainView::OnPlateMaxprofiles()
 			pDoc->SetNullLoad(plate);//plate->ApplyLoad(TRUE, 0, 0); // optimize grid 
 			pDoc->SetLoadArray(plate, TRUE);
 		}
-
 
 		//pDoc->P_CalculateLoad(plate);
 		//if (plate->Comment.Find("First")>=0)
@@ -1501,18 +1508,34 @@ void CMainView::OnPlateSmooth()
 {
 	CBTRDoc* pDoc = (CBTRDoc*)GetDocument();
 	CResSmooth dlg;
-	if (pDoc->OptCombiPlot == -1 || !(pDoc->pMarkedPlate->Loaded)) {
+	if (pDoc->pMarkedPlate == NULL) return;
+	//if (pDoc->OptCombiPlot == -1 || !(pDoc->pMarkedPlate->Loaded)) {
+	if (!(pDoc->pMarkedPlate->Loaded)) {
 		Message_NotSelected();
 		pDoc->ShowStatus(); return;
 	}
 	CPlate * plate = pDoc->pMarkedPlate;
 	dlg.m_Degree = plate->SmoothDegree;
-	if (dlg.DoModal() == IDOK) 	plate->SmoothDegree = dlg.m_Degree;
-	else  	plate->SmoothDegree = 0;
+	
+	if (dlg.DoModal() == IDOK) //	plate->SmoothDegree = dlg.m_Degree;
+		pDoc->pMarkedPlate->SmoothDegree = dlg.m_Degree;
+	else  //	plate->SmoothDegree = 0;
+		pDoc->pMarkedPlate->SmoothDegree = 0;
 
-	plate->ShowLoadState();
+	pDoc->pMarkedPlate->ShowLoadState();
 
+/*	int Sdegree = plate->SmoothDegree;
+	CLoad * OldLoad = plate->Load;
+	CLoad * NewLoad = OldLoad->Smoothed(OldLoad, Sdegree);
+	plate->Load = NewLoad;
+	//pDoc->OnPlotLoadmap();*/
 
+	pDoc->OnPlotMaxprofiles();
+
+/*	plate->Load = OldLoad;
+	delete (NewLoad);
+	plate->SmoothDegree = 0;
+*/
 }
 
 void CMainView::OnLButtonDblClk(UINT /* nFlags */, CPoint point) 
@@ -1679,6 +1702,7 @@ void CMainView::OnLButtonDown(UINT /* nFlags */, CPoint point)
 		
 		//if (plate0->Number == pDoc->PlasmaEmitter)
 			pDoc->ShowPlatePoints(TRUE);//(pDoc->OptDrawPart);
+			pDoc->OnPlotMaxprofiles();
 		// particle spots - scale not recalculated
 	
 	}// marked
@@ -1880,7 +1904,7 @@ void CMainView::OnPlateProperties()
 	pDoc->OnPlotMaxprofiles();
 	return;
 
-
+/////////NOT CALLED //////////////////////////////////////////////////
 	if (pDoc->OptCombiPlot == -1) { //|| !(pDoc->pMarkedPlate->Loaded)) {
 		pDoc->ShowStatus(); return;
 	}
@@ -1913,7 +1937,6 @@ void CMainView::OnPlateProperties()
 	//pDoc->pMarkedPlate->ShowLoadState();
 	pDoc->OnPlotMaxprofiles();
 
-
 }
 
 void CMainView::OnPlateClear() 
@@ -1934,14 +1957,15 @@ void CMainView::OnPlateClear()
 	//plate->ShowLoad();
 	//InvalidateRect(NULL, TRUE);
 	pDoc->OnShow();
-
-
 }
 
 
 void CMainView::OnPlateScale() 
 {
 	CBTRDoc* pDoc = (CBTRDoc*)GetDocument();
+	pDoc->OnPlateScale();
+	return;
+
 	if (pDoc->OptCombiPlot == -1) { pDoc->ShowStatus(); Message_NotSelected(); return; }
 	CPlate * plate = pDoc->pMarkedPlate;
 	if (plate == NULL) { pDoc->ShowStatus(); return; }
@@ -2182,7 +2206,7 @@ void CMainView::OnPlateSave()
 	if (plate == NULL) return;
 	CString  sn;
 	sn.Format("%d",plate->Number);
-	CString name = "load" + sn + ".dat"; 
+	CString name = "load" + sn + ".txt"; 
 	CFileDialog dlg(FALSE, "*", name);
 	if (dlg.DoModal() == IDOK) {
 		FILE * fout;

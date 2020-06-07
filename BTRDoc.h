@@ -850,6 +850,7 @@ public:
 	void ResumeData();
 	void WriteScenTracks();
 	void WriteReport(CString ext);
+	void ReadScenLoads3col(); // read SCEN results from Load_total (3-col)
 	
 /*
 protected:
@@ -1041,6 +1042,8 @@ public:
 	afx_msg void OnEditCrossSect();
 	afx_msg void OnPlateClearall();
 	
+	afx_msg void OnPlateScale();
+	afx_msg void OnResultsReadScen();
 };
 
 /////////////////////////////////////////////////////////////////////////////

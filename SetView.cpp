@@ -95,7 +95,7 @@ void CSetView::OnDraw(CDC* pDC)
 	GetClientRect(rect);
 	pDC->Rectangle(rect);*/
 	CBTRDoc* pDoc = (CBTRDoc*)GetDocument();
-	if (pDoc->ShowProfiles) ShowProfiles(); 
+	if (pDoc->ShowProfiles && Load != NULL) ShowProfiles(); 
 	else ShowStatus();
 
 	return;
@@ -579,9 +579,9 @@ void CSetView:: ShowGlobalScale(CDC* pDC)
 void CSetView:: ShowLoadProfiles(CDC* pDC)
 {
 	CBTRDoc* pDoc = (CBTRDoc*)GetDocument();
-	if (pDoc->OptCombiPlot == -1) return;
+	//if (pDoc->OptCombiPlot == -1) return;
 	CPlate * plate = pDoc->pMarkedPlate;
-	Load = plate->Load;
+	//Load = plate->Load;
 	Xmax = Load->Xmax + Load->StepX;
 	Ymax = Load->Ymax + Load->StepY;
 	CFont* pOldFont = pDC->SelectObject(&smallfont);

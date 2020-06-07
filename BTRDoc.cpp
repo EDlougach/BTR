@@ -54,6 +54,7 @@
 #include "LimitsDlg.h"
 #include "DefLoadDlg.h"
 #include "StatOutDlg.h"
+#include "LoadStepDlg.h"
 using namespace std;
 
 #ifdef _DEBUG
@@ -329,6 +330,8 @@ BEGIN_MESSAGE_MAP(CBTRDoc, CDocument)
 		ON_COMMAND(ID_BEAMINPLASMA_POL_RZ, &CBTRDoc::OnBeaminplasmaPoloidalRz)
 		ON_COMMAND(ID_BEAMINPLASMA_POL_PSIZ, &CBTRDoc::OnBeaminplasmaPoloidalPsiZ)
 		ON_COMMAND(ID_PLOT_PSI, &CBTRDoc::OnPlotPSI)
+		ON_COMMAND(ID_PLATE_SCALE, &CBTRDoc::OnPlateScale)
+		ON_COMMAND(ID_RESULTS_READSCEN, &CBTRDoc::OnResultsReadScen)
 		END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -7465,7 +7468,7 @@ void CBTRDoc:: DetachLoadFiles()
 		}
 }
 
-void CBTRDoc::SaveLoads(bool free)
+void CBTRDoc::SaveLoads(bool free) // SINGLE
 {
 //	CWaitCursor wait; 
 	CPlate * plate;
@@ -10383,15 +10386,17 @@ if (Xmax * Ymax > 1.e-6) {
 			//plate->SmLoad->Comment = load->Comment;
 			plate->SmoothDegree = SmoothDegree;
 			SetLoadArray(plate, TRUE); // 
-			S.Format("Plate %d %s \n is identified", Number, Comment);
+			S.Format("Plate %d %s \n is identified\n", Number, Comment);
 			//AfxMessageBox(S);
+			logout << S;
 			pMarkedPlate = plate;
 			return load;
 	} // found in list
 
 	else {// (!found) or  free surf
-		S.Format("Plate %d %s \n not identified", Number, Comment);
-		AfxMessageBox(S);
+		S.Format("Plate %d %s \n not identified\n", Number, Comment);
+		//AfxMessageBox(S);
+		logout << S;
 		return NULL; // not found
 	}
 
@@ -10461,7 +10466,8 @@ void CBTRDoc:: ReadLoadInfo(CString & Text, int & Nx, int & Ny, double & StepX, 
 		//name.TrimRight();
 		text.Delete(0, pos + 1);
 	}
-	if (name.GetLength() > 1) info = name;
+	if (name.GetLength() > 1) 
+		info = name;
 	else info = "Unknown";
 	//Text = info;
 	//return;
@@ -10517,7 +10523,8 @@ BOOL CBTRDoc:: ReadPlateInfo(char* name, CPlate * Plate)
 	if ( (fin= fopen(name, "r")) == NULL) {
 		CString S ="Can't find/open ";
 		S+=  name;
-		AfxMessageBox(S, MB_ICONSTOP | MB_OK);
+		logout << S << "\n";
+		//AfxMessageBox(S, MB_ICONSTOP | MB_OK);
 		return 0;
 	}
 	//AfxMessageBox("Enter ReadPlateInfo");
@@ -10686,7 +10693,7 @@ BOOL CBTRDoc:: ReadPlateInfo(char* name, CPlate * Plate)
 		if (pos < 0) {
 			Plate->Number = 1000; return 0;}
 		Line.Delete(pos, 4);
-		pos = Line.Find("dat", 0);
+		pos = Line.Find("txt", 0);
 		Line.Delete(pos-1, 4);
 		valstr = Line;
 		Value = atof(valstr);
@@ -10710,7 +10717,7 @@ int CBTRDoc:: ReadLoadArray(char* name, CLoad* Load, bool isfree)
 	if ( (fin = fopen(name, "r")) == NULL) {
 		CString S = "Can't find/open ";
 		S +=  name;
-		//logout << S << "\n";
+		logout << S << "\n";
 		//AfxMessageBox(S, MB_ICONSTOP | MB_OK);
 		return 0;
 	}
@@ -10738,9 +10745,7 @@ int CBTRDoc:: ReadLoadArray(char* name, CLoad* Load, bool isfree)
 			if (i <= Load->Nx  && j <= Load->Ny)
 			Load->Val[i][j] = load;
 		}
-
 		//else	fgets(buf, 1024, fin);
-		
 	}
 	fclose(fin);
 	return 1;
@@ -11090,15 +11095,13 @@ void CBTRDoc::OnDataSave()
 
 void CBTRDoc::OnResultsReadall() 
 {
-	OptFree = FALSE; // set standard by default
+	OptFree = FALSE; // set STANDARD config - by default
 	DINSELECT = FALSE;	
+	
 	if (OnDataGet() == 0) return;// read config failed
-	//OnPlateClearSelect();
-	//if (LoadSelected > 0) SelectAllPlates();
+	
 	SetLoadArray(NULL, FALSE);//clear
-	//ReadIonPowerX();
-	//ReadAtomPowerX();
-
+	
 	BeginWaitCursor(); //OnShow();
 	WIN32_FIND_DATA FindFileData; //fData;
 	HANDLE hFind;
@@ -11933,7 +11936,7 @@ void CBTRDoc::CollectRUNLoads() //called by CompleteScen
 	LPSECURITY_ATTRIBUTES  sec = NULL;
 									  
 	CString LoadsDirName; // merged loads storage
-	LoadsDirName.Format("Loads%d_total", SCEN); // from all RUNs
+	LoadsDirName.Format("Loads_total"); // from all RUNs ("Loads%d_total", SCEN)-old
 	::CreateDirectory(LoadsDirName, sec);
 	::SetCurrentDirectory(LoadsDirName);
 	S.Format("Created Scen %d TOTAL Loads FOLDER >>>>> %s .....\n", SCEN, LoadsDirName);
@@ -12086,9 +12089,9 @@ void CBTRDoc::CollectRUNLoads() //called by CompleteScen
 			//fprintf(fout, "%3d  %0.3le  %0.3le  %0.3le    %0.3le    %0.3le  %0.3le  %0.3le \t%s\n",
 				//Num[i], Pow_A[i], Pow_Resid[i], Pow_Reion[i], SumPow[i],Max_A[i], Max_Resid[i], Max_Reion[i], Scomm);
 
-			fprintf(fout1, " %-7.3f  %-7.3f %-12.3le %-12.3le %-12.3le %-12.3le \n",
+			fprintf(fout1, " %-8.5f %-8.5f %-12.3le %-12.3le %-12.3le %-12.3le \n",
 					X[n], Y[n], Loads[n].X, Loads[n].Y, Loads[n].Z, (Loads[n].X + Loads[n].Y + Loads[n].Z));
-			fprintf(fout2, " %-7.3f  %-7.3f  %-12.3le \n",
+			fprintf(fout2, " %-8.5f %-8.5f %-12.3le \n",
 				X[n], Y[n], (Loads[n].X + Loads[n].Y + Loads[n].Z));
 		}
 		fclose(fout1); fclose(fout2);
@@ -12163,7 +12166,7 @@ void CBTRDoc:: AddAllScenLoads()//called by CompleteScen
 	Srun[2].Format("Loads%d_run3\\", SCEN);//"Loads%d_run3\\"
 //	FILE * fout = fopen("loads.txt", "w"); // loads statistic
 
-	SetNullLoads();// init all maps (incl NOMAP)
+	SetNullLoads();// init all maps (incl NOMAP) with default steps
 	
 	double xmax, ymax, stepx, stepy;
 	double TotSum; // Load Sum from all Runs
@@ -12228,6 +12231,89 @@ void CBTRDoc:: AddAllScenLoads()//called by CompleteScen
 	logout << S;
 	::SetCurrentDirectory(ScenDir); // return from LoadDir
 	S.Format("_____BACK to SCEN folder____ %s\n", ScenDir);
+	logout << S;
+}
+
+void CBTRDoc:: ReadScenLoads3col() // read SCEN results from Load_total (3-col)
+{
+	// Loads reading from SCEN folder (CurrentDir)
+	CString stot = "Loads_total";
+	//CString LoadsDirName = ConfigFileName + "\\" + stot + "\\" + "3-col" ;
+	CString path = stot + "\\" + "3-col" + "\\";  
+	logout << path << "\n";
+
+	SetLoadArray(NULL, FALSE);//clear
+	int count = 0;// count loads
+
+	CString info; // 13 lines in load file 
+	CString Sname;
+	FILE * fin;
+	int infolines = 13;
+	char buf[1024];
+	double x, y, load;
+	double stepx, stepy, xmax, ymax;// = Load->StepX;
+	int nx, ny;
+	CLoad * Load;
+	CPlate * plate;
+	char name[1024];
+	int res;
+	CString S;
+
+	POSITION pos = PlatesList.GetHeadPosition();
+	while (pos != NULL) {
+		plate = PlatesList.GetNext(pos);
+		plate->Touched = FALSE;	// plate->Loaded = TRUE 
+		Sname.Format(path + "load_%d.txt", plate->Number);
+		strcpy(name, Sname);
+		
+		if ((fin = fopen(name, "r")) == NULL) continue;// not exists - next
+		
+		else {
+			info = "";
+			for (int l = 0; l < infolines; l ++) {
+				fgets(buf, 1024, fin);
+				info += CString(buf);
+			}
+			fclose(fin);
+			
+			ReadLoadInfo(info, nx, ny, stepx, stepy);// fetch plate params from text
+			xmax = stepx * nx;
+			ymax = stepy * ny;
+			Load = new CLoad(xmax, ymax, stepx, stepy);
+			//Load->Comment = info;
+			res = ReadLoadArray(name, Load, FALSE); // open file and read 3-col data
+			if (res > 0) Load->SetSumMax();
+			else {
+				S.Format("%s - LoadArray not read \n", name);
+				logout << S;
+			}
+					
+			if (Load->Sum > 1.e-3) {
+				plate->Touched = TRUE;
+				plate->Load = Load;
+				plate->Loaded = TRUE;
+				SetLoadArray(plate, TRUE);// Add the plate to Selected Plates List
+				count++;
+			}
+			else {
+				S.Format("Surf %d  - ZERO power read! \n", plate->Number);
+				logout << S;
+				S.Format("\tNx = %d, Ny = %d, stepX = %5f, stepY = %5f, Xmax = %5f, Ymax = %5f\n",
+					Load->Nx, Load->Ny, Load->StepX, Load->StepY, Load->Xmax, Load->Ymax);
+				logout << S;
+			}
+		
+		/*	if (TotSum > 1.e-3) {
+			plate->Touched = TRUE;// checked in SaveLoad() !!!
+			plate->AddLoads(Load1, Load2, Load3);// + SetSumMax called
+			plate->AtomPower = Load1->Sum;
+			plate->PosPower = Load2->Sum + Load3->Sum;
+			plate->NegPower = 0;
+		}*/
+		} // file exists
+	} // pos
+	
+	S.Format(" %d NON_ZERO loads found \n %d total Loads listed\n", count, LoadSelected);
 	logout << S;
 }
 
@@ -15111,8 +15197,32 @@ void CBTRDoc::OnUpdatePlot3dload(CCmdUI* pCmdUI)
 
 void CBTRDoc::OnPlotLoadmap() 
 {
-	//if (InvUser) return;
-	if (OptCombiPlot == -1) return;//(pMarkedPlate == NULL) return;
+	if (pMarkedPlate == NULL) return;
+	if (!(pMarkedPlate->Loaded)) return;
+	
+	CPlate * plate = pMarkedPlate;
+	ShowProfiles = TRUE;
+	int Sdegree = plate->SmoothDegree;
+	CLoad * OldLoad = plate->Load;
+	CLoad * NewLoad = OldLoad->Smoothed(Sdegree);
+	pMarkedPlate->Load = NewLoad;
+
+	pLoadView->SetLoad_Plate(NewLoad, pMarkedPlate);
+	pLoadView->Contours = FALSE;
+	pLoadView->Cross.X = NewLoad->iProf * NewLoad->StepX;
+	pLoadView->Cross.Y = NewLoad->jProf * NewLoad->StepY;
+	pMarkedPlate->ShowLoad();// pLoadView->SetPlate(pMarkedPlate);
+
+	pSetView->SetLoad_Plate(NewLoad, pMarkedPlate);
+	pSetView->ShowProfiles();//->InvalidateRect(NULL, TRUE);
+	
+	pMarkedPlate->Load = OldLoad;
+	delete (NewLoad);// created in Smoothed()
+	//plate->SmoothDegree = 0;
+	return;
+
+/////////////////NOT CALLED //////////////////////////
+	//if (OptCombiPlot == -1) return;//(pMarkedPlate == NULL) return;
 	if (!(pMarkedPlate->Loaded)) {
 		AfxMessageBox("no load"); return;
 	}
@@ -15166,19 +15276,27 @@ void CBTRDoc::OnUpdatePlotContours(CCmdUI* pCmdUI)
 
 void CBTRDoc::OnPlotMaxprofiles() 
 {
-	if (OptCombiPlot == -1) return;//(pMarkedPlate == NULL) return;
+	//if (OptCombiPlot == -1) return;//(pMarkedPlate == NULL) return;
 	
 	if (pMarkedPlate == NULL) return;
 	if (!(pMarkedPlate->Loaded)) return;
-	//if (!(pMarkedPlate->Selected)) return;
-	//pMarkedPlate->Load->SetSumMax();
+	
+	CPlate * plate = pMarkedPlate;
 	ShowProfiles = TRUE;
-	pLoadView->Cross.X = pMarkedPlate->Load->iProf * pMarkedPlate->Load->StepX;
-	pLoadView->Cross.Y = pMarkedPlate->Load->jProf * pMarkedPlate->Load->StepY;
-//	if (pLoadView->ShowLoad == TRUE) pLoadView->InvalidateRect(NULL, TRUE);
-	pSetView->SetLoad_Plate(pMarkedPlate->Load, pMarkedPlate);
+	int Sdegree = plate->SmoothDegree;
+	CLoad * OldLoad = plate->Load;
+	CLoad * NewLoad = OldLoad->Smoothed(Sdegree);
+	pMarkedPlate->Load = NewLoad;
+
+	pLoadView->Cross.X = NewLoad->iProf * NewLoad->StepX;
+	pLoadView->Cross.Y = NewLoad->jProf * NewLoad->StepY;
+
+	pSetView->SetLoad_Plate(NewLoad, pMarkedPlate);//(pMarkedPlate->Load, pMarkedPlate);
 	pSetView->ShowProfiles();//->InvalidateRect(NULL, TRUE);
-//	UpdateAllViews(NULL, NULL);
+
+	pMarkedPlate->Load = OldLoad;
+	delete (NewLoad);// created in Smoothed()
+	//plate->SmoothDegree = 0;
 	
 }
 
@@ -21068,6 +21186,9 @@ void CBTRDoc::SetNullLoad(CPlate * plate) // create zero load with default mesh 
 		hy = DefLoadStepY;
 	}
 
+	// set 1mm limit to grid step - limited by minAttr pos X,Y precision
+	if (hx < 0.001) hx = 0.001;
+	if (hy < 0.001) hy = 0.001;
 	plate->ApplyLoad(TRUE, hx, hy); //delete old + create new array (Loaded >> TRUE)
 	plate->Loaded = TRUE;
 }
@@ -22462,6 +22583,10 @@ void CBTRDoc::OnUpdatePlateFile(CCmdUI *pCmdUI)
 
 void CBTRDoc::OnPlateLoadOptRecalc() // set plate opt in pop-up menu
 {
+	AfxMessageBox("Not active since 5.1");// static loads
+	return;
+
+	//// old  - worked for Falls (dynamic loads)
 	int n = -1;
 	if (pMarkedPlate != NULL && pMarkedPlate->Selected && OptCombiPlot > -1)
 		n = pMarkedPlate->Number;
@@ -22572,3 +22697,202 @@ void CBTRDoc::OnPlateClearall()
 	ShowStatus();
 }
 
+
+void CBTRDoc::OnPlateScale()// moved from MainView method
+{
+	CPlate * plate = pMarkedPlate;
+	if (plate == NULL) { ShowStatus(); return; }
+	if (plate->Loaded == FALSE) return;
+
+	C3Point p0, p1, p2, p3;
+	double stepX, stepY;// , left, right, bot, top;
+	double xmin, xmax, ymin, ymax, zmin, zmax;
+	CString S;
+		
+	//plate->SetViewDim(); // - set max limits 
+	//plate->ShowLoad(); //OnPlotLoadmap();
+
+/*	plate->ShowEmptyLoad(); // show total rect, pLV->SetPlate(this);
+	plate->DrawLoadRect(); //can be zero - calculate and Show Scale (local) for current limits!!
+	plate->DrawPlateBound(); // plate polygon - scale not recalculated
+	ShowPlatePoints(OptDrawPart); // particle spots - scale not recalculated*/
+
+	LoadStepDlg dlg;
+	dlg.m_StepX = plate->Load->StepX;
+	dlg.m_StepY = plate->Load->StepY;
+	dlg.m_Xmin = plate->leftX; //dlg.m_Xmin = plate->Vmin.X; dlg.m_Xmax = plate->Vmax.X;
+	dlg.m_Xmax = plate->rightX;//dlg.m_Ymin = plate->Vmin.Y; dlg.m_Ymax = plate->Vmax.Y;
+	dlg.m_Ymin = plate->botY;  //dlg.m_Zmin = plate->Vmin.Z; dlg.m_Zmax = plate->Vmax.Z;
+	dlg.m_Ymax = plate->topY;
+	dlg.m_Zmin = 0; 
+	dlg.m_Zmax = plate->Load->MaxVal;//0.0; 
+	//if (plate->Loaded) dlg.m_Zmax = 1.0;// 
+		
+	if (dlg.DoModal() == IDOK) {
+			
+		stepX = plate->Load->StepX; //dlg.m_StepX; // to add later
+		stepY = plate->Load->StepY; //dlg.m_StepY; // to add later
+		xmin =  dlg.m_Xmin; 
+		xmax =  dlg.m_Xmax;
+		ymin =  dlg.m_Ymin;
+		ymax =  dlg.m_Ymax;
+		zmin =  dlg.m_Zmin;
+		zmax =  dlg.m_Zmax;
+		
+		S.Format(" steps: %g / %g\n  Dims: X: %g - %g  Y: %g - %g ", stepX, stepY, xmin, xmax, ymin, ymax);
+		AfxMessageBox(S);
+				
+		//plate->ApplyLoad(TRUE, stepX, stepY); // individual Loaded->TRUE
+				//SetNullLoad(plate); // create zero load with default mesh options
+		//pDoc->P_CalculateLoad(plate);
+		
+	
+		if (xmax - xmin > stepX && ymax - ymin > stepY)
+			plate->SetViewDim(xmin, xmax, ymin, ymax); // - set new limits 
+
+		//plate->ShowLoad(); //OnPlotLoadmap();
+		
+		/*plate->ShowEmptyLoad(); // show total rect, pLV->SetPlate(this);
+		plate->DrawLoadRect(); //can be zero - calculate and Show Scale (local) for current limits!!
+		plate->DrawPlateBound(); // plate polygon - scale not recalculated
+		//pDoc->ShowPlatePoints(); // particle spots - scale not recalculated*/
+
+		if (plate->Number == 2000) {
+			//pDoc->CalculateTracks(); // beam planes in plasma
+		}
+		
+	} //dlg IDOK
+	//else return;// (dlg.DoModal() == IDCANCEL) 
+
+	OnPlotMaxprofiles();	
+	plate->ShowLoadState(); // show summary (info)
+	//OnPlotLoadmap();
+
+	/////plate->ShowLoad(); //OnPlotLoadmap();
+}
+
+void CBTRDoc::OnResultsReadScen()
+{
+	//if (OnDataGet() == 0) return; // read config 
+	//char OldDirName[1024];
+	char DirName[1024];
+	//::GetCurrentDirectory(1024, OldDirName);
+	//logout << "Current folder " << OldDirName << "\n"; 
+	CString OldDirName = CurrentDirName; // old path
+	logout << "Current Config path " << OldDirName << "\n"; 
+	
+	//if (OnDataGet() == 0) return;// read config failed
+	int nread = ReadData(); // Read text-> to m_Text 
+	// Set new ConfigFileName, CurrDirName!!! 
+	CString NewDirName = CurrentDirName; // new - SCEN folder
+	//::GetCurrentDirectory(1024, NewDirName);// SCEN Config
+	logout << "Current Config path " << NewDirName << "\n"; 
+	if (nread == 0) return; // failed
+	
+	// RETURN BACK HOME  
+	CurrentDirName = OldDirName;
+	::SetCurrentDirectory(CurrentDirName);// go up("..\\"); - above scen
+	logout << "Current folder " << CurrentDirName << "\n"; 
+	
+	InitOptions(); //MAXSCEN = 1  empty Fields, AddSurfName, Set default tracing options
+	//InitTrackArrays();// clear 
+	UpdateDataArray(); // m_Text -> SetData SetOption CheckData 
+	SetFields(); // GAS + MF from files if found in Config
+	CheckData();
+	SetBeam(); // Aimings, IS positions
+	InitPlasma(); // called in OnDataGet
+	InitAddPlates(); // Remove AddPlatesList, set AddPlatesNumber = 0;
+	SetPlates();//SetPlasma is called from SetPlatesNBI
+	SetAddPlates();//ReadAddPlates(AddSurfName);
+	if (AddPlatesNumber > 0)	AppendAddPlates();
+	SetStatus();
+
+	CurrentDirName = NewDirName;
+	::SetCurrentDirectory(CurrentDirName);// SCEN folder
+	logout << "Current folder " << CurrentDirName << "\n"; 
+	 
+	// SCEN folder is set as CurrDir!
+	//ScenData[0].SetAt(1, "CONFIG = " + CurrentDirName + "\\ " + ConfigFileName + "\n");
+	
+	CString sn;
+	char name[1024];
+	
+/*	int pos1 = -1, pos2 = -1;
+	CString NAME  = ConfigFileName.MakeUpper();
+	pos1 = NAME.Find("SCEN", 0);
+	pos2 = NAME.Find("_", 0);
+	if (pos1 >=0 && pos2 - pos1 > 4) {
+		sn = NAME.Mid(pos1+4, pos2-pos1-4);  
+		SCEN = atoi(sn);
+		AfxMessageBox("SCEN NUMBER = " + sn); 
+	}
+	else {
+		AfxMessageBox("SCEN NUMBER = 0"); 
+		SCEN = 0;
+		return;
+	}*/
+
+	ReadScenLoads3col(); ////////// Loads reading from SCEN folder////////////////
+/*
+	CString stot = "Loads_total";
+	//CString LoadsDirName = ConfigFileName + "\\" + stot + "\\" + "3-col" ;
+	CString path = stot + "\\" + "3-col" + "\\";  
+	logout << path << "\n";
+
+	SetLoadArray(NULL, FALSE);//clear
+	int count = 0;// count loads
+	
+	//BeginWaitCursor(); //OnShow();
+	WIN32_FIND_DATA FindFileData; //fData;
+	HANDLE hFind;
+	// LPTSTR DirSpec = (LPTSTR)"*.dat";
+	//char OpenDirName[1024];
+	//::GetCurrentDirectory(1024, OpenDirName);
+	//strcpy(sdir, OpenDirName);
+	//::SetCurrentDirectory(OpenDirName);
+	//SetTitle(OpenDirName);// + TaskName);
+
+  // Find the first file in the directory.
+   hFind = FindFirstFile(path + "*.txt", &FindFileData);
+
+   if (hFind == INVALID_HANDLE_VALUE) {
+	   AfxMessageBox("Invalid file handle \n" + path + "check Loads_total name");
+	   return;
+   }
+ 
+   else  {
+	   sn = (CString) (FindFileData.cFileName);
+	   if (sn.Find("load", 0) >= 0) {
+		    count++;
+			strcpy(name, sn);
+			ReadLoad(name);
+			logout << sn << "\n";
+	   }
+   //}
+  
+      while (FindNextFile(hFind, &FindFileData) != 0) 
+      {
+         //_tprintf (TEXT("Next file name is: %s\n"),  FindFileData.cFileName);
+		  sn = (CString) (FindFileData.cFileName);
+		  if (sn.Find("load", 0) >= 0) {
+			  count++;
+			  strcpy(name, sn);
+			  ReadLoad(name);
+			  logout << sn << "\n";
+		  } // if
+      } // while
+   } //valid handle
+     // dwError = GetLastError();
+    FindClose(hFind);
+	//EndWaitCursor();
+	sn.Format("%d loads found\n", count);
+	logout << sn;
+	//AfxMessageBox(sn);
+*/
+	OptCombiPlot = -1;//-1 - no load, 0 - map is calculated, >0 - selected but not calculated 
+	//ModifyArea(FALSE);
+	//OnPlateClearSelect();
+	Progress = 0;
+	OptParallel = FALSE; // CalculateCombi(0)
+	OnShow();
+}

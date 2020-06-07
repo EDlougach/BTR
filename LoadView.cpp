@@ -552,10 +552,11 @@ void CLoadView::OnRButtonDown(UINT /* nFlags */, CPoint point)
 void CLoadView::OnSize(UINT nType, int cx, int cy) 
 {
 	CScrollView::OnSize(nType, cx, cy);
-	CRect rect;
+	ShowLoad = FALSE;
+/*	CRect rect;
 	GetClientRect(rect);
 	UpdateScales(rect);
-	STOP = FALSE;
+	STOP = FALSE;*/
 
 }
 void CLoadView::ShowLocalScale(CDC* pDC)

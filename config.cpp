@@ -338,7 +338,10 @@ void CLoad:: SetSumMax()
 	double sum = 0;
 	MaxVal = 0;
 	iMaxBound = 0;
-	iMaxVal = -1; jMaxVal = -1;
+	iMaxVal = 0; 
+	jMaxVal = 0;
+	iProf =  0;
+	jProf =  0;
 	double val;
 	double cell = StepX * StepY;
 	int i, j;
@@ -346,19 +349,10 @@ void CLoad:: SetSumMax()
 
 	for (i = 0; i <= Nx; i++) {
 		for (j = 0; j <= Ny; j++) {
-		
-			/*	if (i == Nx) { 
-				if (j == Ny) cell = 0.25 * StepX * StepY;
-				else cell = 0.5 * StepX * StepY;
-			}
-			else {// i < Nx
-				if (j == Ny) cell = 0.5 * StepX * StepY;
-				else cell = StepX * StepY;
-			} */
-
+				
 			val = Val[i][j]; // density
 			sum += val * cell;// * StepX * StepY; // power
-			if (val>=MaxVal) {
+			if (val >= MaxVal) {
 				MaxVal = val;
 				iMaxVal = i; iProf =  i;
 				jMaxVal = j; jProf =  j;
@@ -520,6 +514,22 @@ void CLoad::SetValArray(double ** arr, int nx, int ny)
 			Val[i][j] = arr[i][j]; // density
 		}
 	}
+}
+
+CLoad * CLoad:: Smoothed(int smdegree) //(CLoad * load, int smdegree)
+{
+	CLoad * pLoad = new CLoad(Xmax, Ymax, StepX, StepY);
+	//pLoad->Nx = load->Nx;	pLoad->Ny = load->Ny;
+	for (int i = 0; i <= Nx; i++) {
+		for (int j = 0; j <= Ny; j++) {
+			pLoad->Val[i][j] = Val[i][j]; // density
+		}
+	}
+	
+	if (smdegree > 0) pLoad->SmoothLoad(smdegree);
+	else pLoad->SmoothDegree = 0;
+	pLoad->SetSumMax();
+	return pLoad;
 }
 
 void CLoad:: Copy(CLoad * load)
@@ -1524,6 +1534,7 @@ void  CLoad::  SmoothLoad(int degree)
 			}//i
 		} // j
 	} // k = SmoothDegree
+	
 }
 
 
@@ -2623,7 +2634,7 @@ void  CPlate::ApplyLoad(BOOL flag,  double Hx, double Hy)
 	}
 }
 
-void  CPlate :: SetSmoothLoad()
+void  CPlate :: SetSmoothLoad()// not called
 {
 //	if (SmLoad->SmoothDegree == SmoothDegree) return; // smoothed already for this degree
 //	else {
@@ -2669,18 +2680,9 @@ void  CPlate :: ShowLoad()
 	if (Loaded)	{
 		//CorrectLoad();
 		pLV->ShowLoad = TRUE;
-		if (SmoothDegree == 0) {
-			pLV->SetLoad_Plate(Load, this);
-			if (Load->MaxVal > 1.e-10) 
-			pSetView->SetLoad_Plate(Load, this);
-		}
-		else {
-			//SmLoad->SetSumMax();
-			pLV->SetLoad_Plate(SmLoad, this);
-			if (SmLoad->MaxVal > 1.e-10) 
-			pSetView->SetLoad_Plate(SmLoad, this);
-		}
-		
+		pLV->SetLoad_Plate(Load, this);
+		if (Load->MaxVal > 1.e-10) 
+		pSetView->SetLoad_Plate(Load, this);
 	}
 	else {
 		pLV->SetLoad_Plate(Load, this);
@@ -2808,17 +2810,12 @@ void  CPlate :: ShowLoadState()
 	}
 
 	else {	//(Loaded)
-		CLoad * L; 
-		if (SmoothDegree == 0) L = Load;
-		else  {
-			SetSmoothLoad(); L = SmLoad;
-		}
-			//L->SetSumMax();
-			if (L->MaxVal > 1.e-10) {
+		CLoad * L = Load; 
+		/*if (L->MaxVal > 1.e-10) {
 				pSetView->SetLoad_Plate(L, this);
-			}
-			else pSetView->SetLoad_Plate(NULL, NULL);
-	
+		}
+		else pSetView->SetLoad_Plate(NULL, NULL);
+	*/
 			
 		S.Format( " (AS %d)", Number);
 		pDC->TextOut(10,10, Comment + S); 
@@ -2860,12 +2857,11 @@ void  CPlate :: ShowLoadState()
 		S.Format("CORN, m: [0] (%g,%g,%g)  [1] (%g,%g,%g)  [2] (%g,%g,%g)  [3] (%g,%g,%g)", Corn[0].X, Corn[0].Y, Corn[0].Z,
 			Corn[1].X, Corn[1].Y, Corn[1].Z, Corn[2].X, Corn[2].Y, Corn[2].Z, Corn[3].X, Corn[3].Y, Corn[3].Z);
 		pDC->TextOut(10, 230, S);
-		S.Format("Smooth = %d", L->SmoothDegree);
+		S.Format("Smooth = %d", SmoothDegree);// L->Smoothdegree
 		pDC->TextOut(10, 250, S);
 	
 		//pSetView->InvalidateRect(NULL, TRUE);
 		pLV->ReleaseDC(pDC);
-
 
 	}
 
@@ -2940,7 +2936,7 @@ void  CPlate:: WriteLoad(FILE * fout)
 	fprintf(fout, Comment + S);  
 	S.Format("\tNx = %d  Ny = %d \n", L->Nx, L->Ny);
 	fprintf(fout, S);
-	S.Format("\tStepX = %4.3f m  StepY = %4.3f m \n", L->StepX, L->StepY);
+	S.Format("\tStepX = %f m  StepY = %f m \n", L->StepX, L->StepY);
 	fprintf(fout, S);
 	S.Format("\tSumma = %le W  (%s)\n ", L->Sum, Load->Particles);
 	fprintf(fout, S);
@@ -2949,11 +2945,11 @@ void  CPlate:: WriteLoad(FILE * fout)
 	S.Format("\t at X = %4.3f m Y = %4.3f m  \n",  
 				Load->iMaxVal * L->StepX,  L->jMaxVal * L->StepY);
 	fprintf(fout, S);
-	S.Format("\tOrigin at  X = %4.3f m Y = %4.3f m Z = %4.3f m \n ",  Orig.X, Orig.Y, Orig.Z);
+	S.Format("\tOrigin at  X = %f m Y = %f m Z = %f m \n ",  Orig.X, Orig.Y, Orig.Z);
 	fprintf(fout, S);
-	S.Format("\tOrtX  X = %4.3f  Y = %4.3f  Z = %4.3f  \n ",  OrtX.X, OrtX.Y, OrtX.Z);
+	S.Format("\tOrtX  X = %f  Y = %f  Z = %f  \n ",  OrtX.X, OrtX.Y, OrtX.Z);
 	fprintf(fout, S);
-	S.Format("\tOrtY  X = %4.3f  Y = %4.3f  Z = %4.3f  \n",  OrtY.X, OrtY.Y, OrtY.Z);
+	S.Format("\tOrtY  X = %f  Y = %f  Z = %f  \n",  OrtY.X, OrtY.Y, OrtY.Z);
 	fprintf(fout, S);
 	S.Format("\tSmoothing Degree  =  %d \n", L->SmoothDegree);
 	fprintf(fout, S);
@@ -2966,7 +2962,7 @@ void  CPlate:: WriteLoad(FILE * fout)
 			double x = i*L->StepX;
 			double y = j*L->StepY;
 			double load = L->Val[i][j];
-			fprintf(fout, "\t%-7.3f \t %-7.3f \t %-12.3le \n", x,y,load);
+			fprintf(fout, "\t%-8.5f \t %-8.5f \t %-12.3le \n", x,y,load);
 		} // i.j
 }
 
