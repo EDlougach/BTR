@@ -850,7 +850,9 @@ public:
 	void ResumeData();
 	void WriteScenTracks();
 	void WriteReport(CString ext);
-	void ReadScenLoads3col(); // read SCEN results from Load_total (3-col)
+	void ReadScenLoads3col(); // read SCEN results from Load_total folder (3-col)
+	int  ReadLoads3_AtPath(CString path);
+	void ReadResultsSingle(); // replace ReadAll
 	
 /*
 protected:

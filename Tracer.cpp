@@ -1616,15 +1616,20 @@ bool CTracer::TraceSourceIonTHIN() //track until NeutrXmax - stepL
 		m_Pos = P1;
 		Track.Add(m_Pos);
 		P2 = MakeStep();//CalcV, P2 = P1 + ortV * dist;
-		if (P2.X >= Xlimit) {
+		
+		done = GetFalls(P1, P2, metlimit);// Last(solid)>>P2
+		if (!done) stopped = TRUE;// interrupted (pDoc->STOP)
+		if (metlimit) break;
+
+		if (P2.X >= Xlimit) { // return back to limit for passed through
 			double dLx = Xlimit - P1.X;
 			double dt = dLx / m_V.X;// can be <0
 			P2 = P1 + m_V * dt; // stop at Xlimit
 			break;
 		}
-		//if (m_Stopped) break;// MakeStep failed
-		done = GetFalls(P1, P2, metlimit);// Last(solid)>>P2
-		if (!done) stopped = TRUE;// interrupted (pDoc->STOP)
+		
+		//done = GetFalls(P1, P2, metlimit);// Last(solid)>>P2
+		//if (!done) stopped = TRUE;// interrupted (pDoc->STOP)
 		
 		P1 = P2;
 		i++;

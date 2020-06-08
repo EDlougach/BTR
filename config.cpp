@@ -2175,7 +2175,7 @@ BOOL CPlate:: WithinPoly(C3Point P, C3Point p1, C3Point p2, C3Point p3, C3Point 
 BOOL CPlate:: WithinPoly(C3Point Ploc)
 {
 	C3Point p1, p2, p3, p4;
-	double eps = 1.e-12;
+	double eps = 1.e-20;
 	p1 = GetLocal(Corn[0]);
 	p2 = GetLocal(Corn[1]); 
 	p3 = GetLocal(Corn[2]); 
@@ -2700,7 +2700,7 @@ void  CPlate :: ShowEmptyLoad() //
 	//pSetView ->Load = NULL;
 	//pLoadView->Load = NULL;
 	pLoadView->ShowLoad = TRUE; // NULL;
-	pSetView->Invalidate(TRUE);
+	//pSetView->Invalidate(TRUE);
 	//pLV->Invalidate(TRUE);
 	
 	pLV->SetPlate(this);

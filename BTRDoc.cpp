@@ -4748,7 +4748,8 @@ void  CBTRDoc:: ModifyArea(bool fixed)
 					SetLoadArray(plate, FALSE);
 				}
 			}
-			else plate->SetLocals(p0, p1, p2, p3);
+			else 
+			plate->SetLocals(p0, p1, p2, p3);
 		}
 		if (plate->Number == 2 && plate->Comment.Find("Right") >= 0 && plate->Comment.Find("Limit") >=0) {
 			p0 = C3Point(0, AreaHorMin, AreaVertMin);
@@ -4764,7 +4765,8 @@ void  CBTRDoc:: ModifyArea(bool fixed)
 					SetLoadArray(plate, FALSE);
 				}
 			}
-			else plate->SetLocals(p0, p1, p2, p3);
+			else 
+			plate->SetLocals(p0, p1, p2, p3);
 			
 		}
 		if (plate->Number == 3 && plate->Comment.Find("Left") >= 0 && plate->Comment.Find("Limit") >=0) {
@@ -4781,7 +4783,8 @@ void  CBTRDoc:: ModifyArea(bool fixed)
 					SetLoadArray(plate, FALSE);
 				}
 			}
-			else plate->SetLocals(p0, p1, p2, p3);
+			else 
+			plate->SetLocals(p0, p1, p2, p3);
 			
 		}
 		if (plate->Number == 4 && plate->Comment.Find("Bottom") >= 0 && plate->Comment.Find("Limit") >=0) {
@@ -4798,7 +4801,8 @@ void  CBTRDoc:: ModifyArea(bool fixed)
 					SetLoadArray(plate, FALSE);
 				}
 			}
-			else plate->SetLocals(p0, p1, p2, p3);
+			else 
+			plate->SetLocals(p0, p1, p2, p3);
 			
 		}
 		if (plate->Number == 5 && plate->Comment.Find("Top") >= 0 && plate->Comment.Find("Limit") >=0) {
@@ -4815,14 +4819,13 @@ void  CBTRDoc:: ModifyArea(bool fixed)
 					SetLoadArray(plate, FALSE);
 				}
 			}
-			else plate->SetLocals(p0, p1, p2, p3);
-			
+			else 
+			plate->SetLocals(p0, p1, p2, p3);
 			break;
 		}
 		if (plate->Number < 5) continue;
 	} // pos
 	CalcLimitXmax = AreaLong + 1;
-
 }
 
 void  CBTRDoc::SetPlates() // free
@@ -7216,7 +7219,7 @@ void CBTRDoc:: ShowPlatePoints(bool draw)
 	//pSetView->Load = NULL;
 	int x, y;
 	
-	pSetView->InvalidateRect(NULL, TRUE); // clear old profiles
+	//pSetView->InvalidateRect(NULL, TRUE); // clear old profiles
 	
 	pLV->STOP = FALSE;
 	//pLV->InvalidateRect(NULL, TRUE);
@@ -10302,7 +10305,7 @@ void CBTRDoc::OnResultsRead()
 		pSetView->Load = NULL;
 	}
 
-	ModifyArea(FALSE);// beam not fixed, account beamfoot change
+	//ModifyArea(FALSE);// beam not fixed, account beamfoot change
     pMainView->InvalidateRect(NULL, TRUE);
 	pLV->InvalidateRect(NULL, TRUE);
 	pSetView->InvalidateRect(NULL, TRUE);
@@ -11093,8 +11096,67 @@ void CBTRDoc::OnDataSave()
 
 }
 
+void CBTRDoc::ReadResultsSingle()
+{
+	char DirName[1024];
+	CString OldDirName = CurrentDirName; // old path
+	logout << "Current Config path " << OldDirName << "\n"; 
+		
+	int nread = ReadData(); // Read text-> to m_Text 
+	CString NewDirName = CurrentDirName; // new - SCEN folder
+	//::GetCurrentDirectory(1024, NewDirName);// SCEN Config
+	logout << "Current Config path " << NewDirName << "\n"; 
+	if (nread == 0) return; // failed
+	
+	// RETURN BACK HOME  
+	CurrentDirName = OldDirName;
+	::SetCurrentDirectory(CurrentDirName);// go up("..\\"); - above scen
+	logout << "Current folder " << CurrentDirName << "\n"; 
+	
+	InitOptions(); //MAXSCEN = 1  empty Fields, AddSurfName, Set default tracing options
+	//InitTrackArrays();// clear 
+	UpdateDataArray(); // m_Text -> SetData SetOption CheckData 
+	SetFields(); // GAS + MF from files if found in Config
+	CheckData();
+	SetBeam(); // Aimings, IS positions
+	InitPlasma(); // called in OnDataGet
+	InitAddPlates(); // Remove AddPlatesList, set AddPlatesNumber = 0;
+	SetPlates();//SetPlasma is called from SetPlatesNBI
+	SetAddPlates();//ReadAddPlates(AddSurfName);
+	if (AddPlatesNumber > 0)	AppendAddPlates();
+	SetStatus();
+
+	CurrentDirName = NewDirName;
+	::SetCurrentDirectory(CurrentDirName);// SCEN folder
+	logout << "Current folder " << CurrentDirName << "\n"; 
+	 
+/*	CString stot = "Loads_total";
+	CString path = stot + "\\" + "3-col" + "\\";  
+	logout << path << "\n";*/
+
+	SetLoadArray(NULL, FALSE);//clear
+		
+	CString path = ""; // empty
+	int count = ReadLoads3_AtPath(path);// count non-zero loads
+
+	CString S;
+	S.Format(" %d NON_ZERO loads found \n %d total Loads listed\n", count, LoadSelected);
+	logout << S;
+	OptCombiPlot = -1;//-1 - no load, 0 - map is calculated, >0 - selected but not calculated 
+	//ModifyArea(FALSE);
+	OnPlateClearSelect();
+	Progress = 0;
+	//OptParallel = FALSE; // CalculateCombi(0)
+	OnShow();
+}
+
+
 void CBTRDoc::OnResultsReadall() 
 {
+	ReadResultsSingle();
+	return;
+
+	//////////// OLD /////////////////
 	OptFree = FALSE; // set STANDARD config - by default
 	DINSELECT = FALSE;	
 	
@@ -11142,7 +11204,7 @@ void CBTRDoc::OnResultsReadall()
 	EndWaitCursor();
 
 	OptCombiPlot = -1;//-1 - no load, 0 - map is calculated, >0 - selected but not calculated 
-	ModifyArea(FALSE);
+	//ModifyArea(FALSE);
 	OnPlateClearSelect();
 	Progress = 0;
 	//OptParallel = FALSE; // CalculateCombi(0)
@@ -12234,17 +12296,9 @@ void CBTRDoc:: AddAllScenLoads()//called by CompleteScen
 	logout << S;
 }
 
-void CBTRDoc:: ReadScenLoads3col() // read SCEN results from Load_total (3-col)
+int CBTRDoc:: ReadLoads3_AtPath(CString path) //return NONZERO loads count
 {
-	// Loads reading from SCEN folder (CurrentDir)
-	CString stot = "Loads_total";
-	//CString LoadsDirName = ConfigFileName + "\\" + stot + "\\" + "3-col" ;
-	CString path = stot + "\\" + "3-col" + "\\";  
-	logout << path << "\n";
-
-	SetLoadArray(NULL, FALSE);//clear
 	int count = 0;// count loads
-
 	CString info; // 13 lines in load file 
 	CString Sname;
 	FILE * fin;
@@ -12258,6 +12312,7 @@ void CBTRDoc:: ReadScenLoads3col() // read SCEN results from Load_total (3-col)
 	char name[1024];
 	int res;
 	CString S;
+	BeginWaitCursor(); //OnShow();
 
 	POSITION pos = PlatesList.GetHeadPosition();
 	while (pos != NULL) {
@@ -12266,9 +12321,13 @@ void CBTRDoc:: ReadScenLoads3col() // read SCEN results from Load_total (3-col)
 		Sname.Format(path + "load_%d.txt", plate->Number);
 		strcpy(name, Sname);
 		
-		if ((fin = fopen(name, "r")) == NULL) continue;// not exists - next
+		if ((fin = fopen(name, "r")) == NULL) {
+			Sname.Format(path + "load%d.txt", plate->Number);
+			strcpy(name, Sname);
+			if ((fin = fopen(name, "r")) == NULL)	continue;// not exists - next
+		}
 		
-		else {
+		//else {
 			info = "";
 			for (int l = 0; l < infolines; l ++) {
 				fgets(buf, 1024, fin);
@@ -12310,9 +12369,26 @@ void CBTRDoc:: ReadScenLoads3col() // read SCEN results from Load_total (3-col)
 			plate->PosPower = Load2->Sum + Load3->Sum;
 			plate->NegPower = 0;
 		}*/
-		} // file exists
+		//} // file exists
 	} // pos
+
+	EndWaitCursor();
+	return count;
+}
+
+void CBTRDoc:: ReadScenLoads3col() // read SCEN results from Load_total (3-col)
+{
+	// Loads reading from SCEN folder (CurrentDir)
+	//CString LoadsDirName = ConfigFileName + "\\" + stot + "\\" + "3-col" ;
+	CString stot = "Loads_total";
+	CString path = stot + "\\" + "3-col" + "\\";  
+	logout << path << "\n";
+
+	SetLoadArray(NULL, FALSE);//clear
 	
+	int count = ReadLoads3_AtPath(path);// count non-zero loads
+		
+	CString S;
 	S.Format(" %d NON_ZERO loads found \n %d total Loads listed\n", count, LoadSelected);
 	logout << S;
 }
@@ -22773,15 +22849,10 @@ void CBTRDoc::OnPlateScale()// moved from MainView method
 
 void CBTRDoc::OnResultsReadScen()
 {
-	//if (OnDataGet() == 0) return; // read config 
-	//char OldDirName[1024];
 	char DirName[1024];
-	//::GetCurrentDirectory(1024, OldDirName);
-	//logout << "Current folder " << OldDirName << "\n"; 
 	CString OldDirName = CurrentDirName; // old path
 	logout << "Current Config path " << OldDirName << "\n"; 
-	
-	//if (OnDataGet() == 0) return;// read config failed
+		
 	int nread = ReadData(); // Read text-> to m_Text 
 	// Set new ConfigFileName, CurrDirName!!! 
 	CString NewDirName = CurrentDirName; // new - SCEN folder
@@ -22814,10 +22885,9 @@ void CBTRDoc::OnResultsReadScen()
 	// SCEN folder is set as CurrDir!
 	//ScenData[0].SetAt(1, "CONFIG = " + CurrentDirName + "\\ " + ConfigFileName + "\n");
 	
-	CString sn;
+	/*CString sn;
 	char name[1024];
-	
-/*	int pos1 = -1, pos2 = -1;
+		int pos1 = -1, pos2 = -1;
 	CString NAME  = ConfigFileName.MakeUpper();
 	pos1 = NAME.Find("SCEN", 0);
 	pos2 = NAME.Find("_", 0);
@@ -22833,62 +22903,6 @@ void CBTRDoc::OnResultsReadScen()
 	}*/
 
 	ReadScenLoads3col(); ////////// Loads reading from SCEN folder////////////////
-/*
-	CString stot = "Loads_total";
-	//CString LoadsDirName = ConfigFileName + "\\" + stot + "\\" + "3-col" ;
-	CString path = stot + "\\" + "3-col" + "\\";  
-	logout << path << "\n";
-
-	SetLoadArray(NULL, FALSE);//clear
-	int count = 0;// count loads
-	
-	//BeginWaitCursor(); //OnShow();
-	WIN32_FIND_DATA FindFileData; //fData;
-	HANDLE hFind;
-	// LPTSTR DirSpec = (LPTSTR)"*.dat";
-	//char OpenDirName[1024];
-	//::GetCurrentDirectory(1024, OpenDirName);
-	//strcpy(sdir, OpenDirName);
-	//::SetCurrentDirectory(OpenDirName);
-	//SetTitle(OpenDirName);// + TaskName);
-
-  // Find the first file in the directory.
-   hFind = FindFirstFile(path + "*.txt", &FindFileData);
-
-   if (hFind == INVALID_HANDLE_VALUE) {
-	   AfxMessageBox("Invalid file handle \n" + path + "check Loads_total name");
-	   return;
-   }
- 
-   else  {
-	   sn = (CString) (FindFileData.cFileName);
-	   if (sn.Find("load", 0) >= 0) {
-		    count++;
-			strcpy(name, sn);
-			ReadLoad(name);
-			logout << sn << "\n";
-	   }
-   //}
-  
-      while (FindNextFile(hFind, &FindFileData) != 0) 
-      {
-         //_tprintf (TEXT("Next file name is: %s\n"),  FindFileData.cFileName);
-		  sn = (CString) (FindFileData.cFileName);
-		  if (sn.Find("load", 0) >= 0) {
-			  count++;
-			  strcpy(name, sn);
-			  ReadLoad(name);
-			  logout << sn << "\n";
-		  } // if
-      } // while
-   } //valid handle
-     // dwError = GetLastError();
-    FindClose(hFind);
-	//EndWaitCursor();
-	sn.Format("%d loads found\n", count);
-	logout << sn;
-	//AfxMessageBox(sn);
-*/
 	OptCombiPlot = -1;//-1 - no load, 0 - map is calculated, >0 - selected but not calculated 
 	//ModifyArea(FALSE);
 	//OnPlateClearSelect();

@@ -1530,6 +1530,7 @@ void CMainView::OnPlateSmooth()
 	plate->Load = NewLoad;
 	//pDoc->OnPlotLoadmap();*/
 
+	pDoc->ShowProfiles = TRUE;
 	pDoc->OnPlotMaxprofiles();
 
 /*	plate->Load = OldLoad;
@@ -1701,9 +1702,11 @@ void CMainView::OnLButtonDown(UINT /* nFlags */, CPoint point)
 		//if(pDoc->OptDrawPart)
 		
 		//if (plate0->Number == pDoc->PlasmaEmitter)
-			pDoc->ShowPlatePoints(TRUE);//(pDoc->OptDrawPart);
-			pDoc->OnPlotMaxprofiles();
+		pDoc->ShowProfiles = TRUE;
+		pDoc->ShowPlatePoints(TRUE);//(pDoc->OptDrawPart);
+		pDoc->OnPlotMaxprofiles();
 		// particle spots - scale not recalculated
+		return;
 	
 	}// marked
 
@@ -2059,6 +2062,7 @@ void CMainView::OnPlateScale()
 	} //dlg IDOK
 	//else return;// (dlg.DoModal() == IDCANCEL) 
 
+	pDoc->ShowProfiles = TRUE;
 	pDoc->OnPlotMaxprofiles();	
 	//pDoc->pMarkedPlate->ShowLoadState(); // show summary (info)	
 	plate->ShowLoadState(); // show summary (info)
