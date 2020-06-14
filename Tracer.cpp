@@ -1720,6 +1720,68 @@ void CTracer:: DrawPartTrack(CArray<C3Point> & Track)
 	cs.Unlock();
 }
 
+void CTracer:: DistributeTrack(CArray<C3Point> & Track, double power0)
+{
+	//if (m_Charge != 0) return;
+	int n = Track.GetSize();
+	if (n < 1) return;
+	
+	CBTRDoc * pDoc = (CBTRDoc*)m_pDoc;
+	
+	CArray<C3Point> Path; // refined
+	CArray<double> Pow;
+	
+	if (n < 2) {//single point
+		Path.Add(Track[0]);
+		Pow.Add(power0);
+		cs.Lock();
+		pDoc->DistributeTrack(Path, Pow);
+		cs.Unlock();
+		return;
+	}
+	
+	C3Point Pend = Track[n-1];
+	C3Point P0 = Track[0];
+	C3Point dP = (Pend - P0) * 0.001;
+	double step = 0.01; // ModVect(dP);
+	Path.Add(P0);	
+	Pow.Add(power0);
+	C3Point P1, P, dp;//
+	double power, Dist;
+	int k; // split step
+
+	for (int i = 1; i < n; i++) {	//	(P <= Pend) {
+		P0 = Track[i-1];// already added to Path
+		P1 = Track[i];
+		Dist = GetDistBetween(P0, P1);// between 2 neibour points
+		if (Dist > step) { // split Dist
+			k = (int)ceil(Dist / step); //>1
+			dp = (P1 - P0)  / k;
+			for (int j = 1; j <=k; j++) { // include right end
+				P = P0 + dp * j;
+				power = power0 * GetAtomDecay(P0, P);
+				Path.Add(P);
+				Pow.Add(power);
+			}// j = k
+		} // Dist > step
+
+		else { // Dist <= step
+			P = P1;//P0 + dP * i;
+			power = power0 * GetAtomDecay(P0, P);  
+			//pBeamHorPlane->Load->Distribute(P.X, P.Y, power);
+			//pBeamVertPlane->Load->Distribute(P.X, P.Z, power);
+			Path.Add(P);
+			Pow.Add(power);
+		} //no split
+	} // i < n
+
+	cs.Lock();
+	pDoc->DistributeTrack(Path, Pow);
+	cs.Unlock();
+	Path.RemoveAll();
+	Pow.RemoveAll();
+}
+
 bool CTracer::TraceAtom() //called by TraceRay
 //calculate (no drawing) till AreaLimit
 // + DRAW
@@ -1754,6 +1816,8 @@ bool CTracer::TraceAtom() //called by TraceRay
 	//Track.Add(m_Pos);
 	Track.Add(P2);//= Last 
 	if (m_Draw) DrawPartTrack(Track);
+
+	DistributeTrack(Track, m_Power);
 	 
 	if (stopped) return FALSE;
 	
@@ -2807,9 +2871,12 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 				// uses m_AtomPowers to correct all tattr.power
 		
 		cs.Lock();
-		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);
-		bool added = pDoc->AddFallsToFalls(m_ID, is + 1, tattr);
+		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);// BeamPlanes -> SetSumMax
+		//bool added = pDoc->AddFallsToFalls(m_ID, is + 1, tattr);
+		// - TO SWITCH ON in future
 		
+		//if (!added) logout << "!!!!! Falls not added !!!!!!!!!!!!!!\n";
+
 		/*bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
 		if (!added) {
 			SetContinue(FALSE);// m_Continue = FALSE;
@@ -2822,8 +2889,7 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 			stopped = TRUE;// -> leads to STOP all threads in doc
 		cs.Unlock();
 
-		if (!added) logout << "!!!!! Falls not added !!!!!!!!!!!!!!\n";
-
+		
 		ClearArrays();// clear last BML tattr
 		//pDoc->ShowStatus();// not working for multi-run!!!
 		if (!m_Draw) ShowBeamlet(is);// locked inside

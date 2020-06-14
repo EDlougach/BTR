@@ -535,7 +535,7 @@ void CLoadView::OnRButtonDown(UINT /* nFlags */, CPoint point)
 	
 	Cross.X = x; Cross.Y = y;
 	Load->SetProf(x,y);
-	InvalidateRect(NULL, TRUE);//(LoadRect, FALSE);
+	//InvalidateRect(NULL, TRUE);//(LoadRect, FALSE);
 	pDoc->ShowProfiles = TRUE;
 	pDoc->UpdateAllViews(this, NULL);
 	

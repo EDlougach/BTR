@@ -287,8 +287,10 @@ public:
 	CPlate * pMarkedPlate;
 	CPlate   emptyPlate;
 	CPlate * pTorCrossPlate;
-	CPlate * pBeamHorPlane;
-	CPlate * pBeamVertPlane;
+
+	CPlate * pBeamHorPlane; // new - total NBL plane
+	CPlate * pBeamVertPlane; // new - total NBL plane
+
 	int     EmitterNumber;// plate for next beam start
 	int		PlasmaEmitter; // DuctExit or AreaLimit for trace in plasma
 	int		DuctExit;// if defined
@@ -735,6 +737,7 @@ public:
 	double GetStopSigma(double PSI);
 	void CalculatePowerTrack(C3Point Start, C3Point Finish, double StartPower, double Vel); // project power track on plane
 	void CalculateTracks();
+	void DistributeTrack(CArray<C3Point> & Pos, CArray<double> & Pow);
 	
 	void  RandAttr(ATTRIBUTES & Attr, double step);
 	void  ReadPressure();

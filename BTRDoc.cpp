@@ -4741,15 +4741,14 @@ void  CBTRDoc:: ModifyArea(bool fixed)
 			p3 = C3Point(AreaLong, AreaHorMax, AreaVertMax);
 			
 			if (plate->Loaded) {
-				if (AfxMessageBox("Keep the existing load on the Target Plane?", MB_YESNO) == IDNO) {
+				//if (AfxMessageBox("Keep the existing load on the Target Plane?", MB_YESNO) == IDNO) {
 					plate->Load->Clear(); 
 					plate->Loaded = FALSE;
 					plate->SetLocals(p0, p1, p2, p3);
 					SetLoadArray(plate, FALSE);
-				}
+				//}
 			}
-			else 
-			plate->SetLocals(p0, p1, p2, p3);
+			else 	plate->SetLocals(p0, p1, p2, p3);
 		}
 		if (plate->Number == 2 && plate->Comment.Find("Right") >= 0 && plate->Comment.Find("Limit") >=0) {
 			p0 = C3Point(0, AreaHorMin, AreaVertMin);
@@ -4758,15 +4757,14 @@ void  CBTRDoc:: ModifyArea(bool fixed)
 			p3 = C3Point(AreaLong, AreaHorMin, AreaVertMax);
 			
 			if (plate->Loaded) {
-				if (AfxMessageBox("Keep the existing load on the Right Limit?", MB_YESNO) == IDNO) {
+				//if (AfxMessageBox("Keep the existing load on the Right Limit?", MB_YESNO) == IDNO) {
 					plate->Load->Clear(); 
 					plate->Loaded = FALSE;
 					plate->SetLocals(p0, p1, p2, p3);
 					SetLoadArray(plate, FALSE);
-				}
+				//}
 			}
-			else 
-			plate->SetLocals(p0, p1, p2, p3);
+			else plate->SetLocals(p0, p1, p2, p3);
 			
 		}
 		if (plate->Number == 3 && plate->Comment.Find("Left") >= 0 && plate->Comment.Find("Limit") >=0) {
@@ -4776,15 +4774,14 @@ void  CBTRDoc:: ModifyArea(bool fixed)
 			p3 = C3Point(AreaLong, AreaHorMax, AreaVertMax);
 			
 			if (plate->Loaded) {
-				if (AfxMessageBox("Keep the existing load on the Left Limit?", MB_YESNO) == IDNO) {
+				//if (AfxMessageBox("Keep the existing load on the Left Limit?", MB_YESNO) == IDNO) {
 					plate->Load->Clear(); 
 					plate->Loaded = FALSE;
 					plate->SetLocals(p0, p1, p2, p3);
 					SetLoadArray(plate, FALSE);
-				}
+				//}
 			}
-			else 
-			plate->SetLocals(p0, p1, p2, p3);
+			else plate->SetLocals(p0, p1, p2, p3);
 			
 		}
 		if (plate->Number == 4 && plate->Comment.Find("Bottom") >= 0 && plate->Comment.Find("Limit") >=0) {
@@ -4794,15 +4791,14 @@ void  CBTRDoc:: ModifyArea(bool fixed)
 			p3 = C3Point(AreaLong, AreaHorMax, AreaVertMin);
 			
 			if (plate->Loaded) {
-				if (AfxMessageBox("Keep the existing load on the Bottom limit?", MB_YESNO) == IDNO) {
+				//if (AfxMessageBox("Keep the existing load on the Bottom limit?", MB_YESNO) == IDNO) {
 					plate->Load->Clear(); 
 					plate->Loaded = FALSE;
 					plate->SetLocals(p0, p1, p2, p3);
 					SetLoadArray(plate, FALSE);
-				}
+				//}
 			}
-			else 
-			plate->SetLocals(p0, p1, p2, p3);
+			else plate->SetLocals(p0, p1, p2, p3);
 			
 		}
 		if (plate->Number == 5 && plate->Comment.Find("Top") >= 0 && plate->Comment.Find("Limit") >=0) {
@@ -4812,15 +4808,14 @@ void  CBTRDoc:: ModifyArea(bool fixed)
 			p3 = C3Point(AreaLong, AreaHorMax, AreaVertMax);
 			
 			if (plate->Loaded) {
-				if (AfxMessageBox("Keep the existing load on the Top Limit?", MB_YESNO) == IDNO) {
+				//if (AfxMessageBox("Keep the existing load on the Top Limit?", MB_YESNO) == IDNO) {
 					plate->Load->Clear(); 
 					plate->Loaded = FALSE;
 					plate->SetLocals(p0, p1, p2, p3);
 					SetLoadArray(plate, FALSE);
-				}
+				//}
 			}
-			else 
-			plate->SetLocals(p0, p1, p2, p3);
+			else plate->SetLocals(p0, p1, p2, p3);
 			break;
 		}
 		if (plate->Number < 5) continue;
@@ -5238,26 +5233,35 @@ void  CBTRDoc::SetPlatesNBI() // NBI config
 	Ymin = Min(Y0min, Y1min); Ymax = Max(Y0max, Y1max);
 	Zmin = Min(Z0min, Z1min); Zmax = Max(Z0max, Z1max);
 
-	//C3Point p0, p1, p2, p3;
-	p0 = C3Point(PlasmaXmin-1, Ymin - 0.05, 0.); //AreaHorMin
+	/*p0 = C3Point(PlasmaXmin-1, Ymin - 0.05, 0.); //AreaHorMin
 	p1 = C3Point(PlasmaXmax+1, Ymin - 0.05, 0.); //AreaHorMin
 	p2 = C3Point(PlasmaXmin-1, Ymax + 0.05, 0.); //AreaHorMax
-	p3 = C3Point(PlasmaXmax+1, Ymax + 0.05, 0.); //AreaHorMax
-	pBeamHorPlane = new CPlate(p0, p1, p2, p3);
-	pBeamHorPlane->Number = 2000;
+	p3 = C3Point(PlasmaXmax+1, Ymax + 0.05, 0.); //AreaHorMax*/
+	p0 = C3Point(0, AreaHorMin, 0.); //AreaHorMin
+	p1 = C3Point(AreaLong, AreaHorMin, 0.); //AreaHorMin
+	p2 = C3Point(0, AreaHorMax, 0.); //AreaHorMax
+	p3 = C3Point(AreaLong, AreaHorMax, 0.); 
+	pBeamHorPlane = new CPlate(p0, p1, p2, p3); // new - total NBL plane
+	pBeamHorPlane->Number = 3000;
 	pBeamHorPlane->Solid = FALSE;
-	pBeamHorPlane->Comment = "NB in plasma - Horizontal plane";
-	pBeamHorPlane->ApplyLoad(TRUE, 0.1, 0.05);
+	pBeamHorPlane->Comment = "NB - Horizontal plane";
+	//pBeamHorPlane->Comment = "NB in plasma - Horizontal plane";Number = 2000;
+	pBeamHorPlane->ApplyLoad(TRUE, 0.2, 0.02);
 
-	p0 = C3Point(PlasmaXmin-1, 0., Zmin - 0.05); //AreaVertMin);
+	/*p0 = C3Point(PlasmaXmin-1, 0., Zmin - 0.05); //AreaVertMin);
 	p1 = C3Point(PlasmaXmax-1, 0., Zmin - 0.05); //AreaVertMin);
 	p2 = C3Point(PlasmaXmin+1, 0., Zmax + 0.05); //AreaVertMax);
-	p3 = C3Point(PlasmaXmax+1, 0., Zmax + 0.05); //AreaVertMax);
+	p3 = C3Point(PlasmaXmax+1, 0., Zmax + 0.05); //AreaVertMax);*/
+	p0 = C3Point(0, 0, AreaVertMin); //AreaVertMin);
+	p1 = C3Point(AreaLong, 0, AreaVertMin); //AreaVertMin);
+	p2 = C3Point(0, 0, AreaVertMax); //AreaVertMax);
+	p3 = C3Point(AreaLong, 0, AreaVertMax); //AreaVertMax);
 	pBeamVertPlane = new CPlate(p0, p1, p2, p3);
-	pBeamVertPlane->Number = 2000;
+	pBeamVertPlane->Number = 4000;
 	pBeamVertPlane->Solid = FALSE;
-	pBeamVertPlane->Comment = "NB in plasma - Vertical plane";
-	pBeamVertPlane->ApplyLoad(TRUE, 0.1, 0.05);
+	pBeamVertPlane->Comment = "NB - Vertical plane";
+	//pBeamVertPlane->Comment = "NB in plasma - Vertical plane";Number = 2000;
+	pBeamVertPlane->ApplyLoad(TRUE, 0.2, 0.02);
 
 	if (OptBeamInPlasma && AreaLong >= TorCentreX) 
 		SetPlatesTor();
@@ -5550,7 +5554,6 @@ void CBTRDoc:: ClearAllPlates() // clear loads
 		plate->AtomPower = 0;
 		plate->NegPower = 0;
 		plate->PosPower = 0;
-		
 	}
 
 	pBeamHorPlane->Load->Clear(); // created in SetPlatesNBI
@@ -12918,7 +12921,7 @@ void CBTRDoc:: WriteReport(CString ext)
 	S.Format(vf, MaxPD); f << S;
 
 	f << "\n____SHUTTER_____\n"; 
-	Keys.RemoveAll(); Keys.Add("SCRAP"); 
+	Keys.RemoveAll(); Keys.Add("SHUT"); 
 	Sum = -1, MaxPD = -1;
 	n = GetCompSolid(Keys, Sum, MaxPD);
 	S.Format(sdf, "Total Power, W", n); f << S;
@@ -15258,6 +15261,13 @@ void CBTRDoc::OnUpdatePlotMamugpositions(CCmdUI* pCmdUI)
 
 void CBTRDoc::OnPlot3dload() 
 {
+	pMarkedPlate = pBeamHorPlane; //pMarkedPlate;
+	
+	ShowProfiles = TRUE;
+	OnPlotMaxprofiles();
+	OnPlotLoadmap();
+	return;
+
 	if (OptCombiPlot == -1) return; //pMarkedPlate == NULL) 
 	if (!(pMarkedPlate->Loaded)) return;
 	
@@ -15267,7 +15277,7 @@ void CBTRDoc::OnPlot3dload()
 
 void CBTRDoc::OnUpdatePlot3dload(CCmdUI* pCmdUI) 
 {
-	pCmdUI->Enable(OptCombiPlot != -1 && pMarkedPlate->Loaded);
+	//pCmdUI->Enable(OptCombiPlot != -1 && pMarkedPlate->Loaded);
 	
 }
 
@@ -17205,7 +17215,26 @@ double CBTRDoc::GetDecayBetween(C3Point P0, C3Point P1) // old
 	return decay;
 }
 
-double CBTRDoc::GetFillDecayBetween(C3Point P0, C3Point P1, double Power) 
+void CBTRDoc:: DistributeTrack(CArray<C3Point> & Pos, CArray<double> & Pow)
+//DrawPartTrack(CArray <C3Point> &Pos, int charge, COLORREF color)
+{
+	//if (charge != 0 ) return; // only atoms now
+	int n = Pos.GetSize();
+	if (n < 1) return;
+	C3Point Orig1 = pBeamHorPlane->Orig;
+	C3Point Orig2 = pBeamVertPlane->Orig;
+	if (n < 2) {//single point
+		pBeamHorPlane->Load->Distribute(Pos[0].X - Orig1.X, Pos[0].Y - Orig1.Y, Pow[0]);
+		pBeamVertPlane->Load->Distribute(Pos[0].X - Orig2.X, Pos[0].Z - Orig2.Z, Pow[0]);
+		return;
+	}
+	for (int i = 0; i < n; i++) { // (P <= Pend) {
+		pBeamHorPlane->Load->Distribute(Pos[i].X - Orig1.X, Pos[i].Y - Orig1.Y, Pow[i]);
+		pBeamVertPlane->Load->Distribute(Pos[i].X - Orig2.X, Pos[i].Z - Orig2.Z, Pow[i]);
+	}
+}
+
+double CBTRDoc::GetFillDecayBetween(C3Point P0, C3Point P1, double Power)//fill BeamPlanes maps
 // not called (used by older versions)
 //-> all is done in CPlasma object
 // fill arrays - along path and along PSI
@@ -19371,6 +19400,8 @@ void CBTRDoc::SetNullLoads() // init maps for all "interesting" plates
 		plate->NegPower = 0; 
 		plate->PosPower = 0;
 	}
+	pBeamHorPlane->Load->Clear();
+	pBeamVertPlane->Load->Clear();
 } 
 
 void CBTRDoc::AddFallsToLoads(int tid, int isrc,  std::vector<minATTR> * tattr) 
@@ -19392,6 +19423,8 @@ void CBTRDoc::AddFallsToLoads(int tid, int isrc,  std::vector<minATTR> * tattr)
 		plate = List.GetNext(pos);
 		P_CalculateLoad(plate, tattr); // distribute m_GlobalVector
 	}
+	pBeamHorPlane->Load->SetSumMax();
+	pBeamVertPlane->Load->SetSumMax();
 }
 
 void CBTRDoc::CalculateAllLoads() // called after each RUN or on User request
@@ -19759,10 +19792,15 @@ void CBTRDoc::StartAtomsFromEmitter()// trace atoms in plasma
 		AfxMessageBox("Emitter is not defined"); return;
 	}
 	CPlate * plate = GetPlateByNumber(n);
+	CString S;
 	//vector<minATTR> & arr = m_GlobalVector;// m_AttrVector[MaxThreadNumber - 1];
 	CArray<minATTR> & falls = plate->Falls;
 	int Nfalls = falls.GetSize();
-	if (Nfalls < 1) return;
+	if (Nfalls < 1) {
+		S.Format("No start-points (falls) on Emitter Surf %d", n);
+		AfxMessageBox(S); logout << S;
+		return;
+	}
 
 	C3Point Pgl, Ploc, Vat, Vgl;
 	double power;
@@ -19802,7 +19840,6 @@ void CBTRDoc::StartAtomsFromEmitter()// trace atoms in plasma
 			//} // Nfall == plate Num
 		} // i - scan falls attr 
 
-		CString S;
 		S.Format("%d atoms traced from Emitter plane %d\n", found, PlasmaEmitter); 
 		AfxMessageBox(S);
 		logout << S;
@@ -21555,11 +21592,16 @@ void CBTRDoc::ShowPlasmaCut(int icut) // 0- horiz along X, 1- vert along X, 2- Y
 	pMarkedPlate->Load = new CLoad(Dhor, Dvert, Shor, Svert);
 		
 	switch (icut) {
-		case 0: pMarkedPlate->Load->SetValArray(pPlasma->CutHor, Nx, Ny);  pMarkedPlate->Comment = "Horizontal "; break;
-		case 1: pMarkedPlate->Load->SetValArray(pPlasma->CutVert, Nx, Nz); pMarkedPlate->Comment = "Vertical "; break;
-		case 2: pMarkedPlate->Load->SetValArray(pPlasma->CutCS, Ny, Nz);   pMarkedPlate->Comment = "Cross "; break;
-		case 3: pMarkedPlate->Load->SetValArray(pPlasma->CutRZ, Nr, Nz);   pMarkedPlate->Comment = "Poloidal R-Z "; break;
-		case 4: pMarkedPlate->Load->SetValArray(pPlasma->CutPsiZ, Nr, Nz); pMarkedPlate->Comment = "Poloidal Psi-Z "; break;
+		case 0: pMarkedPlate->Load->SetValArray(pPlasma->CutHor, Nx, Ny);  
+			pMarkedPlate->Comment = "Horizontal "; break;
+		case 1: pMarkedPlate->Load->SetValArray(pPlasma->CutVert, Nx, Nz); 
+			pMarkedPlate->Comment = "Vertical "; break;
+		case 2: pMarkedPlate->Load->SetValArray(pPlasma->CutCS, Ny, Nz);   
+			pMarkedPlate->Comment = "Cross "; break;
+		case 3: pMarkedPlate->Load->SetValArray(pPlasma->CutRZ, Nr, Nz);   
+			pMarkedPlate->Comment = "Poloidal R-Z "; break;
+		case 4: pMarkedPlate->Load->SetValArray(pPlasma->CutPsiZ, Nr, Nz); 
+			pMarkedPlate->Comment = "Poloidal Psi-Z "; break;
 		default: break;
 	}
 	//if (icut == 0) pMarkedPlate->Load->SetValArray(pPlasma->CutHor, Nx, Ny); //load->Val = pPlasma->CutHor; //PSI;
@@ -21789,8 +21831,8 @@ void CBTRDoc:: WriteExitVector()
 	fclose(fout);
 } 
 
-void CBTRDoc:: CalculateTracks() // called by OnBeaminplasmaVerticalplane()
-// to be replaced by CalculateTracks from DuctExit
+void CBTRDoc:: CalculateTracks() // NOT called (by OnBeaminplasmaVerticalplane()
+// replaced by CalculateTracks from DuctExit
 {
 	CalculateThickFocused();// actual beam axes
 	TracksCalculated = 1;
@@ -21848,9 +21890,8 @@ void CBTRDoc:: CalculateTracks() // called by OnBeaminplasmaVerticalplane()
 		Yloc = P.Z - pBeamVertPlane->Orig.Z;
 		pBeamVertPlane->Load->Distribute(Xloc, Yloc, Power);
 	}*/
-	pBeamHorPlane->Load->SetSumMax();
-	pBeamVertPlane->Load->SetSumMax();
-	//pMarkedPlate->Load->SetSumMax();
+	//pBeamHorPlane->Load->SetSumMax();
+	//pBeamVertPlane->Load->SetSumMax();
 }
 
 void CBTRDoc:: CalculatePowerTrack(C3Point Start, C3Point Finish, double StartPower, double Vel) 
@@ -22711,6 +22752,7 @@ void CBTRDoc::OnPlateLoadOptRecalc() // set plate opt in pop-up menu
 		SetNullLoad(plate); // create zero load with default mesh options
 		P_CalculateLoad(plate);
 		//SetLoadArray(plate, TRUE);
+		ShowProfiles = TRUE;
 		OnPlotMaxprofiles();
 		plate->ShowLoadState(); // show summary (info)	
 	
@@ -22840,6 +22882,7 @@ void CBTRDoc::OnPlateScale()// moved from MainView method
 	} //dlg IDOK
 	//else return;// (dlg.DoModal() == IDCANCEL) 
 
+	ShowProfiles = TRUE;
 	OnPlotMaxprofiles();	
 	plate->ShowLoadState(); // show summary (info)
 	//OnPlotLoadmap();

@@ -294,6 +294,7 @@ public:
 	void Draw(); // OLD engine < 4.5
 	//void DrawParticlePos(C3Point pos, COLORREF color);
 	void DrawPartTrack(CArray<C3Point> & track);
+	void DistributeTrack(CArray<C3Point> & Track, double power);
 	void TestMem();
 	bool AddFall(int n, C3Point Ploc, C3Point Vat, double power);
 	bool GetFalls(C3Point P1, C3Point & P2, bool & metlimit);

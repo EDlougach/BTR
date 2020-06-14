@@ -79,6 +79,7 @@ public:
 		void DrawPartTrack(CArray <C3Point>& Pos, int charge, COLORREF color);
 		void ShowComments();
 		void ShowTor();
+		void ShowBeamPlanes();
 		void ShowProgress(int percent);
 		//void DrawManMF(CDC*pDC);
 		void OnViewFitonoff();

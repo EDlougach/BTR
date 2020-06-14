@@ -221,6 +221,8 @@ void CMainView::OnDraw(CDC* pDC)
 		if (pDoc->OptSINGAP) ShowSINGAP();
 		else ShowMAMuG();
 	} // show beam
+	else
+		ShowBeamPlanes();
 
 	// draw beam centerline
 	pDC->SetROP2(R2_NOT);
@@ -259,8 +261,10 @@ void CMainView::OnDraw(CDC* pDC)
 		pDoc->RIDField->DrawU(pDC, Origin, Scale);
 	} // show fields
 
-	if (!pDoc->OptFree) ShowComments();
+	if (!pDoc->OptFree) ShowComments();// Dias, Comp names
+		
 	ShowNBLine();	
+	
 	ShowCoord();
 	//if (pDoc->OptBeamInPlasma) 	
 	ShowTor();
@@ -647,7 +651,6 @@ void CMainView:: ShowNBLine()
 	}
 	pDC->SelectObject(pOldFont);
 	ReleaseDC(pDC);
-
 }
 
 /*void CMainView:: DrawManMF(CDC* pDC)
@@ -696,6 +699,121 @@ x += 0.05;
 pDC->SelectObject(pOldPen);
 }
 */
+void CMainView::ShowBeamPlanes()
+{
+	MSG message;
+	STOP = FALSE;
+	CDC* pDC = GetDC();
+	CBTRDoc* pDoc = (CBTRDoc*)GetDocument();
+	int origX = OrigX;
+	int origY = OrigY;
+	int origZ = OrigZ;
+	CPlate * plane1 = pDoc->pBeamHorPlane;
+	CPlate * plane2 = pDoc->pBeamVertPlane;
+	double Xmax = plane1->Xmax;
+	double DimX = Xmax;//DimX = right - left;
+	double Ymax = plane1->Ymax;
+	double DimY = Ymax;//DimY = top - bot;
+	double Zmax = plane2->Ymax;
+	double DimZ = Zmax;//
+	double StepX = plane1->Load->StepX;
+	double StepY = plane1->Load->StepY;
+	double StepZ = plane2->Load->StepY;
+	int xmin = origX + (int)(plane1->Orig.X * ScaleX); // origX + (int)((x) * ScaleX);
+	int ymin = origY - (int)(plane1->Orig.Y * ScaleY); //plane1->Orig.Y;
+	int zmin = origZ - (int)(plane2->Orig.Z * ScaleZ); //plane2->Orig.Y;
+	int xmax = xmin + (int)(Xmax * ScaleX);
+	int ymax = ymin - (int)(Ymax * ScaleY);
+	int zmax = zmin - (int)(Zmax * ScaleZ);
+	double MaxVal1 = plane1->Load->MaxVal;
+	double MaxVal2 = plane2->Load->MaxVal;
+	double MaxVal = max(MaxVal1, MaxVal2);
+
+	CBrush brush;
+	CBrush * oldbrush;
+	brush.CreateSolidBrush(RGB(245, 245, 245));
+	oldbrush = pDC->SelectObject(&brush);
+	pDC->Rectangle(xmin, ymin, xmax, ymax);
+	pDC->Rectangle(xmin, zmin, xmax, zmax);
+	//pDC->Rectangle(pLV->LoadRect);
+	pDC->SelectObject(oldbrush);
+	
+	if (MaxVal < 1.e-10){
+		ReleaseDC(pDC);
+		return;
+	}
+
+////////////////////////////
+	double Val, ratio1 = 0, ratio2 = 0;
+	//int i, j, k;
+	double x, y, z;
+	COLORREF color1, color2;
+	//CString S;
+
+	int ii, jj, kk, Nxx, Nyy, Nzz, ix, jy, kz;
+	double hx = StepX * 0.3; // resolution = load steps divided by 2
+	double hy = StepY * 0.3; 
+	double hz = StepZ * 0.3;
+
+	Nxx = (int)floor(DimX / hx);
+	Nyy = (int)floor(DimY / hy);
+	Nzz = (int)floor(DimZ / hz);
+
+	int rx = (int)(hx * ScaleX / 2) + 2;//  = (int)(StepX *  pLV->ScaleX / 2)+1;
+	if (rx<1) rx = 1; // fill point 'radius'
+	int ry = (int)(hy * ScaleY / 2) + 2;//  = (int)(StepY *  pLV->ScaleY / 2)+1;
+	if (ry<1) ry = 1; // fill point 'radius'
+	int rz = (int)(hz * ScaleZ / 2) + 2;//  = (int)(StepY *  pLV->ScaleY / 2)+1;
+	if (rz<1) rz = 1; // fill point 'radius'
+
+	for (ii = 0; ii < Nxx; ii++) {
+		x = (ii + 0.5)*hx; //left + (ii + 0.5)*hx
+		for (jj = 0; jj < Nyy; jj++) {
+			y = (jj + 0.5) * hy; //bot + (jj + 0.5)*hy;
+			ix = xmin + (int)((x) * ScaleX);
+				//ix = origX + (int)((x - left) * pLV->ScaleX);
+			jy = ymin - (int)((y) * ScaleY);
+				//jy = origY - (int)((y - bot) * pLV->ScaleY);
+			
+			if (MaxVal1 > 1.e-10) 	
+					ratio1 = plane1->Load->GetVal(x, y) / MaxVal1;// Val[i][j] / MaxVal;
+					
+			else 	ratio1 = 1; // too small
+						
+			color1 = GetColor10(ratio1);
+					//		color = RGB(Red(ratio), Green(ratio), Blue(ratio));
+					//		color = RGB(Gray(ratio), Gray(ratio), Gray(ratio));
+			if (ratio1 <= 1)
+					plane1->Load->DrawLoadPoint(ix, jy, rx, ry, color1, pDC);
+		} // jj
+
+		for (kk = 0; kk < Nzz; kk++) {
+			z = (kk + 0.5) * hz;
+			ix = xmin + (int)((x) * ScaleX);
+				//ix = origX + (int)((x - left) * pLV->ScaleX);
+			kz = zmin - (int)((z) * ScaleZ);
+				
+			if (MaxVal2 > 1.e-10) 	
+					ratio2 = plane2->Load->GetVal(x, z) / MaxVal2;
+			else	ratio2 = 1;
+						
+			color2 = GetColor10(ratio2);
+				//		color = RGB(Red(ratio), Green(ratio), Blue(ratio));
+				//		color = RGB(Gray(ratio), Gray(ratio), Gray(ratio));
+			if (ratio2 <= 1)
+					plane2->Load->DrawLoadPoint(ix, kz, rx, rz, color2, pDC);
+		} // kk
+
+				if (::PeekMessage(&message, NULL, 0, 0, PM_REMOVE)) {
+					::TranslateMessage(&message);
+					::DispatchMessage(&message);
+				}
+				if (STOP) break; //return; // 
+	} // ii
+
+	ReleaseDC(pDC);
+}
+
 void CMainView:: ShowMAMuG() // IonSources
 {
 	CDC* pDC = GetDC();
@@ -1288,8 +1406,6 @@ void CMainView::OnPlateLoad()
 {
 	CBTRDoc* pDoc = (CBTRDoc*)GetDocument();
 	CPlate * plate = pDoc->pMarkedPlate;
-	//if (plate == NULL) return; 
-	//if (plate->Loaded == FALSE) return;
 	pDoc->OnPlotLoadmap();
 	return;
 
@@ -1393,7 +1509,14 @@ void CMainView::OnPlate3dplot()
 	Message_NotSelected();
 	pDoc->ShowStatus(); return;
 	}*/
+	pDoc->OnPlot3dload() ;
+	/*CPlate * plate = pDoc->pBeamHorPlane; //pMarkedPlate;
+	pDoc->ShowProfiles = TRUE;
+	pDoc->OnPlotMaxprofiles();
+	pDoc->OnPlotLoadmap();*/
+	return;
 
+///////////////////NOT CALLED//////////////////////////////////////
 	if (pDoc->OptCombiPlot == -1) { //|| !(pDoc->pMarkedPlate->Loaded)) {
 		//Message_NotSelected();
 		pDoc->ShowStatus(); return;
@@ -1499,9 +1622,10 @@ void CMainView::OnPlateMaxprofiles()
 
 	//pDoc->CreateBaseSingle();// set new pMarkedPlate
 	pDoc->ShowProfiles = TRUE;
-	pDoc->pMarkedPlate->ShowLoadState();	
+	
+	//pDoc->pMarkedPlate->ShowLoadState();	//- removed, need check 
 
-	//pDoc->OnShow();
+	
 }
 
 void CMainView::OnPlateSmooth() 
@@ -1522,7 +1646,10 @@ void CMainView::OnPlateSmooth()
 	else  //	plate->SmoothDegree = 0;
 		pDoc->pMarkedPlate->SmoothDegree = 0;
 
+	pDoc->ShowProfiles = TRUE;
 	pDoc->pMarkedPlate->ShowLoadState();
+	pDoc->OnPlotMaxprofiles();
+
 
 /*	int Sdegree = plate->SmoothDegree;
 	CLoad * OldLoad = plate->Load;
@@ -1530,9 +1657,8 @@ void CMainView::OnPlateSmooth()
 	plate->Load = NewLoad;
 	//pDoc->OnPlotLoadmap();*/
 
-	pDoc->ShowProfiles = TRUE;
-	pDoc->OnPlotMaxprofiles();
-
+	//pDoc->ShowProfiles = TRUE;
+	
 /*	plate->Load = OldLoad;
 	delete (NewLoad);
 	plate->SmoothDegree = 0;
@@ -2054,10 +2180,9 @@ void CMainView::OnPlateScale()
 		plate->DrawPlateBound(); // plate polygon - scale not recalculated
 		//pDoc->ShowPlatePoints(); // particle spots - scale not recalculated*/
 
-		if (plate->Number == 2000) {
+		/*if (plate->Number == 2000) {
 			pDoc->CalculateTracks(); // beam planes in plasma
-			//plate->Load->Clear(); //->0
-		}
+		}*/
 		
 	} //dlg IDOK
 	//else return;// (dlg.DoModal() == IDCANCEL) 
@@ -2066,7 +2191,7 @@ void CMainView::OnPlateScale()
 	pDoc->OnPlotMaxprofiles();	
 	//pDoc->pMarkedPlate->ShowLoadState(); // show summary (info)	
 	plate->ShowLoadState(); // show summary (info)
-	pDoc->OnPlotLoadmap();
+	//pDoc->OnPlotLoadmap();
 }
 
 void CMainView::OnMouseMove(UINT nFlags, CPoint point) 

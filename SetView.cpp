@@ -1718,6 +1718,7 @@ void CSetView::OnRButtonDown(UINT nFlags, CPoint point)
 {
 	STOP = TRUE;
 	CBTRDoc* pDoc = (CBTRDoc*)GetDocument();
+	pDoc->ShowProfiles = TRUE;
 	pDoc->pMarkedPlate->SmoothDegree = 0;
 	pDoc->pMarkedPlate->ShowLoadState();
 	

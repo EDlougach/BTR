@@ -846,8 +846,12 @@ void  CLoad::DrawMapLimited(double left, double right, double bot, double top)//
 	CString S;
 
 	int ii, jj, Nxx, Nyy, ix, jy;
-	double hx = StepX *0.1; 
-	double hy = StepY *0.1; // resolution = load steps divided by 10
+	double coef = 0.2; // refine load steps 
+	if (Nx < 100) coef = 0.1;
+	double hx = StepX * coef;
+	coef = 0.2;
+	if (Ny < 100) coef = 0.1;
+	double hy = StepY * coef; 
 
 	Nxx = (int)floor(DimX / hx);
 	Nyy = (int)floor(DimY / hy);
@@ -2785,7 +2789,7 @@ void CPlate ::  DrawPlateBound()//NEW:polygon, called from MainView LBdown
 	pLV->ReleaseDC(pDC);
 }
 
-void  CPlate :: ShowLoadState()
+void  CPlate :: ShowLoadState() // show info
 {
 	CLoadView * pLV = (CLoadView *) pLoadView;
 	//pSetView ->Load = NULL;
@@ -2860,6 +2864,7 @@ void  CPlate :: ShowLoadState()
 		S.Format("Smooth = %d", SmoothDegree);// L->Smoothdegree
 		pDC->TextOut(10, 250, S);
 	
+		//pDoc->ShowProfiles = TRUE;
 		//pSetView->InvalidateRect(NULL, TRUE);
 		pLV->ReleaseDC(pDC);
 
