@@ -796,7 +796,8 @@ void CTracer::Calculate_V()
 {
 	CBTRDoc * pDoc = (CBTRDoc*) m_pDoc;
 	
-	C3Point E = pDoc->RIDField->GetE(m_Pos.X, m_Pos.Y, m_Pos.Z);
+	C3Point E = C3Point(0, 0, 0);
+	E = pDoc->RIDField->GetE(m_Pos.X, m_Pos.Y, m_Pos.Z);
 	E.Z = 0; //!!!!!!!!!!! = U
 	C3Point B = C3Point(0,0,0);
 	if (pDoc->FieldLoaded  && fabs(pDoc->MFcoeff) > 1.e-6) {
@@ -1638,6 +1639,8 @@ bool CTracer::TraceSourceIonTHIN() //track until NeutrXmax - stepL
 	Track.Add(m_Pos);
 	if (m_Draw) DrawPartTrack(Track);//if (m_Draw) DrawParticlePos(m_Pos, m_Color);
 
+	if (pDoc->OptCalcBeamTrack) DistributeTrack(Track, m_Power);
+
 	if (stopped) {
 		m_Stopped = TRUE;
 		return FALSE;
@@ -1817,7 +1820,7 @@ bool CTracer::TraceAtom() //called by TraceRay
 	Track.Add(P2);//= Last 
 	if (m_Draw) DrawPartTrack(Track);
 
-	DistributeTrack(Track, m_Power);
+	if (pDoc->OptCalcBeamTrack)  DistributeTrack(Track, m_Power);
 	 
 	if (stopped) return FALSE;
 	
@@ -1917,15 +1920,17 @@ bool CTracer::GenerateReions(int jray)
 	bool done = TRUE;
 	double ReiXmin = pDoc->ReionXmin;
 	double ReiXmax = pDoc->ReionXmax;
-	
-	C3Point PiStart;
+	double NeutrX = pDoc->NeutrXmax;
+
+	C3Point PiStart, PaStart;
 	
 	//m_Pos = MakeStepToX(ReiXmin);// atom position = Reion start pos
 		
 	m_Stopped = FALSE;
 	
 	if (pDoc->FieldLoaded && fabs(pDoc->MFcoeff) > 1.e-6) { // Move Ion //m_State = SRCION; m_Charge = -1;
-		PiStart = MoveIonToX(ReiXmin); // Move (no falls) Source ions to Reions start point
+		PaStart = MoveIonToX(NeutrX);// Move (no falls) Source ions to NeutrX start point
+		PiStart = MakeStepToX(ReiXmin); //Make (no falls) one straight step (ATOM)
 	}
 	else 	
 		PiStart = MakeStepToX(ReiXmin); // Make (no falls) one straight step (ATOM) 
@@ -1955,6 +1960,7 @@ bool CTracer::GenerateReions(int jray)
 	m_Charge = 1;// used in TraceIon
 	
 	int n = pDoc->ReionArray.GetSize();//Pgen.GetSize();
+
 	for (int i = 0; i < n; i++) {
 		m_Pos = AtomPos;
 		m_V = Vgen;
@@ -2872,9 +2878,10 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 		
 		cs.Lock();
 		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);// BeamPlanes -> SetSumMax
-		//bool added = pDoc->AddFallsToFalls(m_ID, is + 1, tattr);
-		// - TO SWITCH ON in future
-		
+		bool added = pDoc->AddFallsToFalls(m_ID, is + 1, tattr);// can be safely SWITCHED ON/OFF 
+		//CALLED only for atoms in SINGLE run OR
+		// (Attr_Array.GetSize() < 3003)	// max size for falls - 24.5e+6
+				
 		//if (!added) logout << "!!!!! Falls not added !!!!!!!!!!!!!!\n";
 
 		/*bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed

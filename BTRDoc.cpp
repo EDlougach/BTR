@@ -675,6 +675,8 @@ void CBTRDoc:: InitOptions()
 	OptAddDuct = TRUE;//FALSE;
 	PlasmaEmitter = -1;
 	DuctExit = -1;
+
+	OptCalcBeamTrack = FALSE;
 }
 
 void CBTRDoc:: InitTrackArrays()
@@ -1426,6 +1428,8 @@ void  CBTRDoc::ReadScenFile() // read scenario data
 
 BOOL CBTRDoc::OnNewDocument()
 {
+	MAXSCEN = 0; 
+
 	if (!CDocument::OnNewDocument())
 		return FALSE;
 	
@@ -2381,12 +2385,12 @@ void CBTRDoc:: CheckData()
 		S.Format("ErrInput:\n Beamlets Vertical Aiming Distance must be non-zero!");
 		AfxMessageBox(S);
 	}
-	if (fabs(TorCentreY) > PlasmaMajorR + PlasmaMinorR || fabs(TorCentreZ) > PlasmaMinorR* PlasmaEllipticity) {
+/*	if (fabs(TorCentreY) > PlasmaMajorR + PlasmaMinorR || fabs(TorCentreZ) > PlasmaMinorR* PlasmaEllipticity) {
 		TorCentreY = PlasmaMajorR;
 		TorCentreZ = 0;
 		S.Format("ErrInput: corrected \n Beam is shot to plasma Rt = Rmajor, Zt = 0!");
 		AfxMessageBox(S);
-	}
+	}*/
 
 
 	double Ymin, Ymax, Zmin, Zmax;
@@ -3555,7 +3559,7 @@ void  CBTRDoc::SetPlatesTor()
 	Plate->Number = PlateCounter;
 	Plate->OrtDirect = 1;
 	Plate->SetLocals(p0, p1, p2, p3);
-	Plate->Solid =  FALSE; //TRUE;
+	Plate->Solid =  TRUE; //!!!!!!!! stop particles at FW
 	Plate->Visible = FALSE;
 	Plate->Comment = "FW combo";
 	Plate->Fixed = -1; // plan view?

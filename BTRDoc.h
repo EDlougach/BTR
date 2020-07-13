@@ -272,6 +272,7 @@ public:
 	bool OptCalcRID;
 	bool OptCalcDuct;
 	double CalcLimitXmin, CalcLimitXmax;
+	bool OptCalcBeamTrack;
 	
 	
 	int PlateCounter;
