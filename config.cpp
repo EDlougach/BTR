@@ -2456,7 +2456,7 @@ void  CPlate:: DrawPlate(CView * pView, CDC* pDC) // show plate + recalc  RgnPla
 }
 */
 
-void  CPlate:: DrawPlate(CView * pView, CDC* pDC) // taken from BTR_K
+void  CPlate:: DrawPlate(CView * pView, CDC* pDC, BOOL BEAM) // taken from BTR_K
 // show plate + recalc  RgnPlan,  RgnSide
 {
 	CMainView* pMV =  (CMainView* )pView;
@@ -2503,10 +2503,15 @@ void  CPlate:: DrawPlate(CView * pView, CDC* pDC) // taken from BTR_K
 	  if (Selected) // && PLAN)	
 		 // if(pDC->m_hAttribDC != NULL)  
 			  pDC->SelectObject(&pMV->RedPen);
-		 pDC->MoveTo(corn[0]);
+
+	  if (!BEAM) 
+		  pDC->SelectObject(&pMV->YellowPen);
+
+		pDC->MoveTo(corn[0]);
 		for (k = 1; k < 4; k++)  pDC->LineTo(corn[k]);
 		pDC->LineTo(corn[0]);
-		 pDC->SelectObject(pen);
+		
+		pDC->SelectObject(pen);
 
 //Draw on Side View ------------------------------------------------
 	 for (k = 0; k < 4; k++) {
@@ -2524,10 +2529,14 @@ void  CPlate:: DrawPlate(CView * pView, CDC* pDC) // taken from BTR_K
 	  if (Selected)// && !PLAN)	
 		 // if(pDC->m_hAttribDC != NULL)
 		 pDC->SelectObject(&pMV->RedPen);
+
+	  if (!BEAM) 
+		  pDC->SelectObject(&pMV->YellowPen);
 		
 	  pDC->MoveTo(corn[0]);
-		for (k = 1; k < 4; k++)  pDC->LineTo(corn[k]);
-		pDC->LineTo(corn[0]);
+	  for (k = 1; k < 4; k++)  pDC->LineTo(corn[k]);
+	  pDC->LineTo(corn[0]);
+
 		pDC->SelectObject(pen);
 
 	

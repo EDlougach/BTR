@@ -13,13 +13,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Russian resources
+// Russian (Russia) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
-#ifdef _WIN32
 LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
 #pragma code_page(1251)
-#endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -30,23 +28,25 @@ LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
 // remains consistent on all systems.
 IDI_ICON_UP             ICON                    "res\\icon1.ico"
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Dialog
 //
 
-IDD_Task_Dlg DIALOG  0, 0, 187, 65
+IDD_Task_Dlg DIALOGEX 0, 0, 222, 85
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "TASK DEFINITION"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,7,41,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,130,41,50,14
-    EDITTEXT        IDC_TASK,48,15,132,22,ES_MULTILINE | WS_HSCROLL
-    CTEXT           "The Title ",IDC_STATIC,13,16,33,12,SS_CENTERIMAGE
+    DEFPUSHBUTTON   "OK",IDOK,7,61,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,165,61,50,14
+    EDITTEXT        IDC_TASK,86,15,121,22,ES_MULTILINE | WS_HSCROLL
+    CTEXT           "Specify data",IDC_STATIC,23,16,43,12,SS_CENTERIMAGE
+    CTEXT           "Surf labels must be separated by commas: 1, 2, 3,  6, 7,  57,",IDC_STATIC,14,43,201,12,SS_CENTERIMAGE
 END
 
-IDD_CommentsDlg DIALOG  0, 0, 187, 121
+IDD_CommentsDlg DIALOG 0, 0, 187, 121
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "ADDITIONAL INFORMATION"
 FONT 8, "MS Sans Serif"
@@ -95,22 +95,22 @@ BEGIN
     PUSHBUTTON      "Plot",IDC_Plot,125,130,31,14
 END
 
-IDD_PLOT_Dlg DIALOGEX 0, 0, 443, 383
+IDD_PLOT_Dlg DIALOGEX 0, 0, 218, 218
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "BTR Plot "
 FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
-    DEFPUSHBUTTON   "Save",IDOK,7,362,50,14
-    PUSHBUTTON      "Close",IDCANCEL,386,362,50,14
-    CTEXT           "Caption",IDC_CAPTION,7,7,429,13,SS_CENTERIMAGE
-    PUSHBUTTON      "<-",IDC_LEFT,171,362,14,14
-    PUSHBUTTON      "->",IDC_RIGHT,187,362,14,14
-    PUSHBUTTON      "/\\",IDC_UP,242,362,14,14
-    PUSHBUTTON      "\\/",IDC_DOWN,258,362,14,14
-    PUSHBUTTON      "<>",IDC_FIT,215,362,14,14
+    DEFPUSHBUTTON   "Save",IDOK,7,197,50,14
+    PUSHBUTTON      "Close",IDCANCEL,161,197,50,14
+    CTEXT           "Caption",IDC_CAPTION,7,7,204,13,SS_CENTERIMAGE
+    PUSHBUTTON      "<-",IDC_LEFT,69,197,14,14
+    PUSHBUTTON      "->",IDC_RIGHT,83,197,14,14
+    PUSHBUTTON      "/\\",IDC_UP,111,197,14,14
+    PUSHBUTTON      "\\/",IDC_DOWN,125,197,14,14
+    PUSHBUTTON      "<>",IDC_FIT,97,197,14,14
 END
 
-IDD_PREVIEW_Dlg DIALOG  0, 0, 356, 225
+IDD_PREVIEW_Dlg DIALOG 0, 0, 356, 225
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Preview Screen"
 FONT 8, "MS Sans Serif"
@@ -121,7 +121,7 @@ BEGIN
     EDITTEXT        IDC_Text,7,28,342,169,ES_MULTILINE | ES_READONLY | ES_WANTRETURN | WS_VSCROLL | WS_HSCROLL
 END
 
-IDD_ASK_Dlg DIALOG  0, 0, 203, 201
+IDD_ASK_Dlg DIALOG 0, 0, 203, 201
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Short Manual"
 FONT 8, "MS Sans Serif"
@@ -343,14 +343,15 @@ BEGIN
     CONTROL         "Atoms",IDC_ATOMS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,27,151,9,9
     LTEXT           "Trace Atoms",IDC_STATIC,45,151,60,11,NOT WS_GROUP
     PUSHBUTTON      "File",IDC_File,76,19,22,14
-    CONTROL         "IonPower",IDC_IONPOWER,"Button",BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_DISABLED | WS_TABSTOP,19,228,8,8
-    LTEXT           "Surfaces accept ions (or full power - if unchecked)  ",IDC_STATIC,35,228,198,11,NOT WS_VISIBLE | WS_DISABLED | NOT WS_GROUP
+    CONTROL         "IonPower",IDC_IONPOWER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,63,224,8,8
+    CTEXT           "Keep Falls array ",IDC_STATIC,84,224,59,11,NOT WS_GROUP
     CONTROL         "Check1",IDC_Reflect,"Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,27,139,9,9
     LTEXT           "Reflect ions in RID",IDC_STATIC,45,139,66,11,WS_DISABLED
-    CONTROL         "Atoms ",IDC_Atom_Power,"Button",BS_AUTOCHECKBOX | BS_CENTER | WS_TABSTOP,77,199,34,15
+    CONTROL         "Atoms ",IDC_Atom_Power,"Button",BS_AUTOCHECKBOX | BS_CENTER | WS_TABSTOP,85,199,34,15
     CONTROL         "Neg Ions",IDC_NegIon_Power,"Button",BS_AUTOCHECKBOX | BS_CENTER | WS_TABSTOP,130,199,46,15
     CONTROL         "Pos Ions",IDC_PosIons_Power,"Button",BS_AUTOCHECKBOX | BS_CENTER | WS_TABSTOP,185,199,48,15
-    LTEXT           "Show Power on Surfaces",IDC_STATIC,15,198,54,21
+    LTEXT           "Show Power ",IDC_STATIC,27,202,42,9
+    PUSHBUTTON      "Details",IDC_Refl,151,219,57,17
 END
 
 IDD_Beamlet DIALOGEX 0, 0, 155, 288
@@ -391,7 +392,7 @@ BEGIN
     PUSHBUTTON      "Current",ID_PLOT_BEAMLETCURR,88,183,39,14,NOT WS_VISIBLE | WS_DISABLED
 END
 
-IDD_Particles_Dlg DIALOG  0, 0, 138, 187
+IDD_Particles_Dlg DIALOG 0, 0, 138, 187
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Source Particles "
 FONT 8, "MS Sans Serif"
@@ -423,7 +424,7 @@ BEGIN
     EDITTEXT        IDC_Current,91,146,26,12,ES_AUTOHSCROLL
 END
 
-IDD_Thick_Dlg DIALOG  0, 0, 189, 182
+IDD_Thick_Dlg DIALOG 0, 0, 189, 182
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "THICK neutralization"
 FONT 8, "MS Sans Serif"
@@ -449,7 +450,7 @@ BEGIN
     EDITTEXT        IDC_SigmaExch,140,137,34,12,ES_AUTOHSCROLL
 END
 
-IDD_Thin_Dlg DIALOG  0, 0, 187, 120
+IDD_Thin_Dlg DIALOG 0, 0, 187, 120
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "THIN neutralization"
 FONT 8, "MS Sans Serif"
@@ -735,14 +736,14 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_Task_Dlg, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 180
+        RIGHTMARGIN, 215
         TOPMARGIN, 7
-        BOTTOMMARGIN, 55
+        BOTTOMMARGIN, 75
     END
 
     IDD_CommentsDlg, DIALOG
@@ -771,9 +772,9 @@ BEGIN
     IDD_PLOT_Dlg, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 436
+        RIGHTMARGIN, 211
         TOPMARGIN, 7
-        BOTTOMMARGIN, 376
+        BOTTOMMARGIN, 211
     END
 
     IDD_PREVIEW_Dlg, DIALOG
@@ -976,58 +977,66 @@ END
 // AFX_DIALOG_LAYOUT
 //
 
-IDD_Beam_Dlg AFX_DIALOG_LAYOUT 
+IDD_Beam_Dlg AFX_DIALOG_LAYOUT
 BEGIN
-    0x0000
+    0
 END
 
-IDD_Inject_Dlg AFX_DIALOG_LAYOUT 
+IDD_Inject_Dlg AFX_DIALOG_LAYOUT
 BEGIN
-    0x0000
+    0
 END
 
-IDD_DefLoad_Dlg AFX_DIALOG_LAYOUT 
+IDD_DefLoad_Dlg AFX_DIALOG_LAYOUT
 BEGIN
-    0x0000
+    0
 END
 
-IDD_StatOptDlg AFX_DIALOG_LAYOUT 
+IDD_StatOptDlg AFX_DIALOG_LAYOUT
 BEGIN
-    0x0000
+    0
 END
 
-IDD_Limits_Dlg AFX_DIALOG_LAYOUT 
+IDD_Limits_Dlg AFX_DIALOG_LAYOUT
 BEGIN
-    0x0000
+    0
 END
 
-IDD_INPUT_DLG AFX_DIALOG_LAYOUT 
+IDD_INPUT_DLG AFX_DIALOG_LAYOUT
 BEGIN
-    0x0000
+    0
 END
 
-IDD_NBI_Dlg AFX_DIALOG_LAYOUT 
+IDD_NBI_Dlg AFX_DIALOG_LAYOUT
 BEGIN
-    0x0000
+    0
 END
 
-IDD_Threads_Dlg AFX_DIALOG_LAYOUT 
+IDD_Threads_Dlg AFX_DIALOG_LAYOUT
 BEGIN
-    0x0000
+    0
 END
 
-#endif    // Russian resources
+IDD_PLOT_Dlg AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_Task_Dlg AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+#endif    // Russian (Russia) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1037,6 +1046,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDR_MAINFRAME           ICON                    "res\\icon.ico"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1049,14 +1059,14 @@ CAPTION "About BTR"
 FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,23,13,20,20
-    CTEXT           "BTR for ITER 4.5 beta (PL)",IDC_STATIC,62,15,146,12,SS_NOPREFIX | SS_CENTERIMAGE | NOT WS_GROUP
-    DEFPUSHBUTTON   "OK",IDOK,210,57,32,17,WS_GROUP
+    CTEXT           "BTR v5.25 (23 02 2023)",IDC_STATIC,62,15,146,12,SS_NOPREFIX | SS_CENTERIMAGE | NOT WS_GROUP
+    DEFPUSHBUTTON   "OK",IDOK,203,14,28,17,WS_GROUP
     CTEXT           " E.D.Dlougach         e-mail:  edlougach@gmail.com",IDC_STATIC,42,35,174,12,SS_CENTERIMAGE
-    CTEXT           "www.btr.org.ru",IDC_STATIC,125,61,65,13
-    PUSHBUTTON      "BTR  webpage",IDC_BUTTON_Site,22,57,92,17
+    CTEXT           "https://sites.google.com/view/btr-code/home",IDC_STATIC,77,61,157,13
+    PUSHBUTTON      "BTR  webpage",IDC_BUTTON_Site,8,57,60,17
 END
 
-IDD_ViewSize_Dlg DIALOG  0, 0, 134, 76
+IDD_ViewSize_Dlg DIALOG 0, 0, 134, 76
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "View Size"
 FONT 8, "MS Sans Serif"
@@ -1130,7 +1140,7 @@ BEGIN
     EDITTEXT        IDC_Azim,200,188,25,14,ES_AUTOHSCROLL
 END
 
-IDD_Neutr_Dlg DIALOG  0, 0, 162, 80
+IDD_Neutr_Dlg DIALOG 0, 0, 162, 80
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Neutralization"
 FONT 8, "MS Sans Serif"
@@ -1143,7 +1153,7 @@ BEGIN
     CTEXT           "THICK model (based on gas profile) ",IDC_STATIC,27,38,122,12,SS_CENTERIMAGE | NOT WS_GROUP
 END
 
-IDD_Res_Smooth DIALOG  0, 0, 162, 70
+IDD_Res_Smooth DIALOG 0, 0, 162, 70
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Power Density Smoothing"
 FONT 8, "MS Sans Serif"
@@ -1162,7 +1172,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_ABOUTBOX, DIALOG
     BEGIN
@@ -1220,14 +1230,14 @@ END
 // AFX_DIALOG_LAYOUT
 //
 
-IDD_ABOUTBOX AFX_DIALOG_LAYOUT 
+IDD_ABOUTBOX AFX_DIALOG_LAYOUT
 BEGIN
-    0x0000
+    0
 END
 
-IDD_Reion_Dlg AFX_DIALOG_LAYOUT 
+IDD_Reion_Dlg AFX_DIALOG_LAYOUT
 BEGIN
-    0x0000
+    0
 END
 
 
@@ -1237,6 +1247,7 @@ END
 //
 
 IDR_MAINFRAME           BITMAP                  "res\\Toolbar.bmp"
+
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -1281,7 +1292,7 @@ END
 // Toolbar
 //
 
-IDR_MAINFRAME TOOLBAR  16, 15
+IDR_MAINFRAME TOOLBAR 16, 15
 BEGIN
     BUTTON      ID_FILE_NEW
     BUTTON      ID_FILE_OPEN
@@ -1305,7 +1316,7 @@ END
 // Menu
 //
 
-IDR_MAINFRAME MENU 
+IDR_MAINFRAME MENU
 BEGIN
     POPUP "&File"
     BEGIN
@@ -1514,7 +1525,7 @@ BEGIN
     END
 END
 
-IDR_MENUPOP MENU 
+IDR_MENUPOP MENU
 BEGIN
     POPUP "&Plate"
     BEGIN
@@ -1554,7 +1565,7 @@ END
 // Accelerator
 //
 
-IDR_MAINFRAME ACCELERATORS 
+IDR_MAINFRAME ACCELERATORS
 BEGIN
     VK_F11,         ID_ASK,                 VIRTKEY, NOINVERT
     VK_F1,          ID_CONTEXT_HELP,        VIRTKEY, SHIFT, NOINVERT
@@ -1627,19 +1638,19 @@ END
 // String Table
 //
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDR_MAINFRAME           "BTR\n\nBTR\n\n\nBTR.Document\nBTR Document"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     AFX_IDS_APP_TITLE       "BTR"
     AFX_IDS_IDLEMESSAGE     "For Help, press F1"
     AFX_IDS_HELPMODEMESSAGE "Select an object on which to get Help"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_INDICATOR_EXT        "EXT"
     ID_INDICATOR_CAPS       "CAP"
@@ -1649,7 +1660,7 @@ BEGIN
     ID_INDICATOR_REC        "REC"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_FILE_NEW             "Create a new document\nNew"
     ID_FILE_OPEN            "Open an existing document\nOpen"
@@ -1663,7 +1674,7 @@ BEGIN
     ID_FILE_SEND_MAIL       "\t send mail"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_APP_ABOUT            "Display program information, version number and copyright\nAbout"
     ID_APP_EXIT             "Quit the application; prompts to save documents\nExit"
@@ -1672,7 +1683,7 @@ BEGIN
     ID_HELP                 "Display help for current task or command\nHelp"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_FILE_MRU_FILE1       "Open this document"
     ID_FILE_MRU_FILE2       "Open this document"
@@ -1692,18 +1703,18 @@ BEGIN
     ID_FILE_MRU_FILE16      "Open this document"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_NEXT_PANE            "Switch to the next window pane\nNext Pane"
     ID_PREV_PANE            "Switch back to the previous window pane\nPrevious Pane"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_WINDOW_SPLIT         "Split the active window into panes\nSplit"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_EDIT_CLEAR           "Erase the selection\nErase"
     ID_EDIT_CLEAR_ALL       "Erase everything\nErase All"
@@ -1718,13 +1729,13 @@ BEGIN
     ID_EDIT_REDO            "Redo the previously undone action\nRedo"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_VIEW_TOOLBAR         "Show or hide the toolbar\nToggle ToolBar"
     ID_VIEW_STATUS_BAR      "Show or hide the status bar\nToggle StatusBar"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     AFX_IDS_SCSIZE          "Change the window size"
     AFX_IDS_SCMOVE          "Change the window position"
@@ -1735,18 +1746,18 @@ BEGIN
     AFX_IDS_SCCLOSE         "Close the active window and prompts to save the documents"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     AFX_IDS_SCRESTORE       "Restore the window to normal size"
     AFX_IDS_SCTASKLIST      "Activate Task List"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     AFX_IDS_PREVIEW_CLOSE   "Close print preview mode\nCancel Preview"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_PLATE_SELECT         "Calculate map\nCalculate"
     ID_STOP                 "Stop the beam\nStop or Pause"
@@ -1769,7 +1780,7 @@ BEGIN
     ID_RESULTS_SAVEALL      " Save All Loads as text files in a folder"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_DATA_GET             "Read Data from Config File"
     ID_DATA_STORE           "Update the Data (no saving)"
@@ -1781,7 +1792,7 @@ BEGIN
     ID_PLATE_CLEAR          " Set Load to zero"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_DATA_DEFAULT         "\n Show Active Data"
     ID_DATA_ACTIVE          "Show Active Data "
@@ -1796,7 +1807,7 @@ BEGIN
                             "Select /Unselect all surfaces \n Select/Unselect All "
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_VIEW_FULLAREA        "Show total region of NBI cell "
     ID_TASKS_OTHER          "Beam Transport Task\n Beam Transport"
@@ -1815,7 +1826,7 @@ BEGIN
     ID_EDIT_MAGFIELD_4COLUMNS "Set or read MF profile\nMF vs X"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_PLOT_BEAMLETCURR     "Plot Beamlet current via angle \n Beamlet current via angle"
     ID_PLOT_SINGAPARRAY     "\n Re-ion diagram"
@@ -1831,7 +1842,7 @@ BEGIN
     ID_ASK                  "Display short manual \n Help"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_TASKS_BEAMPLASMA     "Calculate Beam Decay in Plasma \nBeam Decay in Plasma"
     ID_OPTIONS_TRACENEUTRALSINPLASMA 
@@ -1843,12 +1854,12 @@ BEGIN
     ID_DATA_IMPORT_PDPSINGAP "Read NBI geometry from PDP-input file"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_ReadAdd              "Read Additional Surfaces"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_TASKS_PDPCODE        "Run PDP-code executable\n Run PDP.exe"
     ID_RESULTS_PDPOUTPUT_TABLE "Show PDP output table as a map"
@@ -1860,24 +1871,24 @@ BEGIN
     ID_Parallel             "Multi-thread calculations \n Start PARALLEL"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_PLOT_COMBI           "Combine surfaces \n Combi-plot"
     ID_PLATE_CLEARSELECT    "Clear selection\n unselect"
     ID_EDIT_FW_2D           "Set First Wall RZ-points"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_PLOT_ANGULARDISTR    "Big Particles data \n BP data"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_RESULTS_READSCEN     "Read SCEN results"
 END
 
-#endif    // English (U.S.) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

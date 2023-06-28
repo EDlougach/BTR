@@ -79,6 +79,31 @@ CString FindFileName(CString S)
 	return S1;
 }
 
+int SplitString(CString sbuf, CString sep, CStringArray SArr)
+{
+	CString sBuf = _T(sbuf);
+	CString Separator = _T(sep);
+	int Position = 0;
+	CString Token;
+	
+	Token = sBuf.Tokenize(Separator, Position);
+	//AfxMessageBox(Token);
+	int found = 0;
+	SArr.Add(Token);
+	
+	while (!Token.IsEmpty())
+	{
+		// Get next token.
+		found++;
+		Token = sBuf.Tokenize(Separator, Position);
+		SArr.Add(Token);
+		//AfxMessageBox(Token);
+		
+	}
+	//AfxMessageBox(SArr[0] + SArr[1] + SArr[2]);
+	return found;
+}
+
 int FindDataColumns(FILE * f)
 {
 	int N = 0;
@@ -389,6 +414,7 @@ void CBTRDoc:: InitData()
 	char buf[1024];
 	::GetCurrentDirectory(1024, buf);
 	TopDirName.Format("%s", buf);  
+	CurrentDirName = TopDirName; // set in InitData;
 	//strcpy(SingapDirName, CurrentDirName);
 
 	// here we detect number of processors present in the system (for unknown purposes)
@@ -404,7 +430,7 @@ void CBTRDoc:: InitData()
 	
 //	AppertRadius = 0.007; // m
 //	AppertCurrDensity = 203.; //A/m2 D-
-	AreaLongMax = 40;
+	AreaLongMax = 26;// 40;
 	ReionPercent = 0;
 	PlasmaEmitter = -1;
 	DuctExit = -1;
@@ -475,7 +501,7 @@ void CBTRDoc:: InitData()
 	else SetGaussBeamlet(BeamCoreDivY, BeamCoreDivZ); 
 	SetPolarBeamletReion(); // called only once
 	SetPolarBeamletResidual();// called only once
-	//std::cout << "SetBeamlets done" << std::endl;
+	std::cout << "SetBeamlets Polar - " << PolarNumber << " Azim -" << AzimNumber << std::endl;
 
 	SetPlates();// calls AdjustAreaLimits();
 	//std::cout << "SetPlates done" << std::endl;
@@ -493,6 +519,17 @@ void CBTRDoc:: InitData()
 	ConfigFileName = " Undefined ";
 	//std::cout << "Config file:" << ConfigFileName << std::endl;
 
+	Reflectors.RemoveAll();
+	ReflectorNums.RemoveAll();
+/*
+	Reflectors.Add("|DD BOX INTERNAL LINER|FACET2");
+	Reflectors.Add("|DD BOX INTERNAL LINER|FACET3");
+	Reflectors.Add("|CDLINER TOP|FACET1");
+	Reflectors.Add("|CDLINER BOTTOM|FACET2");
+	Reflectors.Add("|ABSOLUTE_VALVE | RIGHT 1|FACET1");
+	Reflectors.Add("|ABSOLUTE_VALVE | RIGHT 2|FACET2");
+	Reflectors.Add("|ABSOLUTE_VALVE | RIGHT 3|FACET3");
+	*/
 }
 
 void CBTRDoc::InitFields() // MF + GAS
@@ -539,7 +576,7 @@ void CBTRDoc::SetFields() // if found MF + GAS
 			PressureDim = 1;
 			GasCoeff = 1;
 			OptReionAccount = TRUE;//automatic when gas loaded
-			//OptThickNeutralization = TRUE; // not automatic 
+			OptThickNeutralization = TRUE; // not automatic 
 			logout << " + GAS is set from " + GasFileName + "\n";
 			SetReionPercent();
 			SetNeutrCurrents();
@@ -613,7 +650,7 @@ void CBTRDoc:: InitOptions()
 	AtomPower2 = 0;
 	AtomPower3 = 0;
 
-	OptThickNeutralization = FALSE;
+	//OptThickNeutralization = FALSE;
 	OptReionAccount = FALSE;
 	OptReionStop = TRUE;
 	OptNeutrStop = TRUE;//FALSE;
@@ -640,7 +677,7 @@ void CBTRDoc:: InitOptions()
 	OptDrawPart = FALSE;// TRUE;
 	OptSINGAP = FALSE;
 	OptIndBeamlets = FALSE;
-	OptDeuterium = TRUE;
+	//OptDeuterium = TRUE;
 	OptPDP = FALSE;
 	OptParallel = TRUE; //FALSE;
 	OptCombiPlot = -1; ///-1 - no load, 0 - map is calculated, >0 - selected but not calculated 
@@ -675,8 +712,8 @@ void CBTRDoc:: InitOptions()
 	OptAddDuct = TRUE;//FALSE;
 	PlasmaEmitter = -1;
 	DuctExit = -1;
-
 	OptCalcBeamTrack = FALSE;
+	OptKeepFalls = FALSE;
 }
 
 void CBTRDoc:: InitTrackArrays()
@@ -726,16 +763,16 @@ void CBTRDoc:: InitBeam()
 	//AddData("BML Radius at GG, m", NAME(BeamRadius), BeamRadius = 0, 1);
 	//AddData("BML Focus dist from GG, m", NAME(BeamFocusX), BeamFocusX = 0, 1);
 	//AddData("BML Split Type (default 0 - Polar)", NAME(BeamSplitType), BeamSplitType = 0, 0);
-	AddData("BML Atoms Polar Split Number (Polar Split)", NAME(PolarNumberAtom), PolarNumberAtom = 0, 0);	
-	AddData("BML Atoms Azimuth Split Number (Polar Split)", NAME(AzimNumberAtom), AzimNumberAtom = 0, 0); // one aperture
+	AddData("BML Atoms Polar Split Number (Polar Split)", NAME(PolarNumberAtom), PolarNumberAtom = 100, 0);	
+	AddData("BML Atoms Azimuth Split Number (Polar Split)", NAME(AzimNumberAtom), AzimNumberAtom = 120, 0); // one aperture
 	//AddData("Beamlet Hor. Split Number (Cartesian)  (>0)", NAME(BeamSplitNumberY), BeamSplitNumberY = 10, 0);
 	//AddData("Beamlet Vert. Split Number (Cartesian) (>0)", NAME(BeamSplitNumberZ), BeamSplitNumberZ = 10, 0);
 	AddData("BML Reion Polar Split Number (Polar!)", NAME(PolarNumberReion), PolarNumberReion = 0, 0);
 	AddData("BML Reion Azimuth Split Number (Polar!)", NAME(AzimNumberReion), AzimNumberReion = 0, 0);
 	AddData("BML Resid Polar Split Number (Polar!)", NAME(PolarNumberResid), PolarNumberResid = 0, 0);
 	AddData("BML Resid Azimuth Split Number (Polar!)", NAME(AzimNumberResid), AzimNumberResid = 0, 0);
-	PolarNumber = 0;
-	AzimNumber = 0;
+	PolarNumber = PolarNumberAtom;
+	AzimNumber = AzimNumberAtom;
 
 //	DecilType = AddData("Beamlet Split Type (0-eq.curr; 1-eq.angle)", NAME(DecilType), 1., 0);	//  0 - equal current  1 - equal angle
 //	BeamCoreDiverg = AddData("Beamlet Core Divergence, rad", NAME(BeamCoreDiverg), 0.005, 1);
@@ -744,23 +781,16 @@ void CBTRDoc:: InitBeam()
 	AddData("BML Halo Divergence, rad", NAME(BeamHaloDiverg), BeamHaloDiverg = 0.015, 1);
 	AddData("BML Halo Fraction", NAME(BeamHaloPart), BeamHaloPart = 0.15, 1);
 	AddData("BML Current Cut-Off ratio (<<1)", NAME(CutOffCurrent), CutOffCurrent = 5.e-2, 2);
-	//TStepNeg = AddData("Time-Step for ions D-", NAME(TStepNeg), 2.1E-8, 2);
-	//TStepPos = AddData("Time-Step for ions D+", NAME(TStepPos), 2.2E-8, 2);
-	//TStepNeu = AddData("Time-Step for atoms Do", NAME(TStepNeu), 2.3E-8, 2);
-
+	
 	PartDimHor = 0; PartDimVert = 0; 
 	TracePoints = 1000000;
 	TraceOption = 1; // 0-time, 1-length
 
-//	TracePartType = AddData("Source ions Type (0/1/2 for e/H/D)", NAME(TracePartType), 2., 0);
-//	TracePartQ = AddData("Source ions Charge", NAME(TracePartQ), -1, 0);
-//	TracePartNucl = AddData("Source ions Mass, nucl.", NAME(TracePartNucl), 2., 0);
-	AddData("Source ions Tracking Step, m", NAME(TraceStepL), TraceStepL = 0.1, 1);
-//	TraceTimeStep = 1E-8;
-	TracePartType = -2; // D-
+	// SOURCE PARTICLES -----------------------------------------
+	TracePartType = 1; //H+     // -2; D-
 /*	TracePartQ  = -1;	TracePartNucl = 1;*/
-	SetTraceParticle(TracePartType); // -> TraceTimeStep also
-	
+		
+	AddData("Source ions Tracking Step, m", NAME(TraceStepL), TraceStepL = 0.5, 1);
 	AddData("Cross-Section H- -> Ho, m2", NAME(NeutrSigma), NeutrSigma = 1.3e-20, 2);
 	AddData("Cross-Section Ho -> H+, m2", NAME(ReionSigma), ReionSigma = 3.2e-21, 2);
 	AddData("Cross-Section H- -> H+, m2", NAME(TwoStripSigma), TwoStripSigma = 7.0e-22, 2);
@@ -773,16 +803,15 @@ void CBTRDoc:: InitBeam()
 	AddData("Neutral fraction (Neutr. Efficiency)", NAME(NeutrPart), NeutrPart = 0.6, 1);
 	NeutrPower = IonBeamPower * NeutrPart;
 	AddData("Residual Positive Ions fraction", NAME(PosIonPart), PosIonPart = 0.2, 1);
-//	NeutrPower = AddData("Neutral power after Neutraliser, MW", NAME(NeutrPower), IonPower*(NeutrPart), 1);
-//	InjectedPower = AddData("Injected Neutral Power, MW", NAME(InjectedPower),  0., 1);
+
 	AddData("Re-ionization Start, m", NAME(ReionXmin), ReionXmin = 4.6, 1);
 	AddData("Re-ionization End, m", NAME(ReionXmax), ReionXmax = 25, 1);
 	AddData("Re-ionization Step, m", NAME(ReionStepL), ReionStepL = 0.1, 1);
 	AddData("Reionized/Residual Ions Tracking Step, m", NAME(IonStepL), IonStepL = 0.05, 1);
-	//MinStepL = AddData("Min Step near Surfaces, m", NAME(MinStepL), 0.01, 1);
-	IonStepLspec = IonStepL; Xspec0 = 0; Xspec1 = 0;
-	ReionStepLspec = ReionStepL; RXspec0 = 0; RXspec1 = 0;
-
+	
+	IonStepLspec = IonStepL; Xspec0 = 0; Xspec1 = 0; // specific area step - for reion tracking 
+	ReionStepLspec = ReionStepL; RXspec0 = 0; RXspec1 = 0; //specific reion frequency
+	
 	char * strMisVert;
 	char * strVertTilt;
 	if (OptFree)
@@ -804,7 +833,8 @@ void CBTRDoc:: InitBeam()
 	AddData("Calc. area Horiz. max, m", NAME(AreaHorMax), AreaHorMax = 1, 1);
 	AddData("Calc. area Bottom, m", NAME(AreaVertMin), AreaVertMin = -1.0, 1);
 	AddData("Calc. area Top, m", NAME(AreaVertMax), AreaVertMax = 1.0, 1);
-	        
+	 
+	SetTraceParticle(TracePartType); // -> TraceTimeStep also
 }
 
 void CBTRDoc:: InitNBI() // not active for free config
@@ -1119,8 +1149,8 @@ void CBTRDoc:: InitTaskRID()
 {
 	AreaLong = RIDOutX + 0.5;//7.4;
 	BeamSplitType = 0;
-	PolarNumber = 30;
-	AzimNumber = 36;
+	PolarNumberAtom = 30;
+	AzimNumberAtom = 36;
 //	BeamSplitNumberY = 10;
 //	BeamSplitNumberZ = 10;
 
@@ -1188,8 +1218,8 @@ void CBTRDoc:: InitTaskReionization()
 void CBTRDoc:: InitTaskTransport()
 {
 	AreaLong = AreaLongMax;
-	PolarNumber = 100;
-	AzimNumber = 120;
+	PolarNumberAtom = 100;
+	AzimNumberAtom = 120;
 	BeamSplitNumberY = 60;
 	BeamSplitNumberZ = 60;
 //	TStepNeg = 1.E-8;
@@ -1226,7 +1256,7 @@ void CBTRDoc::InitScenDefault()
 	ScenFileName = "";
 	SkipSurfClass.RemoveAll(); // list of substrings to find in plate Comment
 	ExceptSurf.RemoveAll();
-	
+		
 	for (int i = 0; i <= MAXSCEN; i++)	ScenData[i].RemoveAll();
 	ScenLoaded = FALSE;// INIT default scenarios
 
@@ -1515,8 +1545,12 @@ BOOL CBTRDoc::OnNewDocument()
 				SetPlates(); // if data not changed 
 			break;
 		case IDNO: //res
+			OpenLogFile();
+			logout << "-------- DEFAULT CONFIG ---------\n";
 			break;
 		case IDCANCEL: //res
+			OpenLogFile();
+			logout << "--------- INPUT CANCELLED --------\n";
 			if (OptLogSave) 
 				CloseLogFile();//logout.log.close();
 			return FALSE; // close log before exit
@@ -1559,7 +1593,7 @@ BOOL CBTRDoc::OnNewDocument()
 			return FALSE;
 		} //switch res1
 		
-
+					
 	/*	if (OptFree) { // FREE option is chosen -> add surfaces
 			// not used now
 			BOOL finished = FALSE;
@@ -1590,6 +1624,29 @@ BOOL CBTRDoc::OnNewDocument()
 	case 2: break;  //if (OptStart == 2) // Demo	AfxMessageBox("DEMO is not ready,\n SORRY"); 
 	
 	} // switch OptStart
+
+	 /*
+	{ "DD BOX INTERNAL LINER|FACET2 \n",
+		"DD BOX INTERNAL LINER|FACET3 \n",
+		"CDLINER TOP|FACET1 \n",
+		"CDLINER BOTTOM|FACET2 \n",
+		"ABSOLUTE_VALVE | RIGHT 1|FACET1 \n",
+		"ABSOLUTE_VALVE | RIGHT 2|FACET2 \n",
+		"ABSOLUTE_VALVE | RIGHT 3|FACET3 "
+	}; */
+
+	CString Names[10];
+	int Nrefl = Reflectors.GetSize();
+	for (int i = 0; i < Nrefl; i++)
+		Names[i] = Reflectors.GetAt(i);
+
+		
+	if (Nrefl == 7) s.Format(" Present version collects Falls for the Surfaces:\n %s\n %s\n %s\n %s\n %s\n %s\n %s\n",
+		Names[0], Names[1], Names[2], Names[3], Names[4], Names[5], Names[6]);
+	else s.Format("- found reflectors = %d \n", Nrefl);
+	
+	//AfxMessageBox(s); //" This BTR version collects Falls on the Surfaces:\n" + Names[0] + Names[1] + Names[2] + Names[3]);
+	logout << s;
 
 	//OnDataActive();
 	FormDataText(0); // no internal names
@@ -2041,22 +2098,29 @@ int CBTRDoc:: SetOption(CString & Line)
 	}*/
 
 	if (name.Find("Source") > -1 && name.Find("Particle") > -1) {
-		OptDeuterium  = FALSE; // new data version
+		//OptDeuterium  = FALSE; // new data version
 		valstr.MakeUpper();
 		if (valstr.Find("E") >= 0) TracePartType = 0;
 		if (valstr.Find("H-") >= 0) TracePartType = -1;
 		if (valstr.Find("H+") >= 0) TracePartType = 1;
-		if (valstr.Find("D-") >= 0) {TracePartType = -2; OptDeuterium = TRUE;}
+		if (valstr.Find("D-") >= 0) { TracePartType = -2; } // OptDeuterium = TRUE;
+	
 		if (valstr.Find("D+") >= 0) TracePartType = 2; 
 		if (valstr.Find("H0") >= 0 || valstr.Find("HO") >= 0) TracePartType = 10;
 		if (valstr.Find("D0") >= 0 || valstr.Find("DO") >= 0) TracePartType = 20;
-		//	else OptDeuterium = TRUE; // old data version
+		//	else OptDeuterium = TRUE; // - old  version
+		
+		SetTraceParticle(TracePartType);
+		logout << ">>>>>> SetOption: TracePartType " << TracePartType << valstr << "\n" ;
 		return(1);//9
 	}
 	if (name.Find("Neutralization") > -1) {
 		valstr.MakeUpper();
 		if (valstr.Find("THICK") > 0) OptThickNeutralization = TRUE;
 		else OptThickNeutralization = FALSE;
+
+		//OptThickNeutralization = FALSE; // up to v 5.1 
+
 		//AfxMessageBox("Neutralization SET");
 		return(1);//10
 	}
@@ -2203,7 +2267,8 @@ void CBTRDoc:: UpdateDataArray()
 //	for (k=0; k < NofChannelsHor; k++) ActiveCh[k] = FALSE;
 //	for (k=0; k < NofChannelsVert; k++) ActiveRow[k] = FALSE;
 
-	CString text = m_Text; 
+	CString text;
+	text = m_Text;
 	//if (m_Text.Find("NB") >=0 && m_Text.Find("CONFIG") >= 0) OptFree = FALSE;// standard NBI
 	//else OptFree = TRUE;
 
@@ -2297,6 +2362,9 @@ void CBTRDoc:: CheckData()
 		//AfxMessageBox("To do:\n MF should be defined\n (to trace Re-ionized particles)\n\n" + S1);
 		OptReionStop = TRUE;
 	}
+	
+	PolarNumber = PolarNumberAtom;
+	AzimNumber = AzimNumberAtom;
 
 	if ((int)AzimNumber < 4 && (int)PolarNumber > 0) {
 		//AfxMessageBox("ErrInput:\n Azimuth Number should be > 3\n Otherwise Polar Splitting Number is set to 0");
@@ -2337,12 +2405,22 @@ void CBTRDoc:: CheckData()
 	}
 	}// THIN neutralization
 
+	if (TraceStepL < 1.e-3) {
+		S.Format(" -> FAST and THIN options are set\n when TraceStepL < 1.e-3");
+		OptThickNeutralization = FALSE;
+		AfxMessageBox(S);
+	}
+	/*
 	if (OptThickNeutralization) {// THICK neutralization
-	if (NeutrStepL < IonStepL) {//THICK neutralization
-		AfxMessageBox("Ion trajectory step should not exceed Neutralization step");
-		IonStepL = NeutrStepL;
+	if (NeutrStepL < TraceStepL) {//THICK neutralization
+		AfxMessageBox("SourceIon step should not exceed Neutralization step");
+		NeutrStepL = TraceStepL;
 	}
-	}
+	}*/
+	
+	if (OptKeepFalls == TRUE)
+		AfxMessageBox("Falls will be kept");
+
 
 	//if (IonStepLspec > IonStepL)	IonStepLspec = IonStepL;
 
@@ -2451,7 +2529,7 @@ C3Point  CBTRDoc:: LocalCS(C3Point  P0, int channel)
 	return P;
 }
 
-void  CBTRDoc::SetTraceParticle(int nucl, int q) // 0:e, 1:H+, 2:D+, -1:H-, -2:D-, 10:H0, 20:H0
+void  CBTRDoc::SetTraceParticle(int nucl, int q) // 0:e, 1:H+, 2:D+, -1:H-, -2:D-, 10:H0, 20:D0
 {
 	switch (nucl) { // 0(e), 1(H-), 2(D-)
 	case 0: SetTraceParticle(0); break;
@@ -2475,7 +2553,7 @@ void  CBTRDoc::SetTraceParticle(int nucl, int q) // 0:e, 1:H+, 2:D+, -1:H-, -2:D
 }
 
 
-void  CBTRDoc::SetTraceParticle(int type) // 0:e, 1:H+, 2:D+, -1:H-, -2:D-, 10:H0, 20:H0
+void  CBTRDoc::SetTraceParticle(int type) // 0:e, 1:H+, 2:D+, -1:H-, -2:D-, 10:H0, 20:D0
 {
 	switch (type) { // 0(e), 1(H-), 2(D-)
 	case 0:	// electron
@@ -2541,8 +2619,9 @@ void  CBTRDoc::SetTraceParticle(int type) // 0:e, 1:H+, 2:D+, -1:H-, -2:D-, 10:H
 	if (type == 0) V = RelV(IonBeamEnergy); // MeV // electron
 	else 	V = sqrt(2.* EeV * Qe / TracePartMass); // {m/c}
 	
-	if (TraceOption == 0) TraceStepL = TraceTimeStep * V;
-	else  TraceTimeStep = TraceStepL / V;
+	//if (TraceOption == 0) TraceStepL = TraceTimeStep * V;
+	//else  
+	TraceTimeStep = TraceStepL / V;
 					 
 }
 
@@ -2921,8 +3000,8 @@ void  CBTRDoc::SetPlatesNeutraliser()// -------------  NEUTRALIZER -------------
 
 	 pPlate = new CPlate(); // Entry 
 	 //PlateCounter++;  pPlate->Number = PlateCounter; // -> in AddCond
-	 p0 = C3Point(NeutrInX - 0.2, YminIn - 0.1, -NeutrH * 0.5 - 0.1);
-	 p3 = C3Point(NeutrInX - 0.2, -YminIn + 0.1,  NeutrH * 0.5 + 0.1);
+	 p0 = C3Point(NeutrInX - 0.001, YminIn - 0.1, -NeutrH * 0.5 - 0.1);
+	 p3 = C3Point(NeutrInX - 0.001, -YminIn + 0.1,  NeutrH * 0.5 + 0.1);
 	 pPlate->OrtDirect = -1;
 	 pPlate->SetFromLimits(p0, p3); 
 	 pPlate->Shift(0, NeutrBiasInHor, VShiftNeutr + NeutrBiasInVert);
@@ -3598,7 +3677,7 @@ void  CBTRDoc::SetPlatesDuct() // only dias  (not called)
 	SetDuctDia();
 }
 
-void  CBTRDoc::SetPlatesDuctFull()// not called
+void  CBTRDoc::SetPlatesDuctFull()// called
 {
 	//AfxMessageBox("Enter SetPlatesDuct");
 	CString S;
@@ -3613,8 +3692,8 @@ void  CBTRDoc::SetPlatesDuctFull()// not called
 	DuctExitX = Max(X, DuctExitX);
 
 		
-	// ------------- Pre-Duct Dia (Scraper1)  -------------------------------
-	diaphragm.Number = 5; // PreDuct
+	// ------------- Pre-Duct Dia (Scraper WINGS )  -------------------------------
+	diaphragm.Number = 5; // PreDuct = SCRAPER entry Dia 5
 	 pPlate = new CPlate(); //Pre-Duct Diafragm
 	 //PlateCounter++;	pPlate->Number = PlateCounter; 
 	 p0 = C3Point(PreDuctX, -PreDuctW * 0.5, AreaVertMin);
@@ -3694,7 +3773,7 @@ void  CBTRDoc::SetPlatesDuctFull()// not called
 	 X = PreDuctX;
 	 DuctExitX = Max(X, DuctExitX);
 
-	//--------- SCRAPER 2 -------------------------
+	//--------- SCRAPER WALLS Dia 5-6-------------------------
 	 // PreDuct -> Scr1
 	 // DDLinerIn -> Scr2
 	 diaphragm.Number = 6; // DDLinerIn
@@ -3798,7 +3877,7 @@ void  CBTRDoc::SetPlatesDuctFull()// not called
 	 pPlate->ShiftHor(LinerBiasInHor, LinerBiasOutHor);
 	 //pPlate->Shift(0, LinerHBias, VShiftLinerIn + LinerVBias);
 	 pPlate->Solid = TRUE;
-	 pPlate->Comment = "AV: left wall";
+	 pPlate->Comment = "AV(7-8): left wall";
 	 AddCond(pPlate);//PlatesList.AddTail(pPlate);
 //	if (TaskReionization)  SelectPlate(pPlate); //{ pPlate->Selected = TRUE; SetLoadArray(pPlate, TRUE); }
 	 diaphragm.Corn[2] = pPlate->Corn[2];//p3
@@ -3815,7 +3894,7 @@ void  CBTRDoc::SetPlatesDuctFull()// not called
 	 pPlate->ShiftHor(LinerBiasInHor, LinerBiasOutHor);
 	 //pPlate->ShiftVert(VShiftLinerIn, VShiftLinerOut);
 	 pPlate->Solid = TRUE;
-	 pPlate->Comment = "AV: right wall";
+	 pPlate->Comment = "AV(7-8): right wall";
 	 AddCond(pPlate); //PlatesList.AddTail(pPlate);
 //	if (TaskReionization)  SelectPlate(pPlate);//{ pPlate->Selected = TRUE; SetLoadArray(pPlate, TRUE); }
 	 diaphragm.Corn[0] = pPlate->Corn[1];//p1
@@ -3838,7 +3917,7 @@ void  CBTRDoc::SetPlatesDuctFull()// not called
 	 pPlate->ShiftHor(LinerBiasInHor, LinerBiasOutHor);
 	 //pPlate->ShiftVert(VShiftLinerIn, VShiftLinerOut);
 	pPlate->Solid = TRUE;
-	pPlate->Comment = "AV: top wall";
+	pPlate->Comment = "AV(7-8): top wall";
 	pPlate->Fixed = 1; // side view
 	AddCond(pPlate);//PlatesList.AddTail(pPlate);
 //	if (TaskReionization)  SelectPlate(pPlate);//{ pPlate->Selected = TRUE; SetLoadArray(pPlate, TRUE); }
@@ -3854,7 +3933,7 @@ void  CBTRDoc::SetPlatesDuctFull()// not called
 	 pPlate->ShiftHor(LinerBiasInHor, LinerBiasOutHor);
 	 //pPlate->ShiftVert(VShiftLinerIn, VShiftLinerOut);
 	pPlate->Solid = TRUE;
-	pPlate->Comment = "AV: bottom wall";
+	pPlate->Comment = "AV(7-8): bottom wall";
 	pPlate->Fixed = 1; // side view
 	AddCond(pPlate);//PlatesList.AddTail(pPlate);
 //	if (TaskReionization)  SelectPlate(pPlate); // { pPlate->Selected = TRUE; SetLoadArray(pPlate, TRUE); }
@@ -3875,7 +3954,7 @@ void  CBTRDoc::SetPlatesDuctFull()// not called
 	 pPlate->ShiftHor(LinerBiasOutHor, Duct1BiasHor);
 	 //pPlate->ShiftVert(VShiftDuct1, VShiftDuct2);
 	pPlate->Solid = TRUE;
-	pPlate->Comment = "DUCT0: left wall";
+	pPlate->Comment = "DUCTLINER(8-9): left wall";
 	AddCond(pPlate);//PlatesList.AddTail(pPlate);
 //	if (TaskReionization)  SelectPlate(pPlate);
 	diaphragm.Corn[2] = pPlate->Corn[2];
@@ -3892,7 +3971,7 @@ void  CBTRDoc::SetPlatesDuctFull()// not called
 	 pPlate->ShiftHor(LinerBiasOutHor, Duct1BiasHor);
 	 //pPlate->ShiftVert(VShiftDuct1, VShiftDuct2);
 	pPlate->Solid = TRUE;
-	pPlate->Comment = "DUCT0: right wall";
+	pPlate->Comment = "DUCTLINER(8-9): right wall";
 	AddCond(pPlate);//PlatesList.AddTail(pPlate);
 //	if (TaskReionization)  SelectPlate(pPlate);
 	diaphragm.Corn[0] = pPlate->Corn[1];
@@ -3915,7 +3994,7 @@ void  CBTRDoc::SetPlatesDuctFull()// not called
 	 pPlate->ShiftHor(LinerBiasOutHor, Duct1BiasHor);
 	 //pPlate->ShiftVert(VShiftDuct1, VShiftDuct2);
 	pPlate->Solid = TRUE;
-	pPlate->Comment = "DUCT0: top wall";
+	pPlate->Comment = "DUCTLINER(8-9): top wall";
 	pPlate->Fixed = 1; // side view
 	AddCond(pPlate);//PlatesList.AddTail(pPlate);
 //	if (TaskReionization)  SelectPlate(pPlate);
@@ -3931,7 +4010,7 @@ void  CBTRDoc::SetPlatesDuctFull()// not called
 	 pPlate->ShiftHor(LinerBiasOutHor, Duct1BiasHor);
 	 //pPlate->ShiftVert(VShiftDuct1, VShiftDuct2);
 	pPlate->Solid = TRUE;
-	pPlate->Comment = "DUCT0: bottom wall";
+	pPlate->Comment = "DUCTLINER(8-9): bottom wall";
 	pPlate->Fixed = 1; // side view
 	AddCond(pPlate);//PlatesList.AddTail(pPlate);
 //	if (TaskReionization)  SelectPlate(pPlate);
@@ -3953,7 +4032,7 @@ void  CBTRDoc::SetPlatesDuctFull()// not called
 	 pPlate->ShiftHor(Duct1BiasHor, Duct2BiasHor);
 	 //pPlate->ShiftVert(VShiftDuct1, VShiftDuct2);
 	pPlate->Solid = TRUE;
-	pPlate->Comment = "DUCT1: left wall";
+	pPlate->Comment = "DUCT(9-10): left wall";
 	AddCond(pPlate);//PlatesList.AddTail(pPlate);
 //	if (TaskReionization)  SelectPlate(pPlate);
 	diaphragm.Corn[2] = pPlate->Corn[2];
@@ -3970,7 +4049,7 @@ void  CBTRDoc::SetPlatesDuctFull()// not called
 	 pPlate->ShiftHor(Duct1BiasHor, Duct2BiasHor);
 	 //pPlate->ShiftVert(VShiftDuct1, VShiftDuct2);
 	pPlate->Solid = TRUE;
-	pPlate->Comment = "DUCT1: right wall";
+	pPlate->Comment = "DUCT(9-10): right wall";
 	AddCond(pPlate);//PlatesList.AddTail(pPlate);
 //	if (TaskReionization)  SelectPlate(pPlate);
 	diaphragm.Corn[0] = pPlate->Corn[1];
@@ -3993,7 +4072,7 @@ void  CBTRDoc::SetPlatesDuctFull()// not called
 	 pPlate->ShiftHor(Duct1BiasHor, Duct2BiasHor);
 	 //pPlate->ShiftVert(VShiftDuct1, VShiftDuct2);
 	pPlate->Solid = TRUE;
-	pPlate->Comment = "DUCT1: top wall";
+	pPlate->Comment = "DUCT(9-10): top wall";
 	pPlate->Fixed = 1; // side view
 	AddCond(pPlate);//PlatesList.AddTail(pPlate);
 //	if (TaskReionization)  SelectPlate(pPlate);
@@ -4009,7 +4088,7 @@ void  CBTRDoc::SetPlatesDuctFull()// not called
 	 pPlate->ShiftHor(Duct1BiasHor, Duct2BiasHor);
 	// pPlate->ShiftVert(VShiftDuct1, VShiftDuct2);
 	pPlate->Solid = TRUE;
-	pPlate->Comment = "DUCT1: bottom wall";
+	pPlate->Comment = "DUCT(9-10): bottom wall";
 	pPlate->Fixed = 1; // side view
 	AddCond(pPlate);//PlatesList.AddTail(pPlate);
 //	if (TaskReionization)  SelectPlate(pPlate);
@@ -4897,7 +4976,8 @@ void  CBTRDoc::SetPlates() // free
 	 pPlate->Comment = S;
 //	 SelectPlate(pPlate);//pPlate->Selected = TRUE; SetLoadArray(pPlate, TRUE); 
 	PlatesList.AddTail(pPlate);
-	PlasmaEmitter = pPlate->Number; // if DuctExitX < 0
+
+	PlasmaEmitter = pPlate->Number; // if DuctExitX < 0	// will be revised in SetPlatesNBI
 
 	pPlate = new CPlate(); // Right (HorMin) limit
 	PlateCounter++;//2
@@ -5241,6 +5321,8 @@ void  CBTRDoc::SetPlatesNBI() // NBI config
 	p1 = C3Point(PlasmaXmax+1, Ymin - 0.05, 0.); //AreaHorMin
 	p2 = C3Point(PlasmaXmin-1, Ymax + 0.05, 0.); //AreaHorMax
 	p3 = C3Point(PlasmaXmax+1, Ymax + 0.05, 0.); //AreaHorMax*/
+	/*
+	// temporary removed
 	p0 = C3Point(0, AreaHorMin, 0.); //AreaHorMin
 	p1 = C3Point(AreaLong, AreaHorMin, 0.); //AreaHorMin
 	p2 = C3Point(0, AreaHorMax, 0.); //AreaHorMax
@@ -5250,12 +5332,15 @@ void  CBTRDoc::SetPlatesNBI() // NBI config
 	pBeamHorPlane->Solid = FALSE;
 	pBeamHorPlane->Comment = "NB - Horizontal plane";
 	//pBeamHorPlane->Comment = "NB in plasma - Horizontal plane";Number = 2000;
-	pBeamHorPlane->ApplyLoad(TRUE, 0.2, 0.02);
+	pBeamHorPlane->ApplyLoad(TRUE, 10, 1);// 0.2, 0.02); //-> OFF
+	*/
 
 	/*p0 = C3Point(PlasmaXmin-1, 0., Zmin - 0.05); //AreaVertMin);
 	p1 = C3Point(PlasmaXmax-1, 0., Zmin - 0.05); //AreaVertMin);
 	p2 = C3Point(PlasmaXmin+1, 0., Zmax + 0.05); //AreaVertMax);
 	p3 = C3Point(PlasmaXmax+1, 0., Zmax + 0.05); //AreaVertMax);*/
+	
+	/* // temporary removed
 	p0 = C3Point(0, 0, AreaVertMin); //AreaVertMin);
 	p1 = C3Point(AreaLong, 0, AreaVertMin); //AreaVertMin);
 	p2 = C3Point(0, 0, AreaVertMax); //AreaVertMax);
@@ -5266,6 +5351,7 @@ void  CBTRDoc::SetPlatesNBI() // NBI config
 	pBeamVertPlane->Comment = "NB - Vertical plane";
 	//pBeamVertPlane->Comment = "NB in plasma - Vertical plane";Number = 2000;
 	pBeamVertPlane->ApplyLoad(TRUE, 0.2, 0.02);
+	*/
 
 	if (OptBeamInPlasma && AreaLong >= TorCentreX) 
 		SetPlatesTor();
@@ -5333,6 +5419,55 @@ bool CBTRDoc::AddCond(CPlate * plate)// add to PlateList if condition
 	return TRUE;// added
 }
 
+void  CBTRDoc::AddReflectors(CString text)
+{
+	ReflectorNums.RemoveAll();
+	//ReflectorNums.Add(PlasmaEmitter);
+	
+	CString s = text;
+	CString S, Sn, Comm;
+	bool found = true; // comma
+	int pos; // comma pos
+	int nval;// surf n
+	int count = 0;
+	CPlate * plate;
+	
+	//CString valstr = Line.Mid(pos + 1);
+	//double Value = atof(valstr);
+
+	while (found) {
+		pos = s.Find(",", 0);
+		if (pos > 0) {
+			found = true;
+			Sn = s.Left(pos);
+			nval = (int)(atof(Sn));
+			ReflectorNums.Add(nval);
+			count++;
+			logout << "--- added Surf " << nval << "  to Reflectors\n";
+			s = s.Mid(pos + 1);
+		}
+		else break;
+	}
+
+	logout << " >>> total Reflectors - " << count << "\n";
+	S = "If KEEP FALLS is ON, data will be kept on \n";
+	for (int i = 0; i < count; i++) {
+		nval = ReflectorNums[i];
+		Sn.Format(" #%d - ", nval);
+		plate = GetPlateByNumber(nval);
+		Comm = plate->Comment;
+		S += Sn + Comm + "\n";
+	}
+	AfxMessageBox(S);
+	logout << S << "\n";
+
+	if (OptKeepFalls == TRUE)
+		S = " - The falls will be kept!";
+	else
+		S = " - The falls will be NOT kept";
+	//AfxMessageBox(S);
+	//logout << S << "\n";
+}
 
 void  CBTRDoc::InitAddPlates() // remove all
 {
@@ -5558,10 +5693,12 @@ void CBTRDoc:: ClearAllPlates() // clear loads
 		plate->AtomPower = 0;
 		plate->NegPower = 0;
 		plate->PosPower = 0;
+		plate->Falls.RemoveAll();
 	}
-
-	pBeamHorPlane->Load->Clear(); // created in SetPlatesNBI
-	pBeamVertPlane->Load->Clear();// created in SetPlatesNBI
+	// temporary removed
+	//pBeamHorPlane->Load->Clear(); // created in SetPlatesNBI
+	//pBeamVertPlane->Load->Clear();// created in SetPlatesNBI
+	
 	TracksCalculated = 0;//map tracks on vert/horiz planes in plasma -> CalculateTracks
 
 	ClearSumPower();
@@ -5570,6 +5707,7 @@ void CBTRDoc:: ClearAllPlates() // clear loads
 	LoadSelected = 0;
 	pLoadView->ShowLoad = FALSE;
 	OptCombiPlot = -1; //-1 - no load, 0 - map is calculated, >0 - selected but not calculated 
+	ArrSize = 0;
 	pMainView->InvalidateRect(NULL, TRUE);
 
 	//ShowNothing();
@@ -5711,9 +5849,9 @@ int CBTRDoc::OnDataGet() // load config;
 	CString S;
 	
 	// default settings (used when reading old data)
-	OptDeuterium = TRUE;
+	//OptDeuterium = TRUE;
 	OptIndBeamlets = FALSE;
-	OptThickNeutralization = FALSE;
+	OptThickNeutralization = FALSE;//default
 	BeamSplitType = 0;
 	VertInclin = 0;
 	//OptIonPower = FALSE;
@@ -5724,6 +5862,7 @@ int CBTRDoc::OnDataGet() // load config;
 		
 	int nread = ReadData(); // Read text-> to m_Text + Set Current Dir!!! 
 						// open LOG
+	
 
 	if (nread == 0) { // file -> m_Text 
 		S.Format("input not read \n");
@@ -5776,6 +5915,7 @@ int CBTRDoc::OnDataGet() // load config;
 //	RIDField->Set();
 	SetFields(); // GAS + MF from files if found in Config
 	CheckData();
+	
 	SetBeam(); // Aimings, IS positions
 	InitPlasma(); // called in OnDataGet
 	//SetPlasma();
@@ -5806,8 +5946,9 @@ int CBTRDoc::OnDataGet() // load config;
 		SetStatus();
 	}
 
-	if (OptDeuterium) TracePartType = -2;
-	SetTraceParticle(TracePartType);
+	//if (OptDeuterium) TracePartType = -2;
+	
+	SetTraceParticle(TracePartType); // - already set in SetOption!()
 	SetNeutrCurrents();
 
 	if (OptSINGAP)//	SetSINGAP(); // form BEAMLET_ENTRY array (apply midalign, active chan)
@@ -5815,8 +5956,11 @@ int CBTRDoc::OnDataGet() // load config;
 
 	if ((int)BeamSplitType ==0) SetPolarBeamletCommon(); //Polar // SetBeamletAt(0);
 	else SetGaussBeamlet(BeamCoreDivY, BeamCoreDivZ); // Cartesian
+	std::cout << "SetPolarBeamletCommon Polar - " << PolarNumber << " Azim -" << AzimNumber << std::endl;
 	SetPolarBeamletReion();
+	std::cout << "SetPolarBeamletReion Polar - " << PolarNumber << " Azim -" << AzimNumber << std::endl;
 	SetPolarBeamletResidual();
+	std::cout << "SetPolarBeamletResid Polar - " << PolarNumber << " Azim -" << AzimNumber << std::endl;
 
 	SetReionPercent();
 	
@@ -6035,7 +6179,10 @@ void CBTRDoc::OnDataStore() // Update + save (v5) actual Config
 	else ModifyArea(TRUE);// beam is fixed = true, ignore beamfoot change 
 		
 	SetReionPercent();
-	if (OptThickNeutralization) SetNeutrCurrents();
+	
+	//if (OptThickNeutralization) 
+	SetNeutrCurrents(); // switched back for all cases!!!
+
 	//SetDecayInPlasma();
 
 	ClearArrays();// attr vectors
@@ -7707,6 +7854,9 @@ void CBTRDoc::DeleteContents()
 	PowSolid.RemoveAll();
 	PowNeutral.RemoveAll();
 	PowInjected.RemoveAll();
+
+	Reflectors.RemoveAll();
+	ReflectorNums.RemoveAll();
 		
 	//if (ParticlesFile != NULL) fclose(ParticlesFile);
 	CDocument::DeleteContents();
@@ -7757,6 +7907,7 @@ void  CBTRDoc:: SetSINGAPfromMAMUG()
 	int Ny = (int)NofBeamletsHor, Nz = (int)NofBeamletsVert; // MAMuG
 	int NSy = (int)NofChannelsHor, NSz = (int)NofChannelsVert; // MAMuG
 	int	Ntotal = Ny*Nz*NSy*NSz;
+	double SumPower = 0;
 	
 	// double BeamPower = IonBeamPower; // MW
 
@@ -7770,23 +7921,25 @@ void  CBTRDoc:: SetSINGAPfromMAMUG()
 	for (ii = 0; ii<Ny; ii++)  // NofBeamletsHor
 	for (jj = 0; jj<Nz; jj++) // NofBeamletsVert
 	{			
-		be.Active = TRUE;
+		be.Active = TRUE;// initially
 		be.PosY = BeamletPosHor[i*Ny + ii]; // MAMuG
 		be.PosZ = BeamletPosVert[j*Nz + jj]; // MAMuG
 		be.AlfY = BeamletAngleHor[i*Ny + ii];
 		be.AlfZ = BeamletAngleVert[j*Nz + jj];
 		be.DivY = BeamCoreDivY;
 		be.DivZ = BeamCoreDivZ;
-		be.Fraction = 1;
+		be.Fraction = 1000000 * IonBeamPower / Ntotal;
 		be.i = ii; be.j = jj;
-
+		SumPower += be.Fraction;
 		BeamEntry_Array.Add(be);
+		
 	} // ii,jj
 	} //j
 	} // i
 	NofBeamletsTotal = Ntotal;
 	NofBeamlets = BeamEntry_Array.GetSize();// active
-	//std::cout << "SINGAP(MAMUG) beam set" << std::endl;
+	logout << "SINGAP beam is set from MAMUG\n";
+	logout << "Total beam power, W " << SumPower << "\n";
 }
 
 void  CBTRDoc:: SetSINGAP()
@@ -7835,11 +7988,14 @@ void  CBTRDoc:: SetSINGAP()
 		return;
 	}
 
+	// account of misalignment, tilting, inclination
+
 	for (int k = 0; k < N; k++) {
 		be = Singap_Array.GetAt(k);
 		be.AlfY += BeamMisHor; //mrad -> rad
 		be.AlfZ += BeamMisVert + BeamVertTilt;
-		if  (!OptFree) be.AlfZ += VertInclin; // NBI standard
+		//if  (!OptFree) 
+		be.AlfZ += VertInclin; // NBI standard
 	
 	/*	int i, j;// = (int)((be.PosY + 0.32) / 0.16); // channel number
 
@@ -7868,9 +8024,8 @@ void  CBTRDoc:: SetSINGAP()
 	
 		be.Active = ActiveCh[iseg] * ActiveRow[jseg];
 	*/
-		
 		be.Active = TRUE; // for SINGAP all beamlets are active!!!
-		BeamEntry_Array.Add(be);
+		BeamEntry_Array.Add(be);// with fraction account
 	}
 	NofBeamletsTotal = BeamEntry_Array.GetSize();
 	NofBeamlets = NofBeamletsTotal;
@@ -7906,28 +8061,35 @@ void CBTRDoc:: ReadSINGAP()
 			}
 			
 			if (OldBeamletsFormat(name) == TRUE) 
-				 res = ReadBeamletsOld(name);// BERT's beam 10 col
-			else res = ReadBeamletsNew(name);// AIK's beam 9 col
+				res = ReadBeamletsOld(name);// BERT's beam 10 col
+			else 
+				res = ReadBeamletsBTR(name); // my format for PLV 09/2021
+				//ReadBeamletsNew(name);// AIK's beam 9 col
 			
 			if (res < 1)	{
 			//	OptSINGAP = FALSE;
 			//	SINGAPLoaded = FALSE;
 				AfxMessageBox("Invalid data format",	MB_ICONSTOP | MB_OK); 
-				return;
+				
 			}
 			else  {
 				SINGAPLoaded = TRUE;
 				SetTitle(name);
 				BeamFileName = name;
-				return;
+				OptSINGAP = TRUE;
+				TaskName = "SINGAP BEAM";
+				SetSINGAP(); // form BEAMLET_ENTRY array (apply midalign, active chan)
+							
+				
 			}
 	} // IDOK
 	else {
 	//	OptSINGAP = FALSE;
 	//	SINGAPLoaded = FALSE;
 		AfxMessageBox("No Beam accepted", MB_ICONINFORMATION | MB_OK);
-		return;
+		
 	}
+	return;
 
 }
 
@@ -8104,18 +8266,90 @@ int CBTRDoc:: ReadBeamletsOld(char * name) // BERT de ESHE file (old)
 		OptSINGAP = TRUE;
 		S.Format("%d beamlets accepted \n file %s", total, name);
 		AfxMessageBox(S);
+		logout << S << " <<<<<<<<<<<< \n";
 	}
 	
 	if (total > 0) {
-		double AverFract = SumFract / total; // normally should be 1
-		if (AverFract < 1.e-12) AverFract = 1;
-		// NormFract = be.Fraction / AverFract 
-		for (int i = 0; i < total; i++) 
-			Singap_Array[i].Fraction /= AverFract;
+		logout << " Sum = " << SumFract << "\n";
+		logout << " Each bml current will be normalized to IonBeamCurrent " << IonBeamCurrent << " A \n";
+		for (int i = 0; i < total; i++)
+		{
+			fr = Singap_Array[i].Fraction; // can be zero current!
+			Singap_Array[i].Fraction = fr * IonBeamCurrent / total;
+		}
+
 	}
 
 	return total;
 	
+}
+
+int CBTRDoc::ReadBeamletsBTR(char * name) // similar to BERT format (10 columns)
+//******  Beam array data created by BTR 5 ***********
+//N     POS - Y   WID - Y    ALF - Y       DIV - Y      POS - Z     WID - Z     ALF - Z     DIV - Z     Rel FRACT
+{
+	Singap_Array.RemoveAll();
+	BEAMLET_ENTRY be;
+	char buf[1024];
+	double n, posy, widy, ay, divy, posz, widz, az, divz, fr;
+	int bml, result;
+	CString S;
+	double SumFract = 0;
+
+	FILE * fin = fopen(name, "r");
+	fgets(buf, 1024, fin); // read  line
+	bml = 0;
+	while (!feof(fin)) {
+		result = sscanf(buf, "%le %le %le %le %le %le %le %le %le %le", &n, &posy, &widy, &ay, &divy, &posz, &widz, &az, &divz, &fr);
+
+		if (result == 10) {
+			be.PosY = posy * 0.001; //mm -> m
+			be.PosZ = posz * 0.001;
+			be.AlfY = ay * 0.001;// mrad -> rad
+			be.AlfZ = az * 0.001;// 
+			be.DivY = divy * 0.001;
+			be.DivZ = divz * 0.001;
+			be.Fraction = fr; // =1
+			if (bml == 0) { // set divs common from 1st bml 
+				BeamCoreDivY = divy * 0.001;
+				BeamCoreDivZ = divz * 0.001;
+			}
+			//int i  = (int)((be.PosY + 0.32) / 0.16); // channel number
+			be.Active = TRUE;
+			Singap_Array.Add(be);
+			bml++;
+			SumFract += fr;
+			fgets(buf, 1024, fin); // read next line
+		} // scanned 10 fields
+		else {
+			fgets(buf, 1024, fin); // read next line
+		}
+	} // eof
+	fclose(fin);
+
+	if (bml > 0) {
+		OptSINGAP = TRUE;
+		S.Format(" %d beamlets accepted from file %s", bml, name);
+		AfxMessageBox(S);
+		logout << S << " <<<<<<<<<<<< \n";
+	}
+
+	if (bml > 0) {
+		//double AverFract = SumFract / bml; // normally should be 1
+		//if (AverFract < 1.e-12) AverFract = 1;
+		// NormFract = be.Fraction / AverFract 
+		logout << " Sum = " << SumFract << "\n";
+		logout << " Each bml current is normalized to IonBeamPower " << IonBeamPower << " MW \n";
+
+		if (SumFract < 1.e-6) SumFract = 1;
+		for (int i = 0; i < bml; i++)
+		{
+			fr = Singap_Array[i].Fraction; // can be zero current!
+			Singap_Array[i].Fraction = fr * IonBeamPower * 1000000 / SumFract;
+		}
+	}
+
+	return bml;
 }
 
 int CBTRDoc:: ReadBeamletsNew(char * name) // AIK file (new) - 9 columns
@@ -8280,7 +8514,7 @@ double Round(double inval, int digits) // total non-zero digits
 
 }
 
-bool CBTRDoc:: CheckRegularity(int Iy, int Jz) // SINGAP or MAMuG ?
+bool CBTRDoc:: CheckRegularity(int Iy, int Jz) // SINGAP or MAMuG ? - not called now
 {
 	CString S;
 
@@ -8949,8 +9183,8 @@ void CBTRDoc::SetPolarBeamletReion()
 	double AzimAngle, alfaY, alfaZ, alfaEff;
 
 	// keep main values
-	double OldPolarNumber = PolarNumber;
-	double OldAzimNumber = AzimNumber;
+	//double OldPolarNumber = PolarNumber;
+	//double OldAzimNumber = AzimNumber;
 
 	// set new values for reion task
 	PolarNumber = PolarNumberReion; // 
@@ -9018,8 +9252,8 @@ void CBTRDoc::SetPolarBeamletReion()
 
 	// restore defaults!!!!
 	
-	PolarNumber = OldPolarNumber;
-	AzimNumber = OldAzimNumber;
+	PolarNumber = PolarNumberAtom; //OldPolarNumber;
+	AzimNumber = AzimNumberAtom;//OldAzimNumber;
 
 	CString S;
 	int Nattr = Attr_Array_Reion.GetSize();
@@ -9033,8 +9267,8 @@ void CBTRDoc::SetPolarBeamletResidual()
 	double AzimAngle, alfaY, alfaZ, alfaEff;
 	
 	// keep main values
-	double OldPolarNumber = PolarNumber;
-	double OldAzimNumber = AzimNumber;
+	//double OldPolarNumber = PolarNumber;
+	//double OldAzimNumber = AzimNumber;
 	
 	// set new values for residual
 	PolarNumber = PolarNumberResid;
@@ -9101,10 +9335,9 @@ void CBTRDoc::SetPolarBeamletResidual()
 	}
 
 	// restore defaults!!!!
+	PolarNumber = PolarNumberAtom; //OldPolarNumber;
+	AzimNumber = AzimNumberAtom;//OldAzimNumber;
 	
-	PolarNumber = OldPolarNumber;
-	AzimNumber = OldAzimNumber;
-
 	CString S;
 	int Nattr = Attr_Array_Resid.GetSize();
 	S.Format("Resid Attr size %d", Nattr);
@@ -9125,8 +9358,8 @@ void CBTRDoc::	SetPolarBeamletCommon()		// set attributes for (Npolar*Nazim)BP i
 	ATTRIBUTES Attr;
 	double AzimAngle, alfaY, alfaZ, alfaEff;
 	// keep main values
-	double OldPolarNumber = PolarNumber;
-	double OldAzimNumber = AzimNumber;
+	//double OldPolarNumber = PolarNumber;
+	//double OldAzimNumber = AzimNumber;
 
 	// set new values for residual
 	PolarNumber = PolarNumberAtom;
@@ -9207,8 +9440,9 @@ void CBTRDoc::	SetPolarBeamletCommon()		// set attributes for (Npolar*Nazim)BP i
 			//	::SetCurrentDirectory(CurrentDirName);
 		
 		// restore defaults!!!!
-		PolarNumber = OldPolarNumber;
-		AzimNumber = OldAzimNumber;
+		
+		PolarNumber = PolarNumberAtom; //OldPolarNumber;
+		AzimNumber = AzimNumberAtom;//OldAzimNumber;
 		
 		int Nattr = Attr_Array.GetSize();
 		S.Format("Atoms Attr size %d", Nattr);
@@ -9754,7 +9988,7 @@ void CBTRDoc:: ShowBeamlet(BEAMLET_ENTRY be) //called from _ThreadFunc
 	pDC->MoveTo(x1, y1); pDC->LineTo(x2, y2);
 	pDC->MoveTo(x1, z1); pDC->LineTo(x2, z2);
 	pDC->SelectObject(pOldPen);
-	GdiFlush();
+	GdiFlush(); // temp rem
 	pMainView->ReleaseDC(pDC);
 	//cs.Unlock();
 }
@@ -9885,7 +10119,7 @@ void CBTRDoc:: SetReionPercent()
 
 		Summa += Curr;
 		NeutrCurr = NeutrCurr * (1 - Curr); 
-		P.X = x; 
+		P.X = x + dL; 
 		P.Y = Curr * NeutrCurr; // H+ released at dL
 		P.Z = exp(-Summa);// H0 total at X
 		ReionArray.Add(P);
@@ -9897,12 +10131,210 @@ void CBTRDoc:: SetReionPercent()
 	logout << "Reionization loss  " << ReionPercent << "%\n";
 }
 
-void CBTRDoc:: SetNeutrCurrents()
+void CBTRDoc::SetNeutrCurrents_Neg() // for THICK, negative IS
 {
-	if (!PressureLoaded || GasCoeff < 1.e-6) return;
-
+	logout << "SetNeutrCurrents for Negative Ions\n";
 	NeutrArray.RemoveAll();
 	C3Point P;
+	CString s;
+
+	double NL = 0; // Target Thickness
+	double x = NeutrXmin;
+	double dL = NeutrStepL; //;
+	//double NegDrop, PosRate; // = dj/j = NegDrop = NeutrCurr + PosCurr
+	double NegCurr, PosCurr; //j-, j+
+	double A, B, C, D;
+
+	// H-/D-
+	A = ReionSigma + PosExchSigma; // H0->H+, H+->H0 
+	B = TwoStripSigma - ReionSigma; // H-->H+, H0->H+
+	C = ReionSigma; // H0->H+
+	D = NeutrSigma + TwoStripSigma;// H-->H0
+	s.Format("  Sigmas: 0+1 - %g +10 - %g  -1+1 - %g  -10 - %g\n", 
+			ReionSigma, PosExchSigma, TwoStripSigma, NeutrSigma);
+	logout << s;
+		
+		NegCurr = 1; PosCurr = 0;
+		P.X = x; P.Y = NegCurr; P.Z = PosCurr; // H-/D-
+		NeutrArray.Add(P);
+		x += dL;
+		while (x <= NeutrXmax) {
+			NL += GetPressure(C3Point(x, 0, 0)) * dL;
+			if (NL < 1.e-30 || fabs(D) < 1.e-30) NegCurr = 1;
+			else  NegCurr = exp(-D*NL);
+			if (NL < 1.e-30 || fabs(A) < 1.e-30 || fabs(D) < 1.e-30 || fabs(A - D) < 1.e-30) PosCurr = 0;
+			else  PosCurr = C / A - (C / A + B / (A - D)) * exp(-A*NL) + B / (A - D) * exp(-D*NL);
+			P.X = x; P.Y = NegCurr; P.Z = PosCurr;
+			NeutrArray.Add(P);
+			x += dL;
+		}
+		
+		double NegIonPart = NegCurr; //exp(-SummaNeg);
+		PosIonPart = PosCurr; // (1 - ((NeutrSigma)*exp(-SummaPos) - (ReionSigma)*exp(-SummaNeg)) / (NeutrSigma - ReionSigma));
+		NeutrPart = 1 - NegIonPart - PosIonPart;
+		NeutrPower = IonBeamPower * (NeutrPart);
+
+		logout << "Neutral fraction         " << NeutrPart << "\n";
+		logout << "Positive ions fraction   " << PosIonPart << "\n";
+		logout << "Negative ions fraction   " << NegIonPart << "\n";
+			
+}
+
+void CBTRDoc::SetNeutrCurrents_Pos() // for THICK, positive IS
+{
+	logout << "SetNeutrCurrents for Positive Ions\n";
+	NeutrArray.RemoveAll();
+	C3Point P;
+	CString s;
+	
+	double NL = 0; // Target Thickness
+	double x = NeutrXmin;
+	double dL = NeutrStepL; //;
+	double PosCurr; // = dj+/j+ = PosDrop = NeutrCurr 
+	double NeutrCurr; // j0
+	double A, B, C, D;
+	A = PosExchSigma; // H+ -> H0
+	B = ReionSigma; // H0 -> H+
+	C = A + B;
+	s.Format(" Sigmas: 0+1 - %g +10 - %g  Sum - %g\n", ReionSigma, PosExchSigma, C);
+	logout << s;
+
+	NeutrCurr = 0; PosCurr = 1;
+	P.X = x; P.Y = NeutrCurr; P.Z = PosCurr;// 
+	NeutrArray.Add(P);
+	x += dL;
+	while (x <= NeutrXmax) {
+		NL += GetPressure(C3Point(x, 0, 0)) * dL; // dL = NeutrStepL
+		if (NL < 1.e-30 || fabs(C) < 1.e-30) PosCurr = 1;
+		else  PosCurr = (1 - B / C) * exp(-C*NL) + B / C; //
+		P.X = x; P.Y = NeutrCurr; P.Z = PosCurr;
+		NeutrArray.Add(P);
+		x += dL;
+	}
+	
+	PosIonPart = PosCurr; // (1 - ((NeutrSigma)*exp(-SummaPos) - (ReionSigma)*exp(-SummaNeg)) / (NeutrSigma - ReionSigma));
+	NeutrPart = 1 - PosIonPart;
+	NeutrPower = IonBeamPower * (NeutrPart);
+
+	logout << "Neutral fraction         " << NeutrPart << "\n";
+	logout << "Positive ions fraction   " << PosIonPart << "\n";
+	
+}
+
+void CBTRDoc::SetNeutrYield_Neg() // for THIN, negative IS
+{
+	logout << "SetNeutrYield for Negative Ions\n";
+
+	BOOL CalcYield = FALSE; // user defined yields 
+	if (PressureLoaded && GasCoeff > 1.e-6) CalcYield = TRUE;
+
+	//if (!PressureLoaded || NeutrPart > 1.e-3) CalcYield = FALSE;
+	//if (GasCoeff < 1.e-6) CalcYield = FALSE;// Set Yields directly
+
+	double x = NeutrXmin;
+	double dL = NeutrStepL; //;
+	double NegCurr, PosCurr; //j-, j+
+	C3Point P;
+
+	if (CalcYield) // use gas prof
+	{
+		SetNeutrCurrents_Neg(); // similarly for THICK
+		//PosIonPart = PosCurr; // (1 - ((NeutrSigma)*exp(-SummaPos) - (ReionSigma)*exp(-SummaNeg)) / (NeutrSigma - ReionSigma));
+		//NeutrPart = 1 - NegIonPart - PosIonPart;
+	}
+
+	NeutrArray.RemoveAll(); // clear array
+	// for THIN - add 4 points only - step 
+	NegCurr = 1; PosCurr = 0;
+	P.X = x; P.Y = NegCurr; P.Z = PosCurr;
+	NeutrArray.Add(P);
+	x = NeutrXmax; P.X = x;
+	NeutrArray.Add(P);
+
+	x = NeutrXmax + dL;
+	NegCurr = 1 - NeutrPart - PosIonPart;
+	PosCurr = PosIonPart;
+	P.X = x; P.Y = NegCurr; P.Z = PosCurr; // after NeutrXmax
+	NeutrArray.Add(P);
+	x += dL; P.X = x;
+	NeutrArray.Add(P);
+
+	if (!CalcYield) {
+		NeutrPower = IonBeamPower * (NeutrPart);
+		double NegIonPart = 1 - NeutrPart - PosIonPart; //exp(-SummaNeg);
+		logout << "Neutral fraction         " << NeutrPart << "\n";
+		logout << "Positive ions fraction   " << PosIonPart << "\n";
+		logout << "Negative ions fraction   " << NegIonPart << "\n";
+	}
+}
+
+void CBTRDoc::SetNeutrYield_Pos() // for THIN, positive IS
+{
+	logout << "SetNeutrYield for Positive Ions\n";
+	
+	BOOL CalcYield = FALSE; // user defined yields 
+	if (PressureLoaded && GasCoeff > 1.e-6) 	CalcYield = TRUE;
+
+	//if (!PressureLoaded || NeutrPart > 1.e-3) CalcYield = FALSE;
+	//if (GasCoeff < 1.e-6) CalcYield = FALSE;// Set Yields directly
+	
+	if (CalcYield) // use gas prof
+	{
+		SetNeutrCurrents_Pos(); // similarly for THICK
+		//PosIonPart = PosCurr; // (1 - ((NeutrSigma)*exp(-SummaPos) - (ReionSigma)*exp(-SummaNeg)) / (NeutrSigma - ReionSigma));
+		//NeutrPart = 1 - PosIonPart;
+		//NeutrPower = IonBeamPower * (NeutrPart);
+	}
+	NeutrArray.RemoveAll(); // clear array
+	
+// for THIN - add 4 points only - step 
+	double x = NeutrXmin;
+	double dL = NeutrStepL; //;
+	double NeutrCurr, PosCurr; //j0, j+
+	C3Point P;
+
+	NeutrCurr = 0;	PosCurr = 1;
+	P.X = x; P.Y = NeutrCurr; P.Z = PosCurr;
+	NeutrArray.Add(P);
+	x = NeutrXmax; P.X = x;
+	NeutrArray.Add(P);
+
+	x = NeutrXmax + dL;
+	NeutrCurr = 1 - PosIonPart;
+	PosCurr = PosIonPart;
+	P.X = x; P.Y = NeutrCurr; P.Z = PosCurr; // after NeutrXmax
+	NeutrArray.Add(P);
+	x += dL; P.X = x;
+	NeutrArray.Add(P);
+
+	if (!CalcYield) {
+		logout << "Neutral fraction         " << NeutrPart << "\n";
+		logout << "Positive ions fraction   " << PosIonPart << "\n";
+	}
+}
+
+void CBTRDoc::SetNeutrCurrents()
+{
+	if (!PressureLoaded || GasCoeff < 1.e-6) // set THIN mode
+		OptThickNeutralization = FALSE;
+
+	if (TracePartQ > 0) {// H+/D+
+		if (OptThickNeutralization)
+			SetNeutrCurrents_Pos();
+		else SetNeutrYield_Pos(); // with or without gas prof!
+	}
+	else { // H-/D-
+		if (OptThickNeutralization)
+			SetNeutrCurrents_Neg();
+		else SetNeutrYield_Neg();// with or without gas prof!
+	}
+}
+	
+/*	// Old CBTRDoc::SetNeutrCurrents()
+	NeutrArray.RemoveAll();
+	C3Point P;
+	bool OptThick = OptThickNeutralization;
+	//if (!OptThickNeutralization) return;
 
 	// double SummaNeg = 0; // source current total drop
 	// double SummaPos = 0; // Total Pos current 
@@ -9926,8 +10358,19 @@ void CBTRDoc:: SetNeutrCurrents()
 			if (NL < 1.e-30 || fabs(C) < 1.e-30) PosCurr = 1; 
 			else  PosCurr = (1 - B/C) * exp(-C*NL) +  B / C; //
 			P.X = x; P.Y = NegCurr; P.Z = PosCurr;
+			if (!OptThick) {// THIN
+				NegCurr = 0; PosCurr = 1;
+				P.X = x; P.Y = NegCurr; P.Z = PosCurr;// 
+			}
 			NeutrArray.Add(P);
 			x += dL;
+		}
+		if (!OptThick) {// THIN - add 2 points
+				P.X = x; P.Y = 0; P.Z = PosIonPart;// after NeutrXmax
+				NeutrArray.Add(P);
+				x += dL;
+				P.X = x;
+				NeutrArray.Add(P);
 		}
 	} // positive source ions
 
@@ -9947,9 +10390,21 @@ void CBTRDoc:: SetNeutrCurrents()
 			if (NL < 1.e-30 || fabs(A) < 1.e-30 || fabs(D) < 1.e-30 || fabs(A-D) < 1.e-30) PosCurr = 0;
 			else  PosCurr = C/A - (C/A + B/(A-D)) * exp(-A*NL) + B/(A-D) * exp(-D*NL);
 			P.X = x; P.Y = NegCurr; P.Z = PosCurr;
+			if (!OptThick) {// THIN
+				NegCurr = 1; PosCurr = 0;
+				P.X = x; P.Y = NegCurr; P.Z = PosCurr; //PosIonPart at NeutrXmax
+			}
 			NeutrArray.Add(P);
 			x += dL;
 		}
+		if (!OptThick) {// THIN - add 2 points
+			NegCurr = 1 - NeutrPart - PosIonPart; PosCurr = PosIonPart;
+			P.X = x; P.Y = NegCurr; P.Z = PosCurr; // after NeutrXmax
+			NeutrArray.Add(P);
+			x += dL; P.X = x;
+			NeutrArray.Add(P);
+		}
+			
 	} // negative source ions
 	
 	double NegIonPart = NegCurr; //exp(-SummaNeg);
@@ -9960,7 +10415,8 @@ void CBTRDoc:: SetNeutrCurrents()
 	logout << "Neutral fraction         " << NeutrPart << "\n";
 	logout << "Positive ions fraction   " << PosIonPart << "\n";
 	logout << "Negative ions fraction   " << NegIonPart << "\n";
-}
+	*/
+
 
 C3Point CBTRDoc:: GetCurrentRate(double x, double NL, bool getRate) // 0 - currents, 1 - rates
 // source ions H-/D- !
@@ -12084,6 +12540,8 @@ void CBTRDoc::CollectRUNLoads() //called by CompleteScen
 				if (n >= ndata) break;
 				X[n] = x; 
 				Y[n] = y;
+				if (z < 1.e-9) z = 0;
+
 				switch (k) {
 				case 0: Loads[n].X = z; // k = 0
 					SumAtom += z;
@@ -12924,6 +13382,23 @@ void CBTRDoc:: WriteReport(CString ext)
 	S.Format(sf, "MaxPD, W/m2");  f << S;
 	S.Format(vf, MaxPD); f << S;
 
+	Keys.RemoveAll(); Keys.Add("SCRAP"); Keys.Add("WALL");
+	Sum = -1; MaxPD = -1;
+	n = GetCompSolid(Keys, Sum, MaxPD);
+	S.Format(sdf, "Walls Power, W", n); f << S;
+	S.Format(vf, Sum);  f << S;
+	S.Format(sf, "Walls MaxPD, W/m2");  f << S;
+	S.Format(vf, MaxPD); f << S;
+
+	Keys.RemoveAll(); Keys.Add("SCRAP"); Keys.Add("WING");
+	Sum = -1; MaxPD = -1;
+	n = GetCompSolid(Keys, Sum, MaxPD);
+	S.Format(sdf, "Faces Power, W", n); f << S;
+	S.Format(vf, Sum);  f << S;
+	S.Format(sf, "Faces MaxPD, W/m2");  f << S;
+	S.Format(vf, MaxPD); f << S;
+
+	/*
 	f << "\n____SHUTTER_____\n"; 
 	Keys.RemoveAll(); Keys.Add("SHUT"); 
 	Sum = -1, MaxPD = -1;
@@ -12941,8 +13416,8 @@ void CBTRDoc:: WriteReport(CString ext)
 	S.Format(vf, Sum);  f << S;
 	S.Format(sf, "MaxPD, W/m2");  f << S;
 	S.Format(vf, MaxPD); f << S;
-
-	f << "\n_____LINER_____\n"; 
+	*/
+	f << "\n_____D-LINER_____\n"; 
 	Keys.RemoveAll(); Keys.Add("LINER"); 
 	Sum = -1, MaxPD = -1;
 	n = GetCompSolid(Keys, Sum, MaxPD);
@@ -12960,7 +13435,7 @@ void CBTRDoc:: WriteReport(CString ext)
 	S.Format(sf, "MaxPD, W/m2");  f << S;
 	S.Format(vf, MaxPD); f << S;
 
-	f << "\n____< DUCT >_____\n"; 
+	f << "\n____ALL DUCT >_____\n"; 
 	Keys.RemoveAll(); Keys.Add("DUCT"); 
 	Sum = -1, MaxPD = -1;
 	n = GetCompSolid(Keys, Sum, MaxPD);
@@ -13000,7 +13475,8 @@ void CBTRDoc:: WriteReport(CString ext)
 	f.close();
 }
 
-void CBTRDoc::RunScen(int iopt[3]) // - current scenario with default run-options
+void CBTRDoc::RunScen(int iopt[3]) // - current scenario with default run-options 
+								   // called by OnStartParallel
 {
 	CString S;
 	//int opt[3] = { iopt[0], iopt[1], iopt[2] };// { ATOMS, Resid, Reions }
@@ -13118,7 +13594,9 @@ void CBTRDoc::RunScen(int iopt[3]) // - current scenario with default run-option
 	
 	
 
-void CBTRDoc:: OnStartParallel() // start or resume threads //older - enabled BTR-Fast)
+void CBTRDoc:: OnStartParallel() // launches MULTI or Single SCEN 
+								 // calls InitTracers
+								 // start or resume threads //older - enabled BTR-Fast)
 {
 	CString S, s1, s2;
 	int res;
@@ -15055,13 +15533,13 @@ void CBTRDoc:: PlotBeamletCurrent()
 	CString S;
 
 	if ((int)BeamSplitType ==0) { 
-		DecilPlot.Caption = "Beamlet Integral Current vs Polar Angle ";
+		DecilPlot.Caption = "BML polar prof ";
 //		S.Format(" (Polar = %d)", (int)PolarNumber);
-		S.Format(" (Core Div = %g mrad, Halo Div = %g mrad, Halo Fraction = %g)",
+		S.Format(" Core %g mrad, Halo %g mrad, Halo = %g",
 			BeamCoreDivY*1000, BeamHaloDiverg*1000, BeamHaloPart);
 		DecilPlot.Caption += S;
-		DecilPlot.LabelX = "Angle, mrad";
-		DecilPlot.LabelY = "Polar Profile(green), Splitting(red)";
+		DecilPlot.LabelX = "mrad";
+		DecilPlot.LabelY = "Splitting, Polar Profile";
 		DecilPlot.Line = 1;
 		DecilPlot.Interp = 0; // stairs
 		
@@ -15071,15 +15549,15 @@ void CBTRDoc:: PlotBeamletCurrent()
 		S.Format(" (Core DivY = %g mrad, Halo Div = %g mrad, Halo Fraction = %g)", 
 			BeamCoreDivY*1000, BeamHaloDiverg*1000, BeamHaloPart);
 		DecilPlot.Caption += S;
-		DecilPlot.LabelX = "Angle, mrad";
+		DecilPlot.LabelX = "mrad";
 		DecilPlot.LabelY = "Core+Halo, Core, Halo";
 		DecilPlot.Line = 1;
 		DecilPlot.Interp = 1; //
 		
 	}
-	DecilPlot.LimitX = 0;
+	DecilPlot.LimitX = 90;//0
 	DecilPlot.LimitY = 1;
-	DecilPlot.CrossX = 5;
+	DecilPlot.CrossX = 20;
 	DecilPlot.CrossY = 0.2;
 	
 	DecilPlot.PosNegX = FALSE;
@@ -15089,6 +15567,9 @@ void CBTRDoc:: PlotBeamletCurrent()
 	if (fabs(divY) < 1.e-16) divY = 0.00001;
 	double divZ = BeamCoreDivZ;
 	if (fabs(divZ) < 1.e-16) divZ = 0.00001;
+
+	if ((int)BeamSplitType == 0) SetPolarBeamletCommon(); //SetBeamletAt(0);
+	else SetGaussBeamlet(BeamCoreDivY, BeamCoreDivZ);
 
 	if ((int)BeamSplitType ==0) { //  Polar Splitting --------------------------
 		PosX.Add(PolarAngle[0] * divY);
@@ -15265,7 +15746,8 @@ void CBTRDoc::OnUpdatePlotMamugpositions(CCmdUI* pCmdUI)
 
 void CBTRDoc::OnPlot3dload() 
 {
-	pMarkedPlate = pBeamHorPlane; //pMarkedPlate;
+	// temporary removed
+//	pMarkedPlate = pBeamHorPlane; //pMarkedPlate;
 	
 	ShowProfiles = TRUE;
 	OnPlotMaxprofiles();
@@ -15382,7 +15864,8 @@ void CBTRDoc::OnPlotMaxprofiles()
 	pLoadView->Cross.Y = NewLoad->jProf * NewLoad->StepY;
 
 	pSetView->SetLoad_Plate(NewLoad, pMarkedPlate);//(pMarkedPlate->Load, pMarkedPlate);
-	pSetView->ShowProfiles();//->InvalidateRect(NULL, TRUE);
+	pSetView->ShowProfiles();
+	//pSetView->InvalidateRect(NULL, TRUE);
 
 	pMarkedPlate->Load = OldLoad;
 	delete (NewLoad);// created in Smoothed()
@@ -15640,11 +16123,11 @@ void CBTRDoc:: PlotBeamletFoot()
 	
 	BletPlot.PosNegX = TRUE;
 	BletPlot.PosNegY = TRUE;
-	BletPlot.Caption = "Beamlet Exit Image";
-	S.Format(" at X = %g m ", AreaLong);
+	BletPlot.Caption = "Beamlet Image";
+	S.Format(" X = %g m ", AreaLong);
 	BletPlot.Caption += S;
 	if ((int)BeamSplitType == 0) 
-		S.Format(" (Polar = %d  Azim = %d  Cut-Off = %g)", (int)PolarNumber, (int)AzimNumber, CutOffCurrent);
+		S.Format(" (Polar = %d Azim = %d Cut-Off = %g)", (int)PolarNumber, (int)AzimNumber, CutOffCurrent);
 	else 
 		S.Format(" (Horiz. = %d  Vert. = %d  Cut-Off = %g)", (int)BeamSplitNumberY, (int)BeamSplitNumberZ, CutOffCurrent);
 	BletPlot.Caption += S;
@@ -16086,10 +16569,10 @@ void CBTRDoc:: SetNeutralisation()
 		AfxMessageBox("gas profile is needed for THICK model \n THIN model is active ");
 		OptThickNeutralization = FALSE;
 	}
-	if (BTRVersion >= 5.0 && OptThickNeutralization) {
+/*	if (BTRVersion >= 5.0 && OptThickNeutralization) {
 		AfxMessageBox("Version 5: not supports THICK model yet \n THIN model is active ");
 		OptThickNeutralization = FALSE;
-	}
+	} */
 
 	if (!OptThickNeutralization) {
 		CThinDlg dlg;
@@ -17223,7 +17706,8 @@ void CBTRDoc:: DistributeTrack(CArray<C3Point> & Pos, CArray<double> & Pow)
 //DrawPartTrack(CArray <C3Point> &Pos, int charge, COLORREF color)
 {
 	//if (charge != 0 ) return; // only atoms now
-	int n = Pos.GetSize();
+	// temporary removed
+/*	int n = Pos.GetSize();
 	if (n < 1) return;
 	C3Point Orig1 = pBeamHorPlane->Orig;
 	C3Point Orig2 = pBeamVertPlane->Orig;
@@ -17236,6 +17720,7 @@ void CBTRDoc:: DistributeTrack(CArray<C3Point> & Pos, CArray<double> & Pow)
 		pBeamHorPlane->Load->Distribute(Pos[i].X - Orig1.X, Pos[i].Y - Orig1.Y, Pow[i]);
 		pBeamVertPlane->Load->Distribute(Pos[i].X - Orig2.X, Pos[i].Z - Orig2.Z, Pow[i]);
 	}
+	*/
 }
 
 double CBTRDoc::GetFillDecayBetween(C3Point P0, C3Point P1, double Power)//fill BeamPlanes maps
@@ -17364,15 +17849,15 @@ double CBTRDoc::GetFillDecayBetween(C3Point P0, C3Point P1, double Power)//fill 
 		DecayArray[k].Z += Npower;
 		DecayPathArray[k].Y += Density;
 		DecayPathArray[k].Z += TotalSigma;
-
-		Xloc = P.X - pBeamHorPlane->Orig.X;
+		// temporary removed
+		/*Xloc = P.X - pBeamHorPlane->Orig.X;
 		Yloc = P.Y - pBeamHorPlane->Orig.Y;
 		pBeamHorPlane->Load->Distribute(Xloc, Yloc, IonPower);
 
 		Xloc = P.X - pBeamVertPlane->Orig.X;
 		Yloc = P.Z - pBeamVertPlane->Orig.Z;
 		pBeamVertPlane->Load->Distribute(Xloc, Yloc, IonPower);
-						
+		*/		
 		ipsi = (int)floor(PSI / StepPSI);
 		if (PSI > 0 && ipsi > 0 && ipsi < Kpsi) {
 			SumPSIArray[ipsi].X += IonPower;
@@ -17909,7 +18394,7 @@ void CBTRDoc::PlotStopArray()
 	char name[1024];
 
 	PLOTINFO Plot;
-	Plot.Caption = "Beam ionization in Plasma along beam axis" ;
+	Plot.Caption = "Decay/Ionization in Plasma" ;
 	Plot.LabelX = "X, m";
 	Plot.LabelY = "Ions, Atoms";
 	Plot.LimitX = PlasmaXmax - PlasmaXmin;
@@ -17959,9 +18444,9 @@ void CBTRDoc::PlotStopArray()
 	//double lost = 100 - Percent;//power onto FW (not captured)
 	double Vbeam = pPlasma->Ray.Vmod;
 	
-	S.Format("\n Yt = %g, Zt= %g, X = %5.2f->%5.2f, v = %6.2e, Sig = %6.2e, lost = %7.5f",
+	S.Format("\n Yt=%g,Zt=%g,X=%5.2f->%5.2f,v =%6.2e,S=%6.2e,lost=%7.5f",
 		 TorCentreY, TorCentreZ, PlasmaXmin, PlasmaXmax, Vbeam, sigma*mult, lost);
-	Plot.Caption += S;
+	//Plot.Caption += S;
 
 	CPlotDlg dlg;
 	dlg.Plot = &Plot;
@@ -18432,7 +18917,7 @@ void CBTRDoc::OnUpdatePlotReion(CCmdUI *pCmdUI)
 	pCmdUI->Enable(PressureLoaded);
 }
 
-void CBTRDoc:: PlotCurrentRates(bool rate) 
+void CBTRDoc:: PlotCurrentRates(bool rate) // Neutralization currents / rates
 {
 	CArray<double, double>  ArrX;
 	CArray<double, double>  ArrY;
@@ -18443,12 +18928,12 @@ void CBTRDoc:: PlotCurrentRates(bool rate)
 	
 	int Knucl = TracePartNucl;
 	if (Knucl == 0) Knucl = 1;
-	S.Format("THICK Neutralization:  Energy = %g keV/nucl",  
+	S.Format("Neutralization on loaded GAS profile:  Energy = %g keV/nucl",  
 		IonBeamEnergy*1000/Knucl,  NeutrXmin);
 
-	if (rate) CurrPlot.Caption = "Creation/drop Rates (Neutralization region)";
+	if (rate) CurrPlot.Caption = "Neutralization rates";
 	else CurrPlot.Caption = S;
-	CurrPlot.LabelX = "X, m";
+	CurrPlot.LabelX = "X,m";
 	if (TracePartType == -1) CurrPlot.LabelY = "H+,  H-,  Ho   ";
 	else CurrPlot.LabelY = "D+,  D-,  Do   ";
 		
@@ -18464,11 +18949,11 @@ void CBTRDoc:: PlotCurrentRates(bool rate)
 	CurrPlot.PosNegY = FALSE;
 	CurrPlot.PosNegX = FALSE;
 	double x, y;
-	//double xmax = NeutrXmax;
+	
 	double dx = NeutrStepL; 
 	double NL = 0;
 	x = NeutrXmin;
-	while (x <= Xmax) {
+	while (x <= Xmax) {//NeutrXmax
 		NL += dx * GetPressure(C3Point(x, 0, 0));// NL
 		y = GetCurrentRate(x, NL, rate).X; //PosRate
 		if (y > 1.e-20) {
@@ -18549,8 +19034,7 @@ void CBTRDoc:: PlotCurrentRates(bool rate)
 }
 void CBTRDoc::OnPlotNeutrefficiency() // -> OnNeutralization -> PlotCurrentRates
 {
-	/*PlotCurrentRates(1);
-	return;
+	//PlotCurrentRates(1);	return;
 
 	int res;
 	if (pDataView->m_rich.GetModify()) {
@@ -18580,7 +19064,7 @@ void CBTRDoc::OnPlotNeutrefficiency() // -> OnNeutralization -> PlotCurrentRates
 
 	PLOTINFO NeffPlot;
 	NeffPlot.Caption = S;
-	NeffPlot.LabelX = "X, m";
+	NeffPlot.LabelX = "X,m";
 	if (TracePartType == -1) NeffPlot.LabelY = "H+,  H-,  Ho   ";
 	else NeffPlot.LabelY = "D+,  D-,  Do   ";
 	NeffPlot.LimitX = NeutrXmax + 0.5;
@@ -18660,7 +19144,6 @@ void CBTRDoc::OnPlotNeutrefficiency() // -> OnNeutralization -> PlotCurrentRates
 	ArrX.RemoveAll();
 	ArrY.RemoveAll();
 	
-	*/
 }
 
 
@@ -18944,7 +19427,7 @@ int CBTRDoc:: ReadAddPlatesDir(char * dirname) // read all surf files from folde
 {
 	int totfiles = 0;
 	CString S;
-	CString FullPath = CurrentDirName + "\\" + dirname;
+	CString FullPath = dirname; // CurrentDirName + "\\" + dirname;
 
 	::SetCurrentDirectory(FullPath);
 	//logout << "Set Folder " << FullPath << "\n";
@@ -18952,7 +19435,7 @@ int CBTRDoc:: ReadAddPlatesDir(char * dirname) // read all surf files from folde
 	DWORD error = ::GetLastError();
 	//if (error != 0) { AfxMessageBox("AddSurf Dir not found"); return 0;}
 
-	S.Format(">>>> Reading AddSurf Folder: %s ...\n", FullPath);
+	S.Format(">>>> Reading AddSurf Folder:\n %s ...\n", FullPath);
 	logout << S;
 
 	BeginWaitCursor(); 
@@ -18965,7 +19448,7 @@ int CBTRDoc:: ReadAddPlatesDir(char * dirname) // read all surf files from folde
 	char buf[1024];
 	CString line;
 	int pos;
-	int added = 0; // plates
+	int n, added = 0; // plates
 
 /*	char OpenDirName[1024];
 	::GetCurrentDirectory(1024, OpenDirName);
@@ -18984,6 +19467,8 @@ int CBTRDoc:: ReadAddPlatesDir(char * dirname) // read all surf files from folde
 		ReadLoad(name);}*/
 	   
 		strcpy(name, sn);
+		S.Format(" - opening file %s\n", name);
+		logout << S;
 		fin = fopen(name, "r");
 		if (fin == NULL) { AfxMessageBox("AddSurf file error"); return 0;}
 		if (fgets(buf, 1024, fin) == NULL)	return 0;
@@ -18992,8 +19477,11 @@ int CBTRDoc:: ReadAddPlatesDir(char * dirname) // read all surf files from folde
 		line.MakeUpper();
 		pos = line.Find("SURF");
 		if (pos >= 0) {
-			added += ReadAddPlates(name);
+			n = ReadAddPlates(name);
+			added += n;
 			totfiles++;// file read 
+			S.Format("\t + %d surfaces, total %d \n", n, added);
+			logout << S;
 		}
   
       while (FindNextFile(hFind, &FindFileData) != 0) 
@@ -19004,6 +19492,8 @@ int CBTRDoc:: ReadAddPlatesDir(char * dirname) // read all surf files from folde
 			  ReadLoad(name);} // if*/
 		  
 		  strcpy(name, sn);
+		  S.Format(" - opening file %s\n", name);
+		  logout << S;
 		  fin = fopen(name, "r");
 		  if (fin == NULL) continue; // { AfxMessageBox("AddSurf file error"); return totfiles;}
 		  if (fgets(buf, 1024, fin) == NULL) continue;	//return totfiles;
@@ -19011,9 +19501,12 @@ int CBTRDoc:: ReadAddPlatesDir(char * dirname) // read all surf files from folde
 		  fclose(fin);
 		  line.MakeUpper();
 		  pos = line.Find("SURF");
-		  if (pos >= 0) { // return totfiles;
-			 added += ReadAddPlates(name);
-			 totfiles++;// file read 
+		  if (pos >= 0) {
+			  n = ReadAddPlates(name);
+			  added += n;
+			  totfiles++;// file read 
+			  S.Format("\t + %d surfaces, total %d \n", n, added);
+			  logout << S;
 		  }
       } // while next txt-file found
    } //valid handle
@@ -19054,7 +19547,7 @@ int CBTRDoc:: ReadAddPlates(char * name)
 			return 0;
 		}
 
-		S.Format("Reading AddSurf file: %s \n",name);
+		S.Format("\t - reading file: %s\n",name);
 		logout << S;
 
 		total = 0;  
@@ -19097,9 +19590,10 @@ int CBTRDoc:: ReadAddPlates(char * name)
 		}// feof
 		fclose(fin);
 	S.Format(" - Scanned %d Surf \n",	total);
-	logout << S;// << std::endl;
+	//logout << S;// << std::endl;
 	S.Format(">>>> result AddPlatesNumber - %d\n", AddPlatesNumber);
-	logout << S; // "\t result AddPlatesNumber - " << AddPlatesNumber << std::endl; 
+	//logout << S; // "\t result AddPlatesNumber - " << AddPlatesNumber << std::endl; 
+	
 	//ShowFileText(name);
 	//ModifyArea(FALSE);
 	return total;
@@ -19162,9 +19656,10 @@ void CBTRDoc::OnOptionsBeam()
 	dlg.m_AtomPower = OptAtomPower;
 	dlg.m_NegIon_Power = OptNegIonPower;
 	dlg.m_PosIon_Power = OptPosIonPower;
-	
+	dlg.m_IonPower = OptKeepFalls;
 	dlg.m_Reflect = OptReflectRID;
 	
+
 	if (dlg.DoModal() == IDOK) {
 			OptSINGAP = !(dlg.m_OptSINGAP);
 			BeamSplitType = dlg.m_Gauss;
@@ -19177,6 +19672,7 @@ void CBTRDoc::OnOptionsBeam()
 			OptPosIonPower = (dlg.m_PosIon_Power != 0);
 			OptBeamInPlasma = TRUE; // (dlg.m_OptPlasma != 0);
 			OptReflectRID = (dlg.m_Reflect != 0);
+			OptKeepFalls = (dlg.m_IonPower != 0);
 
 		//	TracePartType = 2 - dlg.m_D;
 			CheckData();
@@ -19404,8 +19900,10 @@ void CBTRDoc::SetNullLoads() // init maps for all "interesting" plates
 		plate->NegPower = 0; 
 		plate->PosPower = 0;
 	}
-	pBeamHorPlane->Load->Clear();
-	pBeamVertPlane->Load->Clear();
+	// temporary removed
+	//pBeamHorPlane->Load->Clear();
+	//pBeamVertPlane->Load->Clear();
+	
 } 
 
 void CBTRDoc::AddFallsToLoads(int tid, int isrc,  std::vector<minATTR> * tattr) 
@@ -19427,8 +19925,10 @@ void CBTRDoc::AddFallsToLoads(int tid, int isrc,  std::vector<minATTR> * tattr)
 		plate = List.GetNext(pos);
 		P_CalculateLoad(plate, tattr); // distribute m_GlobalVector
 	}
-	pBeamHorPlane->Load->SetSumMax();
-	pBeamVertPlane->Load->SetSumMax();
+	
+	// temporary removed !!! to restore later if needed
+	//pBeamHorPlane->Load->SetSumMax();
+	//pBeamVertPlane->Load->SetSumMax();
 }
 
 void CBTRDoc::CalculateAllLoads() // called after each RUN or on User request
@@ -19857,35 +20357,74 @@ void CBTRDoc::ShowBPdata(int n, int lines, int pos, int angle, int power) // sho
 	m_Text.Empty();// = "";
 	CString S, s, Ssort;
 	COLORREF color;
-	vector <minATTR> & arr = m_GlobalVector;// m_AttrVector[MaxThreadNumber - 1];
+	CPlate * plate; // = pMarkedPlate;
+	int optN;
+	//CPlate * plateN = pMarkedPlate;// if selected (n > 0)
+	//CPlate * plate;// not selected -> all
+	
+	CArray<minATTR, const minATTR &> arr;// collect falls from plates tp temp arr
+
+	if (n < 0) { // not selected
+		optN = PlasmaEmitter; // 
+	}
+	else optN = n;
+	plate = GetPlateByNumber(optN);// >=0
+	S.Format("Show Falls on Emitter Surf %d\n", optN);
+	AfxMessageBox(S); logout << S;
+
+	//if (n >= 0) { // single plate
+		//vector <minATTR> & arr = plate->Falls; // m_GlobalVector;// m_AttrVector[MaxThreadNumber - 1];
+	
+	arr.Append(plate->Falls);
+	int Nfalls = arr.GetSize();
+	//long long Nfalls = plate->Falls.GetSize(); //m_GlobalVector.size();
+	
+	if (Nfalls < 1) {
+		S.Format("Zero start-points (Falls) on Emitter Surf %d !!!\n", optN);
+		AfxMessageBox(S); logout << S;
+		return;
+	}
+
 	C3Point Pgl, Ploc, Vat;
 	double PowerW;
+	double SumA = 0; 
+	double Axy, minA = 100, maxA = 0;
+
 	Ssort = " ";
 	if (OptAtomPower) Ssort += "A";
 	if (OptNegIonPower) Ssort += "/N";
 	if (OptPosIonPower) Ssort += "/P";
-	if (n >= 0)	S.Format("Particles data on Surf %d (in local CS) (%s) - %d lines\n", n, Ssort, lines);
-	else S.Format("Particles data (in local CS) across ALL surfs (%s) - %d lines \n", Ssort, lines);
-	//if (n >= 0)	S.Format("Particles data on Surf %d (in local CS) - %d lines\n", n, lines);
-	//else S.Format("Particles data (in local CS) across ALL surfs  - %d lines \n", lines);
+	if (n >= 0) {
+		S.Format("Particles data on Surf %d (in local CS) (%s) - %d lines\n", n, Ssort, lines);
+		m_Text += S;
+		C3Point ortX = plate->OrtX;
+		C3Point ortY = plate->OrtY;
+		C3Point ortZ = plate->OrtZ;
+		S.Format("Surf loc vectors:  X (%g, %g, %g), Y(%g, %g, %g), Normal (%g, %g, %g)\n",
+			ortX.X, ortX.Y, ortX.Z, ortY.X, ortY.Y, ortY.Z, ortZ.X, ortZ.Y, ortZ.Z);
+		m_Text += S;
+	}
+	else {
+		S.Format("Particles data (in local CS) across ALL surfs (%s) - %d lines \n", Ssort, lines);
+		//if (n >= 0)	S.Format("Particles data on Surf %d (in local CS) - %d lines\n", n, lines);
+		//else S.Format("Particles data (in local CS) across ALL surfs  - %d lines \n", lines);
+		m_Text += S;
+	}
+	S.Format("Xlocal, Ylocal are in [m]\t  AXfall = VXlocal / Vabs, AYfall = VYlocal / Vabs \n\n");
 	m_Text += S;
-	S.Format("Xlocal, Ylocal are in [m]\t  AXfall = VXloc / modV, AYfall = VYloc / modV \n\n");
-	m_Text += S;
-
-	CPlate * plateN = pMarkedPlate;// if selected (n > 0)
-	CPlate * plate;// not selected -> all
+		
 	//Pgl = plate->GetGlobalPoint(Ploc);
 	//S.Format("Num  Sort\t Xlocal  Ylocal\t AXfall  AYfall\t Power,W\t #surf\n");
-	S = "  Num   Sort\t";
-	if (pos == 1 || pos == 2) S += " Xlocal Ylocal  "; // 1 - local 3 - global 
-	if (pos == 2 || pos == 3) S += " Xglob Yglob Zglob "; // 2 - local + global pos
+	S = " Num   Sort  ";
+	if (pos == 1 || pos == 2) S += " Xlocal  Ylocal  "; // 1 - local 3 - global 
+	if (pos == 2 || pos == 3) S += " Xglob  Yglob  Zglob  "; // 2 - local + global pos
 	//if (angle == 1) S += "Polar Angle\t";
-	if (angle > 0) S += " AXfall AYfall   ";
-	if (power > 0) S += " Power,W\t ";
-	S += " #surf\n";
+	if (angle > 0) S += "  AXfall  AYfall   ";
+	if (power > 0) S += "  Power,W\t ";
+	S += "  #surf\n";
 	m_Text += S;
 
-	int arrsize = (int)arr.size();
+	int arrsize = Nfalls; // (int)arr.size();
 	int lim = min(lines, arrsize);
 	if (lim < 1) {
 		S.Format("\n ----------- No data found ---------------\n");
@@ -19894,34 +20433,42 @@ void CBTRDoc::ShowBPdata(int n, int lines, int pos, int angle, int power) // sho
 
 	int i = 0; // written lines
 	int k = -1; // array index
-	while (i < lim && k < arrsize -1) {
+	while (i < lim && k < arrsize - 1) {
 		k++;
-		minATTR &tattr = arr[k];
-		if (n >= 0 && tattr.Nfall != n) {// single surf selected
-			continue;
-		}
-		else { // all plates or true number
-			if (!OptAtomPower && tattr.Charge == 0) continue;
-			if (!OptNegIonPower && tattr.Charge < 0) continue;
-			if (!OptPosIonPower && tattr.Charge > 0) continue;
-			
-			PowerW = tattr.PowerW;
-			Ploc.X = tattr.Xmm * 0.001;// plate->GetLocal(Pgl);
-			Ploc.Y = tattr.Ymm * 0.001;
-			Ploc.Z = 0;
-			Vat.X = tattr.AXmrad * 0.001;
-			Vat.Y = tattr.AYmrad * 0.001;
-			Vat.Z = 1;
-			
-			if (n >=0) 
-				Pgl = plateN->GetGlobalPoint(Ploc);// one
-			else { // all plates
-				plate = GetPlateByNumber(tattr.Nfall);
-				if (plate == NULL) Pgl = C3Point(-1, -1, 0); // undefined
-				else Pgl = plate->GetGlobalPoint(Ploc);
-			}
 
-			switch (tattr.Charge) {
+		minATTR & mattr = arr[k]; // collected from all
+
+		//if (n >= 0 && mattr.Nfall != n) {// single surf selected
+		if (mattr.Nfall != optN) // wrong fall N
+			continue; //pass without i++
+		
+		else { // -1 or correct fall number -> write
+			if (!OptAtomPower   && mattr.Charge == 0) continue;
+			if (!OptNegIonPower && mattr.Charge < 0) continue;
+			if (!OptPosIonPower && mattr.Charge > 0) continue;
+			
+			PowerW = mattr.PowerW;
+			Ploc.X = mattr.Xmm * 0.001;// plate->GetLocal(Pgl);
+			Ploc.Y = mattr.Ymm * 0.001;
+			Ploc.Z = 0;
+			Vat.X = mattr.AXmrad * 0.001; //AXmrad = (short)(ax * 1000);
+			Vat.Y = mattr.AYmrad * 0.001; //AYmrad = (short)(ay * 1000);
+			Vat.Z = 1;
+
+			Axy = sqrt(Vat.X * Vat.X + Vat.Y * Vat.Y);
+			minA = min(minA, Axy);
+			maxA = max(maxA, Axy);
+			SumA += Axy;
+			
+			//if (n >=0) 
+			//Pgl = plate->GetGlobalPoint(Ploc);// one
+			//else { // all plates
+			//plate = GetPlateByNumber(mattr.Nfall);//plate = GetPlateByNumber(optN);// >=0
+			if (plate == NULL) Pgl = C3Point(-1, -1, 0); // undefined
+			else Pgl = plate->GetGlobalPoint(Ploc);
+			//}
+
+			switch (mattr.Charge) {
 			case -1: color = RGB(0, 255, 0); Ssort = "N"; break;
 			case  0: color = RGB(0, 0, 255); Ssort = "A"; break;
 			case  1: color = RGB(255, 0, 0); Ssort = "P"; break;
@@ -19931,7 +20478,7 @@ void CBTRDoc::ShowBPdata(int n, int lines, int pos, int angle, int power) // sho
 			S = " ";
 			//S.Format("%5d  %s\t %6.3f %6.3f\t %6.3f %6.3f\t %9.2e\t %3d\n",
 				//i, Ssort, Ploc.X, Ploc.Y, Vat.X, Vat.Y, PowerW, tattr.Nfall);
-			s.Format("%5d  %s\t", i, Ssort); // "Num   Sort\t";
+			s.Format("%5d  %s   ", i, Ssort); // "Num   Sort\t";
 			S += s;
 			if (pos == 1 || pos == 2) {
 				s.Format("%6.3f %6.3f\t", Ploc.X, Ploc.Y); // " Xlocal   Ylocal\t "; // 1 - local pos
@@ -19949,15 +20496,29 @@ void CBTRDoc::ShowBPdata(int n, int lines, int pos, int angle, int power) // sho
 				s.Format("   %9.2e\t", PowerW); //" Power,W\t ";
 				S += s;
 			}
-			s.Format("%  3d\n", tattr.Nfall); // " #surf\n";
+			s.Format("%  3d\n", mattr.Nfall); // " #surf\n";
 			S += s;
 			m_Text += S;
 			
 			i++; // line written
 
-		} // nfall = plate number
+		} // nfall = correct plate number
 				 
-	} // Global vector size 
+	} // Falls size 
+	double AverA = SumA / i; // div by lines written
+	S.Format("Average Vt/Vabs (<sin> angle from normal) %g\n", AverA); 
+	m_Text += S;
+
+	double Arad = asin(AverA);
+	double Adeg = Arad * 180 / PI;
+	double Amin = asin(minA) * 180 / PI;
+	double Amax = asin(maxA) * 180 / PI;
+	S.Format("Average angle from normal: %g rad = %g deg\n", Arad, Adeg);
+	m_Text += S;
+	S.Format("Min/Max: %g / %g, deg\n", Amin, Amax);
+	m_Text += S;
+
+	arr.RemoveAll();
 
 	pDataView->m_rich.SetFont(&pDataView->font, TRUE);
 	pDataView->m_rich.SetBackgroundColor(FALSE, RGB(255, 187, 130)); // (250, 250, 180)); // G230
@@ -19967,6 +20528,7 @@ void CBTRDoc::ShowBPdata(int n, int lines, int pos, int angle, int power) // sho
 
 
 void CBTRDoc::ShowBPdata(int n, int lines) // show statistics on Marked Surf in orange panel
+// not called now
 {
 	m_Text.Empty();// = "";
 	CString S, Ssort;
@@ -19987,7 +20549,7 @@ void CBTRDoc::ShowBPdata(int n, int lines) // show statistics on Marked Surf in 
 	m_Text += S;
 	S.Format("Xlocal, Ylocal are in [m]\t  AXfall = VXloc / modV, AYfall = VYloc / modV \n\n");
 	m_Text += S;
-	S.Format("Num  Sort\t Xlocal  Ylocal\t AXfall  AYfall\t Power,W\t #surf\n");
+	S.Format("Num\t Sort\t Xlocal\tYlocal\tAXfall\tAYfall\t Power,W\t #surf\n");
 	m_Text += S;
 	int arrsize = (int)arr.size();
 	int lim = min(lines, arrsize);
@@ -20031,7 +20593,7 @@ void CBTRDoc::ShowBPdata(int n, int lines) // show statistics on Marked Surf in 
 			default: color = RGB(0, 0, 0); Ssort = "UNDEFINED PARTICLE";
 			}
 
-			S.Format("%5d  %s\t %6.3f %6.3f\t %6.3f %6.3f\t %9.2e\t %3d\n",
+			S.Format("%5d\t %s\t%6.3f\t%6.3f\t %6.3f\t%6.3f\t %9.2e\t %3d\n",
 				i, Ssort, Ploc.X, Ploc.Y, Vat.X, Vat.Y, power, tattr.Nfall);
 			m_Text += S;
 			i++; // line written
@@ -20809,7 +21371,7 @@ void CBTRDoc::OnDataExportRegularBeam()
 {
 	//char * name = "_Beamlet_Regular_Array.txt";
 	char name[1024];// = "_Input_PDP_BTR.txt";
-	strcpy(name,"_Beamlet_Regular_Array.txt");
+	strcpy(name,"Beamlets_BERT.txt");
 //	char title[1024];
 //	char newname[1024];
 	FILE * fin;
@@ -20856,21 +21418,43 @@ void CBTRDoc::WriteSingapBeam(char * name)
 	int kmax = BeamEntry_Array.GetUpperBound();
 
 	fout = fopen(name, "w"); 
-	fprintf(fout, "  Beam array data, created by BTR 4.14\n");
+	fprintf(fout, " ******  Beam array data created by BTR 5 ***********\n");
 
-	fprintf(fout, "  Y,mm\t AlfY,mrad DivY,mrad\t\t Z,mm\t Alfz,mrad DivZ,mrad\t\t Fract\t column\t row\n");
-	
+	fprintf(fout, " N     POS-Y   WID-Y    ALF-Y       DIV-Y      POS-Z     WID-Z     ALF-Z     DIV-Z     RelFRACT\n");
+
+	//fprintf(fout, "  Y,mm\t AlfY,mrad DivY,mrad\t\t Z,mm\t Alfz,mrad DivZ,mrad\t\t Fract\t column\t row\n"); // AK format
+	int N = 0;
+	double WID = 0; // not used
+	double POSY, ALFY, DIVY, POSZ, ALFZ, DIVZ, Fr;
+
 	for (int k = 0; k <= kmax; k++) {
 		be = BeamEntry_Array[k];
+		N++;
 
 		be.AlfY -= BeamMisHor; //mrad -> rad
 		be.AlfZ -= BeamMisVert + BeamVertTilt;
-		if  (!OptFree) be.AlfZ -= VertInclin; // NBI standard
-		fprintf(fout, " %g\t %g\t %g\t\t\t %g\t %g\t %g\t\t %g\t %d\t %d\n", 
-		1000 * be.PosY, 1000 * be.AlfY, 1000 * be.DivY, 1000 * be.PosZ, 1000 * be.AlfZ, 1000 * be.DivZ, 
-		be.Fraction, be.i, be.j);
-	}
+		be.AlfZ -= VertInclin; // NBI standard
+		//fprintf(fout, " %g\t %g\t %g\t\t\t %g\t %g\t %g\t\t %g\t %d\t %d\n", 
+		//1000 * be.PosY, 1000 * be.AlfY, 1000 * be.DivY, 1000 * be.PosZ, 1000 * be.AlfZ, 1000 * be.DivZ, 
+		//be.Fraction, be.i, be.j);
 
+		POSY = 1000 * be.PosY; POSZ = 1000 * be.PosZ;
+		ALFY = 1000 * be.AlfY; ALFZ = 1000 * be.AlfZ;
+		DIVY = 1000 * be.DivY; DIVZ = 1000 * be.DivZ;
+		Fr = be.Fraction;
+
+		fprintf(fout, " %d\t %5g\t %3g\t %7g\t %3g\t %5g\t %3g\t %7g\t %3g\t %7g\n",
+						N,  POSY,  WID,  ALFY, DIVY, POSZ,  WID,  ALFZ,  DIVZ, Fr);
+	}
+	fprintf(fout, " N    POS-Y   WID-Y    ALF-Y       DIV-Y      POS-Z     WID-Z     ALF-Z     DIV-Z     Rel FRACT\n\n");
+
+	fprintf(fout, "BEAM SOURCE GG data ~ Bert's format (SINGAP accelerator exit) \n");
+	fprintf(fout, "Dimensions are mm and mrad. Y is horizontal, Z is vertical \n");
+	fprintf(fout, "POS-Y/POS-Z - Horizontal / Vertical position of beamlet in mm \n");
+	fprintf(fout, "WID-Y/WID-Z - Horizontal / Vertical width(= radius) of beamlet in mm (not used) \n");
+	fprintf(fout, "ALF-Y/ALF-Z - Horizontal / Vertical angle in mrad. Positive angle is pointing left/upwards \n");
+	fprintf(fout, "DIV-Y/DIV-Z - Horizontal / Vertical beamlet divergence in mrad \n");
+	fprintf(fout, "FRACT -	Reference power fraction for this beamlet. BTR will normalize it by the total source power \n");
 	/*  be.Active = TRUE;
 		be.PosY = BeamletPosHor[i*Ny + ii]; // MAMuG
 		be.PosZ = BeamletPosVert[j*Nz + jj]; // MAMuG
@@ -20885,7 +21469,7 @@ void CBTRDoc::WriteSingapBeam(char * name)
 
 }
 
-void CBTRDoc:: WriteRegularBeam(char * name)
+void CBTRDoc:: WriteRegularBeam(char * name) // not called
 {
 	FILE * fout;
 	CString S;
@@ -21003,28 +21587,97 @@ bool CBTRDoc::AddLog(std::vector<CString> * log)
 }
 
 bool CBTRDoc::AddFallsToFalls(int tid, int isrc, std::vector<minATTR> * tattr)
-// append vector to plate.Falls array
+
+// append vector tattr to plate.Falls array
+// currently used for n = PlasmaEmitter (few surf can be added) -  Single run
+// called after each BML in SINGLE run for limited split
+// + can be called after each bml in MULTI
 {
-	if (RUN !=13) return TRUE; // keep only atoms in SINGLE run)
-	if (Attr_Array.GetSize() > 3003) return true; // max size for falls - 24.5e+6
+	
+	if (RUN != 13) return TRUE; // keep falls in SINGLE run ONLY
+
+	//if (Attr_Array.GetSize() > 13000) return true; // hard limit for falls - 24.5e+6
 	
 	//return TRUE; // switched OFF now !!!!!!!!!!!!
 ////////////////////////////////////////////////////
 	if (STOP) return FALSE;
-	int n = PlasmaEmitter;
-	if (n < 0) return FALSE;
-	CPlate * plate = GetPlateByNumber(n);
+
+	CPlate * plate;
 	CString S, Slog;
-	
+	int n, nrefl;
+		
 	long long tsize = tattr->size();
-	long long OldArrSize = plate->Falls.GetSize(); //m_GlobalVector.size();
+	long long OldArrSize = ArrSize; // plate->Falls.GetSize(); //m_GlobalVector.size();
+
+	/* // for multiple reflectors
+	CString name;
+	CString Names[10];
+	int Nrefl = Reflectors.GetSize();
+	for (int i = 0; i < Nrefl; i++)
+		Names[i] = Reflectors.GetAt(i);
+		
+	int Nlen = 1;// Nrefl+1; // sizeof(Names);
 	
-	ArrSize = OldArrSize;
+	int n0 = PlasmaEmitter;
+	int NumS[] = { n0 , -1, -1, -1, -1, -1, -1, -1, -1, -1 }; // max = 10
 
-	for (int i = 0; i < tsize; i++) {
+	int i = 1; // counter for NumS > 0
+	POSITION pos = PlatesList.GetHeadPosition();
+	while (pos != NULL) {
+		plate = PlatesList.GetNext(pos);
+		CString Com = plate->Comment;
+		for (n = 0; n < Nlen; n++) {
+			name = Names[n];
+			if (Com.Find(name, 0) > 0) {
+				NumS[i] = plate->Number;
+				i++; // max index
+				if (i > sizeof(NumS)) {
+					//AfxMessageBox("Surf Emitter out of bounds (10) ");
+					i--;
+					break;
+				}
+			}
+		} // scan names
+	} // scan plates
+
+	int NumLen = 1;// i;// sizeof(NumS);  // <= 10 !!!
+
+	for (int ind = 0; ind < NumLen; ind++) {
+		int np = NumS[ind];
+		plate = GetPlateByNumber(np);
+		OldArrSize += plate->Falls.GetSize();
+	}
+	*/ // for multiple reflectors
+
+	//bool exists = std::find(std::begin(a), std::end(a), x) != std::end(a);
+	
+	//int n0 = PlasmaEmitter;// single!!
+	//plate = GetPlateByNumber(n0);
+	//OldArrSize += plate->Falls.GetSize();
+	//ArrSize = plate->Falls.GetSize(); //OldArrSize; // new size to be calculated
+	//OldArrSize = ArrSize;
+	
+	nrefl = ReflectorNums.GetSize();
+	if (nrefl < 1) return FALSE;
+
+	bool found = FALSE; // n - in reflectors list
+
+	for (int i = 0; i < tsize; i++) { // falls
 		minATTR fall(tattr->at(i));
-		if (fall.Nfall != n) continue;
+		n = fall.Nfall;	//if (fall.Nfall != n) continue;
+		found = FALSE;
+		for (int j = 0; j < nrefl; j++) {
+			if (ReflectorNums[j] == n) {
+				found = TRUE;
+				break;
+			}
+		}
+		if (!found) continue; // go to next fall
+		
+		//if (n != n0) // && fall.Charge != 0) continue; // keep atoms only for plasma Emitter
+		//bool exists = std::find(std::begin(NumS), std::end(NumS), n) != std::end(NumS);// multiple reflectors
 
+		plate = GetPlateByNumber(n); // found in the list
 		TRY {
 			//fall = tattr->at(i);
 			plate->Falls.Add(fall);
@@ -21036,15 +21689,16 @@ bool CBTRDoc::AddFallsToFalls(int tid, int isrc, std::vector<minATTR> * tattr)
 			//STOP = TRUE;
 			return FALSE;
 		} END_CATCH;
-	} // i
+		ArrSize++; // added
+	} // i falls
 
-	ArrSize++;
+	//ArrSize = plate->Falls.GetSize();
 	return TRUE;
 }
 
-bool CBTRDoc::AddFalls(int tid, int isrc,  std::vector<minATTR> * tattr)
+bool CBTRDoc::AddFalls(int tid, int isrc,  std::vector<minATTR> * tattr) // not called
 // not called now  - only for tests (DoNextStep, TestMem)
-//bool AddFalls(int tid, int isrc, std::vector<minATTR> & attr);
+// bool AddFalls(int tid, int isrc, std::vector<minATTR> & attr);
 {
 	if (STOP) return FALSE;
 	vector<minATTR>::iterator it;//= m_GlobalVector.end();
@@ -21112,7 +21766,7 @@ void CBTRDoc::InitTracer(int thread, CTracer * pTracer)// not called
 	//pTracer->SetContinue(TRUE);
 }
 
-void CBTRDoc:: InitTracers()
+void CBTRDoc:: InitTracers() // called by OnStartParallel
 {
 	CString S;
 	if (NofBeamlets < 1) { AfxMessageBox("N of beamlets = 0?"); return; }
@@ -21129,7 +21783,8 @@ void CBTRDoc:: InitTracers()
 	
 	ClearArrays();//Global arrays size -> 0
 	
-	SetNullLoads();//clear loads
+	SetNullLoads();//clear loads, remove falls
+
 	NofCalculated = 0;
 
 	for (int i = 0; i < ThreadNumber; i++)
@@ -21148,6 +21803,7 @@ void CBTRDoc:: InitTracers()
 			if (i == ThreadNumber-1) Nmax = Max(Nmax, NofBeamlets - 1); // last thread takes all remained
 			m_Tracer[i].SetLimits(Nmin, Nmax);
 			m_Tracer[i].SetStartPoint(Nmin);
+			m_Tracer[i].SetSrcIonState();
 			m_Tracer[i].SetRaysAttr(&Attr_Array);
 			m_Tracer[i].SetStartVP(0);
 			m_Tracer[i].ClearArrays();
@@ -22129,8 +22785,15 @@ void CBTRDoc:: TraceSingleParticle(int state, C3Point pos, C3Point v, double ste
 
 double CBTRDoc:: GetIonStep(double x)
 {
-	if (x >= Xspec0 && x <= Xspec1) return IonStepLspec;
-	else return IonStepL;
+	if (x < NeutrXmin) return TraceStepL; // source ions
+	else if (x >= NeutrXmin && x <= NeutrXmax) {
+		if (OptThickNeutralization) return NeutrStepL; // THICK neutralization region
+		else return TraceStepL; // source ions
+	}
+	else { //if (x > NeutrXmax) {
+		if (x >= Xspec0 && x <= Xspec1) return IonStepLspec;
+		else return IonStepL; // reion / resid ions
+	}
 }
 
 void CBTRDoc::OnOptionsPlasma()
@@ -22599,7 +23262,8 @@ void CBTRDoc::OnUpdatePlotAngulardistr(CCmdUI *pCmdUI)
 
 void CBTRDoc::OnNeutralizationCurrents()
 {
-	PlotCurrentRates(0); 
+	OnPlotNeutrefficiency();
+	//PlotCurrentRates(0); 
 }
 
 void CBTRDoc::OnNeutralizationRates()
@@ -22637,25 +23301,30 @@ void CBTRDoc::OnUpdateLogSave(CCmdUI *pCmdUI)
 
 void CBTRDoc::OnStatisticsView() //= Show ALL (all stat options -> ON)
 {
-/*	int n = -1; // all surf if not Selected
+	int n = -1; // all surf if not Selected
 	int lines = 100000;
-	if (pMarkedPlate != NULL && pMarkedPlate->Selected && OptCombiPlot > -1) 
+	
+	//if (pMarkedPlate != NULL && pMarkedPlate->Selected && OptCombiPlot > -1) 
+		//n = pMarkedPlate->Number;
+
+	if (pMarkedPlate != NULL) 
 		n = pMarkedPlate->Number;
+	else n = -1; // show all falls
 	ShowBPdata(n, lines); // all data on selected surf (or ALL)*/
 
-	ShowReport();
+	//ShowReport();
 }
 
 
 void CBTRDoc::OnStatisticsSet()
 {
-	AfxMessageBox("Not active now");
-	return;
+	//AfxMessageBox("Not active now");
+	//return;
 
 	int n = -1; // all falls
 	int lines = 100; // to show
 	int power, posloc, posglob, angle, pos; // options for output
-	if (pMarkedPlate != NULL && pMarkedPlate->Selected && OptCombiPlot > -1)
+	if (pMarkedPlate != NULL) // && pMarkedPlate->Selected && OptCombiPlot > -1)
 		n = pMarkedPlate->Number;
 	
 	CStatOutDlg dlg;

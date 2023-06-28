@@ -66,13 +66,13 @@ BOOL CBTRApp::InitInstance()
 	CTime tm = CTime::GetCurrentTime();
 	//if (tm.GetMonth() == 6 && tm.GetDay() > 2 && tm.GetDay() < 8) InvUser = FALSE;
 	if (InvUser && tm.GetDay() > 1) {
-		AfxMessageBox("WinApp problem");
+		AfxMessageBox("BTRApp problem");
 		return 0;
 	}
 	if (tm.GetMonth() > 12) { // never happens
 		AfxMessageBox("Please, see the updates on IDM");
 		if (InvUser){
-			AfxMessageBox("A system problem\n Please call the support");
+			AfxMessageBox("OOPS!\n Please call BTR support");
 			return 0;
 		}
 	}
@@ -221,7 +221,7 @@ void CBTRApp::OnHelpManual()
 			"BTR_Man.doc; BTR_Man.pdf  | *.doc; *.DOC; *.pdf; *.PDF | All Files (*.*) | *.*||", NULL);
 			if (dlg.DoModal() == IDOK) name = dlg.GetPathName();//	strcpy(name, dlg.GetPathName());
 			else { 
-				AfxMessageBox("BTR Manual not found");
+				AfxMessageBox("BTR Manual not found on this machine ");
 				name = "";
 			} // dlg CANCEL
 		} // pdf file not found 
@@ -242,7 +242,8 @@ void CBTRApp::OnBnClickedButtonSite()
 
 void CAboutDlg::OnBnClickedButtonSite()
 {
-	CString S = "https://sites.google.com/site/btrcode/"; // http://www.btr.org.ru;
+	CString S = "https://sites.google.com/view/btr-code/home";
+		//sites.google.com/site/btrcode/"; // www.btr.org.ru";
 	ShellExecute(NULL, "open", S, NULL, NULL, SW_SHOWMAXIMIZED);
 	OnOK();
 }

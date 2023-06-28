@@ -110,7 +110,7 @@ void CLoadView::OnDraw(CDC* pDC)
 		pDC->TextOut(OrigX+10, 10, Plate->Comment + "  MAP");
 		
 		//BeginWaitCursor();
-		//Load->DrawLoadLimited(this, pDC, Xmin, Ymin, Xmax, Ymax); //old
+		//Load->DrawLoadLimited(this, pDC, Xmin, Ymin, Xmax, Ymax); //old - with Color Bar!!!
 		
 		if (Plate->Load != NULL) // NEW Show Map/Contours if exists
 			if (Contours) 
@@ -557,7 +557,6 @@ void CLoadView::OnSize(UINT nType, int cx, int cy)
 	GetClientRect(rect);
 	UpdateScales(rect);
 	STOP = FALSE;*/
-
 }
 void CLoadView::ShowLocalScale(CDC* pDC)
 {

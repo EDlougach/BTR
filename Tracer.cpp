@@ -57,7 +57,8 @@ m_Falls(0),
 m_Run(0),
 m_AtomPower1(0),
 m_AtomPower2(0),
-m_AtomPower3(0)
+m_AtomPower3(0),
+SRCION(1)
 {
 	
 }
@@ -82,6 +83,7 @@ void CTracer::SetColor()
 	//if (m_State == SRCION) m_Color = RGB(255,50,0);
 }
 
+
 void CTracer::SetStartPoint(int isource)
 {
 	CBTRDoc * pDoc = (CBTRDoc*) m_pDoc;
@@ -91,7 +93,9 @@ void CTracer::SetStartPoint(int isource)
 	m_Pos.Y = be.PosY;
 	m_Pos.Z = be.PosZ;
 	m_iSource = isource;
-	m_State = SRCION;
+	 
+	SRCION = pDoc->TracePartType;
+	m_State = pDoc->TracePartType;
 	m_Charge = pDoc->TracePartQ;	
 	SetColor();
 	m_Stopped = FALSE;
@@ -172,14 +176,16 @@ void CTracer::SetStartVP(int iray) //  called from InitTracer!!
 	m_Pos.Y += dy; 
 	m_Pos.Z += dz;
 
-	double BeamPower = pDoc->IonBeamPower;
-	int	Ntotal = pDoc->NofBeamletsTotal; //BeamEntry_Array.GetSize();
-	double fraction = be.Fraction;
+	//double BeamPower = pDoc->IonBeamPower;
+	//int	Ntotal = pDoc->NofBeamletsTotal; //BeamEntry_Array.GetSize();
+	//double fraction = be.Fraction;
 	
-	double  BeamletPower = BeamPower * 1000000. / Ntotal ; //W per beamlet 
-	m_StartPower = at.Current  * BeamletPower * fraction;//W 
+	double  BeamletPower = be.Fraction;//
+	//BeamletPower = BeamPower * 1000000. / Ntotal; //W per beamlet for regular array (MAMUG)
+	m_StartPower = at.Current  * BeamletPower;//W, ray power
 	m_Power = m_StartPower;
-	m_Step = pDoc->TraceStepL;
+
+	m_Step = pDoc->GetIonStep(m_Pos.X);// pDoc->TraceStepL;
 
 	m_iRay = iray;
 	SetColor();
@@ -227,7 +233,7 @@ void CTracer::GetNeutrPoint()
 	m_Power = m_NeutrPower;//src ion power
 }
 
-int CTracer:: GetNeutrPointNumber() // for 1D gas profile
+int CTracer:: GetNeutrPointNumber() // for 1D gas profile // not called?
 {
 	CBTRDoc * pDoc = (CBTRDoc*) m_pDoc;
 	int res = -1;
@@ -264,7 +270,7 @@ int CTracer:: GetReionPointNumber() // for 1D gas profile
 	}
 	return (res);
 }
-void CTracer:: SetPosIonState()// secondary ions H+/D+ after neutralisation
+void CTracer:: SetPosIonState()// OLD - secondary ions H+/D+ after neutralisation
 {
 	if (m_Dead) return;
 	if (m_Pos.X < 0) {
@@ -353,7 +359,7 @@ void CTracer:: SetReionState()// reionized positive ion
 
 	m_State = REION; 
 	m_Charge = 1; 
-	m_Step = pDoc->GetIonStep(m_Pos.X); //*pDoc->IonStepL;
+	m_Step = pDoc->GetIonStep(m_Pos.X); //pDoc->IonStepL;*
 	SetColor();
 	
 	double Dens = pDoc->GetPressure(m_Pos);
@@ -387,19 +393,24 @@ void CTracer:: SetReionState()// reionized positive ion
 	if (m_Power < 1.e-12) m_Stopped = TRUE;
 
 }
-void CTracer:: SetSrcIonState() // remaining after neutralisation
+void CTracer:: SetSrcIonState() //OLD called from SetNextState// remaining after neutralisation
+// + called from InitTracers !!!
 {
 	if (m_Dead) return;
 	CBTRDoc * pDoc = (CBTRDoc*) m_pDoc;
+
+	m_State = pDoc->TracePartType;
+	SRCION = pDoc->TracePartType;
+	m_Charge = pDoc->TracePartQ;
+	if (m_Pos.X < pDoc->NeutrXmin) return;
+
 	if (!pDoc->OptThickNeutralization && pDoc->OptNeutrStop) { m_Dead = TRUE; return;}
 	if (pDoc->OptThickNeutralization && pDoc->OptNeutrStop && m_Pos.X > pDoc->NeutrXmax) 
 	{ m_Dead = TRUE; return;}
 	
 	if (m_Pos.X < 0) { 	m_Stopped = FALSE;	m_Dead = TRUE;	return;	}
 		
-	m_State = SRCION; 
-	m_Charge = pDoc->TracePartQ;//; 
-	m_Step = pDoc->IonStepL; //NeutrStepL;
+	m_Step = pDoc->GetIonStep(m_Pos.X);// pDoc->TraceStepL; //IonStepL; //NeutrStepL;
 
 	double NeutrFr, PosIonFr, NegIonFr;// gone away from primary ion at a neutr-point (dj/dl*step)
 	double NegCurr, PosCurr, NeutrCurr; //j-, j+, j0 - total (remained) current
@@ -504,7 +515,8 @@ void CTracer:: SetSingleParticle(int state, C3Point pos, C3Point v, double step,
 	
 }
 
-void CTracer:: SetAtomState(int from)
+void CTracer:: SetAtomState(int from) // OLD
+									  // + called from TraceSingleAtom 
 {
 	if (m_Dead) return;
 	CBTRDoc * pDoc = (CBTRDoc*) m_pDoc;
@@ -616,7 +628,7 @@ void CTracer:: SetAtomState(int from)
 	if (m_Power < 1.e-12) m_Stopped = TRUE;
 		
 }
-void CTracer::SetNextState() // if stopped -> set next particle
+void CTracer::SetNextState() //OLD - called from DoNextStep //if stopped -> set next particle
 {
 	if (!m_Continue) return;
 	if (m_Dead) return; // if dead -> emit next source particle
@@ -625,11 +637,11 @@ void CTracer::SetNextState() // if stopped -> set next particle
 	//int n;// 0 - neutralization, 1 - reionization 
 
 	switch (state) {
-		case SRCION:  m_Dead = TRUE;  m_Transformed = FALSE; break;
+		//case SRCION:  m_Dead = TRUE;  m_Transformed = FALSE; break;
 		case POSION: GetNeutrPoint(); SetAtomState(POSION); m_Transformed = TRUE; break;//Randomize();
 		case ATOM:   GetNeutrPoint(); SetSrcIonState(); m_Transformed = TRUE;  break;
 		case REION:  GetReionPoint(); SetAtomState(REION);  break;
-		default: break;
+		default: m_Dead = TRUE;  m_Transformed = FALSE; break;//for SRCION
 	}
 
 	SetColor();
@@ -648,7 +660,8 @@ void CTracer:: CheckNeutrBound(C3Point P1, C3Point P2)
 }
 
 
-void CTracer::CheckNeutrState(C3Point P1, C3Point P2) // check SRCION for neutralization
+void CTracer::CheckNeutrState(C3Point P1, C3Point P2) //OLD -  called from DoNextStep 
+													  //check SRCION for neutralization
 {
 	if (!m_Continue) return;
 	if (m_Stopped || m_Dead) return;
@@ -702,7 +715,8 @@ void CTracer::CheckNeutrState(C3Point P1, C3Point P2) // check SRCION for neutra
 	//SetColor();
 }
 
-BOOL CTracer::CheckReionState(C3Point P1, C3Point P2) // check ATOM for reionization
+BOOL CTracer::CheckReionState(C3Point P1, C3Point P2) //OLD - called by DoNextStep 
+													  //check ATOM for reionization
 {
 	if (!m_Continue) return 0;
 	if (m_Stopped || m_Dead) return 0;
@@ -891,8 +905,8 @@ C3Point CTracer::MoveIonToX(double Xlim) // Make ION STEP - no track / no keep f
 C3Point CTracer:: MakeStepToX(double Xlim) // Make ATOM STEP - straight line
 {
 	//if (!m_Continue) return m_Pos;
-	double dLx = Xlim - m_Pos.X; // can be <0
-	if (fabs(m_V.X) < 1.e-6 || fabs(dLx) < 1.e-6) {
+	double dLx = Xlim - m_Pos.X; // can be <= 0!!!
+	if (fabs(m_V.X) < 1.e-6) {
 		m_Stopped = TRUE;
 		return m_Pos;
 	}
@@ -954,7 +968,8 @@ void CTracer::DoNextStep() // old (before 4.5)
 		goto label0;
 	} //<<<<<<<<<<<<< Fast tracing of Atoms
 
-	if (m_State == REION) m_Step = pDoc->GetIonStep(m_Pos.X); //set var step along X
+	if (m_State == REION) m_Step = pDoc->TraceStepL;
+		//m_Step = pDoc->GetIonStep(m_Pos.X); //set var step along X
 	
 	Pnext = MakeStep(); //m_Pos +  m_V * (dl/ Vabs);
 	Pold = m_Pos;
@@ -1373,8 +1388,9 @@ bool CTracer::AddFall(int n, C3Point Ploc, C3Point Vat, double power)
 	double modV = ModVect(Vat);
 	double ax = (Vat.X / modV);
 	double ay = (Vat.Y / modV);
-
+	//AXmrad = (short)(ax * 1000);AYmrad = (short)(ay * 1000);
 	minATTR tat(Ploc, ax, ay, power, n, m_Charge, m_Run); // ax, ay, Ploc are x1000 in minATTR()
+	
 	/*if (m_Charge == 0 && n == 7) { // NeutrExit plane
 		if (m_Run == 1) m_AtomPower1 += power;
 		if (m_Run == 2) m_AtomPower2 += power;//never!
@@ -1479,7 +1495,7 @@ if (n>=0) {
 	decay = 1;// for ions
 	if (m_State == ATOM) decay = GetAtomDecay(P1, Last); // -> 1 if not atom
 	Vat = GetVatPlate(Plate0, m_V);
-	added = AddFall(n, Ploc0, Vat, m_Power * decay);
+	added = AddFall(n, Ploc0, Vat, m_Power * decay);//AXmrad = (short)(ax * 1000);AYmrad = (short)(ay * 1000);
 	if (!added) { 
 		metlimit = TRUE;
 		return FALSE; // stopped
@@ -1588,15 +1604,16 @@ bool CTracer::TraceSourceIonTHIN() //track until NeutrXmax - stepL
 	}
 	//m_Charge = -1;//m_State = SRCION;
 	//m_Pos = Pos0; m_V = V0;
-	//m_Step = pDoc->TraceStepL;// pDoc->GetIonStep(m_Pos.X);
+   //	m_Step = pDoc->GetIonStep(m_Pos.X);//already done in SetStartVP
 	//SetColor();
 	// <- already set in SetStartPoint(is)
 
 	C3Point P1 = m_Pos;
-	C3Point P2, Pstop, ortV;
+	C3Point P2 = P1, Pstop, ortV;
 	C3Point V = m_V;
 	CArray<C3Point> Track; // track to draw
-	
+///	CMainView* pMainView = (CMainView*)m_pViewWnd;
+
 	//double dist = pDoc->AreaLong + 1.0;
 	double modV = ModVect(V); // const
 	double eps = 1.e-6;
@@ -1608,9 +1625,10 @@ bool CTracer::TraceSourceIonTHIN() //track until NeutrXmax - stepL
 	}
 
 	bool metlimit = 0; // solid or area bound
-	double maxlen = pDoc->AreaLong;
-	int maxstep = (int)(maxlen / m_Step);// steps number limit
+	//double maxlen = pDoc->AreaLong;
+	//int maxstep = (int)(maxlen / m_Step);// steps number limit
 	double Xlimit = pDoc->NeutrXmax - 0.5 * m_Step; // must be < NeutrLimit!!! 
+	int maxstep = (int)(Xlimit / m_Step) + 1;// steps number limit
 
 	int i = 0;
 	while (metlimit == 0 && !stopped && i < maxstep) {
@@ -1620,35 +1638,57 @@ bool CTracer::TraceSourceIonTHIN() //track until NeutrXmax - stepL
 		
 		done = GetFalls(P1, P2, metlimit);// Last(solid)>>P2
 		if (!done) stopped = TRUE;// interrupted (pDoc->STOP)
-		if (metlimit) break;
-
-		if (P2.X >= Xlimit) { // return back to limit for passed through
-			double dLx = Xlimit - P1.X;
-			double dt = dLx / m_V.X;// can be <0
-			P2 = P1 + m_V * dt; // stop at Xlimit
+		if (metlimit || P2.X >= Xlimit) {
+			//m_Pos = P2;
+			//m_Stopped = TRUE;
+			P2 = P1;
 			break;
 		}
+
+		/*if (P2.X >= Xlimit) { // return back to limit for passed through
+			double dLx = Xlimit - P1.X;
+			double dt = dLx / m_V.X;// can be <0
+			Pstop = P1 + m_V * dt; // stop at Xlimit
+			m_Pos = Pstop;
+			break;
+		}*/
 		
 		//done = GetFalls(P1, P2, metlimit);// Last(solid)>>P2
 		//if (!done) stopped = TRUE;// interrupted (pDoc->STOP)
 		
 		P1 = P2;
 		i++;
+
+		// temporary added
+		/*if (m_Draw) { // DrawParticlePos(m_Pos, m_Color);
+			cs.Lock();
+			//pMainView->DrawPartTrack(Track, m_Charge, m_Color);
+			pMainView->ShowParticlePos(m_Pos, m_Color);
+			cs.Unlock();
+		}*/
+		
 	}
+	
 	m_Pos = P2;
+	
 	Track.Add(m_Pos);
-	if (m_Draw) DrawPartTrack(Track);//if (m_Draw) DrawParticlePos(m_Pos, m_Color);
-
-	if (pDoc->OptCalcBeamTrack) DistributeTrack(Track, m_Power);
-
+		
+	// temporary removed
+	if (m_Draw) DrawPartTrack(Track);
+		
+	// temporary removed
+	//if (pDoc->OptCalcBeamTrack) DistributeTrack(Track, m_Power);
+	
 	if (stopped) {
 		m_Stopped = TRUE;
 		return FALSE;
 	}
+	if (metlimit) m_Stopped = TRUE;
+		
 	return TRUE;
 }
 
-bool CTracer::TraceIon(int charge, C3Point Pos0, C3Point V0, double power) 
+bool CTracer::TraceIon(int charge, C3Point Pos0, C3Point V0, double power) // set m_Step = pDoc->IonStepL!!!
 //calculate ion track + DRAW
 //power = const
 {
@@ -1671,7 +1711,8 @@ bool CTracer::TraceIon(int charge, C3Point Pos0, C3Point V0, double power)
 	C3Point V = V0;
 	CArray<C3Point> Track; // track to draw
 			
-	m_Step = pDoc->GetIonStep(m_Pos.X);
+	m_Step = pDoc->GetIonStep(m_Pos.X);//pDoc->IonStepL; // >TraceStepL; //
+
 	//double dist = pDoc->AreaLong + 1.0;
 	double modV = ModVect(V0); // const
 	double eps = 1.e-6;
@@ -1818,9 +1859,10 @@ bool CTracer::TraceAtom() //called by TraceRay
 	if (!done) stopped = TRUE;
 	//Track.Add(m_Pos);
 	Track.Add(P2);//= Last 
-	if (m_Draw) DrawPartTrack(Track);
+	
+	if (m_Draw) DrawPartTrack(Track);// temp 
 
-	if (pDoc->OptCalcBeamTrack)  DistributeTrack(Track, m_Power);
+	//if (pDoc->OptCalcBeamTrack)  DistributeTrack(Track, m_Power);
 	 
 	if (stopped) return FALSE;
 	
@@ -1846,7 +1888,8 @@ bool CTracer::GeneratePosIon(int jray) // NOT called (ResIons after Neutraliser)
 	double NeutrX = pDoc->NeutrXmax;
 	m_Pos = MakeStepToX(NeutrX);
 	m_Power = m_Power * (pDoc->PosIonPart);
-	m_Step = pDoc->GetIonStep(NeutrX);
+
+	m_Step = pDoc->GetIonStep(NeutrX);//IonStepL; // 
 
 	if (pDoc->OptNeutrStop == FALSE) 
 		done = TraceIon(m_Charge, m_Pos, m_V, m_Power);
@@ -1880,7 +1923,8 @@ bool CTracer::GenerateNegIon(int jray) // NOT called (ResIons after Neutraliser)
 	m_Pos = MakeStepToX(NeutrX);
 	m_Pos = MoveIonToX(NeutrX);
 	m_Power = m_Power * (1. - pDoc->NeutrPart - pDoc->PosIonPart);
-	m_Step = pDoc->GetIonStep(NeutrX);
+
+	m_Step = pDoc->GetIonStep(NeutrX);//pDoc->IonStepL; //
 
 	if (pDoc->OptNeutrStop == FALSE) 
 		done = TraceIon(m_Charge, m_Pos, m_V, m_Power);
@@ -1911,7 +1955,8 @@ bool CTracer::GenerateReions(int jray)
 	//SetRaysAttr(&(pDoc->Attr_Array_Reion)); // don ein TraceBeamletReions
 	
 	m_iRay = jray;
-	SetStartVP(jray);//m_V,   m_iRay = iray, m_Power
+	SetStartVP(jray);//m_V,  m_iRay = iray, m_Power, m_Step!!
+	//m_Step = pDoc->GetIonStep(m_Pos.X);// pDoc->TraceStepL;
 
 	//m_State = ATOM;// 
 	//m_Charge = 0;
@@ -1928,11 +1973,11 @@ bool CTracer::GenerateReions(int jray)
 		
 	m_Stopped = FALSE;
 	
-	if (pDoc->FieldLoaded && fabs(pDoc->MFcoeff) > 1.e-6) { // Move Ion //m_State = SRCION; m_Charge = -1;
+	if (pDoc->FieldLoaded && fabs(pDoc->MFcoeff) > 1.e-6 && m_Step > 1.e-3) { // Move Ion //m_State = SRCION; m_Charge = -1;
 		PaStart = MoveIonToX(NeutrX);// Move (no falls) Source ions to NeutrX start point
 		PiStart = MakeStepToX(ReiXmin); //Make (no falls) one straight step (ATOM)
 	}
-	else 	
+	else // trace source atom - FAST + THIN	
 		PiStart = MakeStepToX(ReiXmin); // Make (no falls) one straight step (ATOM) 
 
 	if (m_Stopped) { // met solid before ReiXmin
@@ -1977,7 +2022,8 @@ bool CTracer::GenerateReions(int jray)
 		
 		m_Power = AtomPower * ReionPart;// reionized power
 		m_Pos = AtomPos; // Ion Pos  =  AtomPos moved with m_V = Vgen - no change
-		done = TraceIon(m_Charge, m_Pos, m_V, m_Power);//-> m_Step = pDoc->GetIonStep(m_Pos.X);
+		m_Step = pDoc->GetIonStep(m_Pos.X); //pDoc->IonStepL;
+		done = TraceIon(m_Charge, m_Pos, m_V, m_Power);// 
 		if (!done) break;
 	
 	}
@@ -1992,7 +2038,7 @@ bool CTracer::GenerateReions(int jray)
 	return TRUE;
 }
 
-bool CTracer::TraceRay(int jray) // called by TraceBeamletAtoms
+bool CTracer::TraceRay(int jray) // called by TraceBeamletAtoms SINGLE, MULTI 
 {
 	bool stopped = FALSE;
 	CString S;
@@ -2001,39 +2047,41 @@ bool CTracer::TraceRay(int jray) // called by TraceBeamletAtoms
 		stopped = TRUE;
 		return FALSE;
 	}
-	SetStartPoint(m_iSource);// m_iSource = isource 	m_State = SRCION;
-	SetRaysAttr(&(pDoc->Attr_Array));// must be called before SetStartVP!!!
-	//pAttr = &(pDoc->Attr_Array);
-	int Nattr = pAttr->GetSize();
-	//S.Format(" Total %d rays  ->  TraceRay(%d) \n", Nattr, jray);
-	//std::cout <<  S;
+
+	SetStartPoint(m_iSource);// m_iSource = isource 	m_State = SRCION, m_Charge = TracePartQ < or > 0
+	SetRaysAttr(&(pDoc->Attr_Array));// set pAttr,  must be called before SetStartVP!!!
+						//pAttr = &(pDoc->Attr_Array);
+	//int Nattr = pAttr->GetSize();
+		//S.Format(" Total %d rays  ->  TraceRay(%d) \n", Nattr, jray);
+		//std::cout <<  S;
 
 	SetStartVP(m_iRay);//m_Power,  m_Step = pDoc->TraceStepL;
-	//m_Pos.X = 0;
-	//m_iRay = jray; // SetStartPoint(isource) - called before
-	//TraceAtomFast();// with decay, reions are stopped 
-	//MakeStep(); // slow trace: emit reions
+	//m_Step = pDoc->TraceStepL;
+		//m_Pos.X = 0;
+		//m_iRay = jray; // SetStartPoint(isource) - called before
+		//TraceAtomFast();// with decay, reions are stopped 
+		//MakeStep(); // slow trace: emit reions
 
 	bool done = TRUE;
 	m_Stopped = FALSE;
 
 	// TRACE SRCION until NeutrXmax 
-	if (pDoc->FieldLoaded && fabs(pDoc->MFcoeff) > 1.e-6) {
-		//SetStartVP(jray);//m_Pos, m_V, m_Power, m_Step, m_iRay = iray
-		done = TraceSourceIonTHIN();// up to NeutrXmax
+	if (pDoc->FieldLoaded && fabs(pDoc->MFcoeff) > 1.e-6 && m_Step > 1.e-3) {
+									//SetStartVP(jray);//m_Pos, m_V, m_Power, m_Step, m_iRay = iray
+		done = TraceSourceIonTHIN();// from m_Pos - to NeutrXmax
 	}
 
 	if (!done || pDoc->STOP) {
 		stopped = TRUE;
 		S.Format(" TraceSourceIonTHIN {%d} interrupted\n Src %d ray %d\n", m_ID, m_iSource, jray);
-		logout << S; //AfxMessageBox(S);
+		logout << S;  // AfxMessageBox(S);
 		return FALSE; // interrupted
 	}
 	
 	// if ION is alive (!m_Stopped) - TRACE ATOM after NeutrXmax 
-	if (!m_Stopped && pDoc->OptTraceAtoms) {//  as only residuals can be traced next
-		//SetStartVP(jray);//m_Pos, m_V, m_Power, m_Step, m_iRay = iray
-		done = TraceAtom();
+	if (!m_Stopped && pDoc->OptTraceAtoms) {//  also only residuals can be traced next
+		
+		done = TraceAtom(); // from m_Pos to AreaLong
 	}
 	
 	if (!done || pDoc->STOP) {
@@ -2069,6 +2117,7 @@ bool CTracer:: TraceBeamletReions(int isource) // called by TraceAll - for SINGL
 		
 	m_iSource = isource;
 	SetStartPoint(isource);// m_iSource = isource
+	//m_Step = pDoc->TraceStepL;
 
 	bool stopped = FALSE;
 	bool done = TRUE;
@@ -2087,6 +2136,7 @@ bool CTracer:: TraceBeamletReions(int isource) // called by TraceAll - for SINGL
 		m_iRay = jray;
 		Vstart = m_V;
 		Pstart = m_Pos;
+		//m_Step = pDoc->TraceStepL;
 	
 		SetStartPoint(isource);// Init m_Pos, m_iSource = isource
 		done = GenerateReions(jray); 
@@ -2137,7 +2187,8 @@ bool CTracer:: TraceBeamletResIons(int isource)
 	m_iSource = isource;
 	SetStartPoint(isource);//SRCION m_Pos  m_iSource = isource    //m_iRay = jray;
 	P0start = m_Pos; //GG - fixed
-	m_Step = pDoc->GetIonStep(NeutrX);
+
+	//m_Step = pDoc->IonStepL; // TraceStepL; // pDoc->GetIonStep(NeutrX);
 
 	bool stopped = FALSE;
 	bool done = TRUE;
@@ -2153,27 +2204,27 @@ bool CTracer:: TraceBeamletResIons(int isource)
 			break;
 		}
 
-		m_iRay = jray;
-		SetStartVP(jray);// m_V, m_Power, m_Step, m_iRay = iray
-		RayPower = m_Power; //source ray
-		Vstart = m_V; // fix
-		m_Pos = P0start;// SetStartPoint(isource);
-		m_V = Vstart;  //SetStartVP(jray);
-		m_Stopped = FALSE;
-		//PiStart = MakeStepToX(NeutrX); // Make (no falls) one straight step (ATOM) m_V = const 
+	m_iRay = jray;
+	SetStartVP(jray);// m_V, m_Power, m_Step = TraceStepL, m_iRay = iray
+	//m_Step = pDoc->TraceStepL;
+	RayPower = m_Power; //source ray
+	Vstart = m_V; // fix
+	m_Pos = P0start;// SetStartPoint(isource);
+	m_V = Vstart;  //SetStartVP(jray);
+	m_Stopped = FALSE;
+	//PiStart = MakeStepToX(NeutrX); // Make (no falls) one straight step (ATOM) m_V = const 
 
-		if (pDoc->FieldLoaded && fabs(pDoc->MFcoeff) > 1.e-6) { // Move Ion
+	if (pDoc->FieldLoaded && fabs(pDoc->MFcoeff) > 1.e-6 && m_Step > 1.e-3) { // Move Ion
 			//m_State = SRCION; m_Charge = -1;
 			//m_Pos = P0start;
-			PiStart = MoveIonToX(NeutrX); // Move (no falls) Source ions to Reions start point
-		}
-		else 	PiStart = MakeStepToX(NeutrX); // Make (no falls) one straight step (ATOM) 
+		PiStart = MoveIonToX(NeutrX); // Move (no falls) Source ions to Reions start point
+	}
+	else 	PiStart = MakeStepToX(NeutrX); // Make (no falls) one straight step (ATOM) 
 
-		C3Point Vn0 = m_V; // at NeutrX
-
-		if (m_Stopped) { // met solid
-			continue; // GO TO next ray
-		}
+	C3Point Vn0 = m_V; // at NeutrX
+	if (m_Stopped) { // met solid
+		continue; // GO TO next ray
+	}
 ///////////// TRACE ATOM - to get AtomPower /////////////////////
 		//if (!m_Stopped && pDoc->OptTraceAtoms) {//  as only residuals can be traced next
 		/*m_Power = RayPower * (pDoc->NeutrPart);
@@ -2205,7 +2256,9 @@ bool CTracer:: TraceBeamletResIons(int isource)
 		m_Charge = 1;
 		m_Pos = PiStart;
 		m_V = Vn0;//Vstart;
-		done = TraceIon(m_Charge, m_Pos, m_V, m_Power); // get falls
+
+		//m_Step = pDoc->IonStepL;
+		done = TraceIon(m_Charge, m_Pos, m_V, m_Power); // get falls, set m_Step = pDoc->IonStepL;
 
 		if (!done || pDoc->STOP) {
 			stopped = TRUE;
@@ -2222,12 +2275,17 @@ bool CTracer:: TraceBeamletResIons(int isource)
 		}
 
 ///////////// TRACE NEG ray ---> GenerateNegIon
-		m_Power = RayPower * (1. - pDoc->NeutrPart - pDoc->PosIonPart);//m_Power = m_Power * (pDoc->PosIonPart);
+		if (pDoc->TracePartQ < 0) // negative IS
+			m_Power = RayPower * (1. - pDoc->NeutrPart - pDoc->PosIonPart);//m_Power = m_Power * (pDoc->PosIonPart);
+		else m_Power = 0; // no power for positive IS !!!
+
 		m_State = SRCION;
 		m_Charge = -1;
 		m_Pos = PiStart;
 		m_V = Vn0;//Vstart;
-		done = TraceIon(m_Charge, m_Pos, m_V, m_Power); // get falls
+		
+		//m_Step = pDoc->IonStepL;
+		done = TraceIon(m_Charge, m_Pos, m_V, m_Power); // get falls, m_Step = pDoc->IonStepL;
 
 		if (!done || pDoc->STOP) {
 			stopped = TRUE;
@@ -2277,8 +2335,10 @@ bool CTracer:: TraceBeamletAtoms(int isource)
 	
 	CBTRDoc * pDoc = (CBTRDoc*)m_pDoc;
 	if (pDoc->STOP || !GetContinue()) return FALSE;
+	
 	pAttr = &(pDoc->Attr_Array); // default attr - for transport
 	int Nattr = pAttr->GetSize();//!!!!
+	
 	S.Format("\t[%d] TraceBeamletAtoms - bml %d  TotRays %d\n",m_ID, isource, Nattr);
 	logout << S;// << std::endl;
 
@@ -2412,8 +2472,11 @@ bool CTracer::TraceAllAtoms()//MULTI - run ALL beamlets // no memory reserve tes
 
 		// ADD BML FALLS 
 		cs.Lock();//------------
+		bool added;
 		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);
-		bool added = pDoc->AddFallsToFalls(m_ID, is + 1, tattr);
+		
+		if (pDoc->OptKeepFalls == TRUE) 
+			added = pDoc->AddFallsToFalls(m_ID, is + 1, tattr);
 		
 		AtomPower1 += m_AtomPower1;
 
@@ -2435,6 +2498,7 @@ bool CTracer::TraceAllAtoms()//MULTI - run ALL beamlets // no memory reserve tes
 		//pDoc->ShowStatus();// not working for multi-run!!!
 		
 		if (!m_Draw) ShowBeamlet(is);// locked inside
+
 		ShowProgress(Ncalc); // locked inside
 		::GdiFlush();
 	} // is = m_Max 
@@ -2448,7 +2512,7 @@ bool CTracer::TraceAllAtoms()//MULTI - run ALL beamlets // no memory reserve tes
 	return TRUE; // success
 }
 
-bool CTracer::TraceAllResIons() // from ALL beamlets
+bool CTracer::TraceAllResIons() // MULTI - from ALL beamlets
 {
 	CString S, Slog;
 	S.Format("\t[%d]---- TraceAllResions start bml %d ... %d \n ",m_ID, m_Min, m_Max);
@@ -2599,7 +2663,7 @@ bool CTracer::TraceAllResIons() // from ALL beamlets
 	return TRUE; // success
 }*/
 
-bool CTracer::TraceAllReions() // from ALL beamlets
+bool CTracer::TraceAllReions() // MULTI- from ALL beamlets
 {
 	CString S, Slog;
 	S.Format("\t[%d] TraceAllReions start bml %d ... %d \n", m_ID, m_Min, m_Max);
@@ -2785,6 +2849,7 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 	bool log = TRUE;// write log
 	bool stopped = FALSE;
 	bool done = TRUE;
+	bool KeepFalls = pDoc->OptKeepFalls;
 	// TraceAlltest();// TEST trace 
 
 	int MaxScen = pDoc->MAXSCEN;
@@ -2829,7 +2894,7 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 
 		ClearArrays();	//CVectorCleanup tattr_cleanup(tattr);//tattr->clear();
 	
-		TRY{ // reserve attributes
+	/*	TRY{ // reserve attributes
 			tattr->reserve(sz);
 		} CATCH(CMemoryException, e) {
 			//S.Format("Thread %d\n reserve at %d FAILED (low memory)", m_ID, NofCalculated);
@@ -2838,7 +2903,8 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 			logout << S;
 			stopped = TRUE;
 			break;
-		} END_CATCH;
+		} END_CATCH; */
+
  /// TO CHECK!!!!!
 
 	/*	TRY { // reserve log
@@ -2850,7 +2916,7 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 		istop = is;
 		done = TRUE;
 		m_AtomPower1 = 0; // set in GetFalls for SINGLE
-		m_AtomPower2 = 0; // set in TreceBMLResIons for SINGLE
+		m_AtomPower2 = 0; // set in TraceBMLResIons for SINGLE
 		m_AtomPower3 = 0; // set in GenerateReions for SINGLE
 
 		if (done) // && pDoc->OptTraceAtoms) //----- TRACE ATOMS with decay --------------
@@ -2878,12 +2944,13 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 		
 		cs.Lock();
 		pDoc->AddFallsToLoads(m_ID, is + 1, tattr);// BeamPlanes -> SetSumMax
-		bool added = pDoc->AddFallsToFalls(m_ID, is + 1, tattr);// can be safely SWITCHED ON/OFF 
-		//CALLED only for atoms in SINGLE run OR
-		// (Attr_Array.GetSize() < 3003)	// max size for falls - 24.5e+6
-				
-		//if (!added) logout << "!!!!! Falls not added !!!!!!!!!!!!!!\n";
+		
+		if (KeepFalls == TRUE) // ON/OFF 
+			bool added = pDoc->AddFallsToFalls(m_ID, is + 1, tattr);
 
+		//CALLED only for atoms in SINGLE run OR
+		// (Attr_Array.GetSize() < 13000 / 3003)	// limit for falls - 24.5e+6
+		//if (!added) logout << "!!!!! Falls not added !!!!!!!!!!!!!!\n";
 		/*bool added = pDoc->AddFalls(m_ID, is + 1, tattr);// calls OnStop() if failed
 		if (!added) {
 			SetContinue(FALSE);// m_Continue = FALSE;
@@ -2891,17 +2958,19 @@ void CTracer::TraceAll() // called by ThreadFunc()  - replace old Draw(), based 
 		}*/
 
 		NofCalculated++;	// - if not stopped	
+		cs.Unlock();
+
 		int Ncalc = NofCalculated;
 		if (NofCalculated == pDoc->NofBeamletsTotal)  
 			stopped = TRUE;// -> leads to STOP all threads in doc
-		cs.Unlock();
-
+		//cs.Unlock();
 		
 		ClearArrays();// clear last BML tattr
 		//pDoc->ShowStatus();// not working for multi-run!!!
 		if (!m_Draw) ShowBeamlet(is);// locked inside
-		ShowProgress(Ncalc); // locked inside
-		::GdiFlush();
+		
+		ShowProgress(Ncalc); // locked inside >> unlocked now
+		::GdiFlush();// temp rem
 		
 	} // is = m_Max 
 
@@ -3065,8 +3134,12 @@ long long CTracer:: GetGlobFalls()
 
 void CTracer:: ShowProgress(int Ncalc) // new - static loads
 {
-	if (Ncalc % 20 != 0) return;
+	int Mod = 1;
 	CBTRDoc * pDoc = (CBTRDoc*) m_pDoc;
+	if (pDoc->NofBeamletsTotal > 20) Mod = 5;
+	if (pDoc->NofBeamletsTotal > 100) Mod = 20;
+	if (Ncalc % Mod != 0) return;
+	
 	if (Ncalc == 0 || pDoc->STOP) return; // tracing in progress
 /////////////////////////////////////////////////
 	bool SINGLE = (pDoc->MAXSCEN == 1);
@@ -3103,7 +3176,7 @@ void CTracer:: ShowProgress(int Ncalc) // new - static loads
 		mleft = sleft / 60;
 		hleft = mleft / 60;
 
-		cs.Lock();
+	//	cs.Lock();
 		S.Format("\n%02d:%02d:%02d --- PROGRESS --- SCEN %d RUN %d ---\n", 
 						h,m,s, Nscen, Nrun);
 		pDC->TextOut(10, 105, S);
@@ -3134,7 +3207,7 @@ void CTracer:: ShowProgress(int Ncalc) // new - static loads
 		logout << S;
 		logout << "-----------------------\n";
 		//if (SINGLE) ::GdiFlush();
-		cs.Unlock();
+	//	cs.Unlock();
 
 	pStatus->ReleaseDC(pDC);
 }
@@ -3294,7 +3367,7 @@ void CTracer:: ShowBeamlet(int isource)
 	pDC->MoveTo(x1, y1); pDC->LineTo(x2, y2);
 	pDC->MoveTo(x1, z1); pDC->LineTo(x2, z2);
 	pDC->SelectObject(pOldPen);
-	::GdiFlush();
+	::GdiFlush(); //temp rem
 	cs.Unlock();
 
 	pMainView->ReleaseDC(pDC);
@@ -3716,6 +3789,7 @@ int CTracer:: GetFallAdd(const C3Point P1, C3Point & P2) // not used now
 }
 
 void CTracer:: TraceAtomFast() //with decay account, reions are stopped: pDoc->OptReionStop = TRUE
+// called by DoNextStep (old)
 {
 	CBTRDoc * pDoc = (CBTRDoc*) m_pDoc;
 	if (!pDoc->OptTraceAtoms) {  m_Stopped = TRUE; return; } // to be converted next
@@ -4026,7 +4100,7 @@ void CTracer:: GetAtomFallsBetween(const C3Point P1, const C3Point P2) const
 
 }
 
-void CTracer:: DrawAtomTrack(const C3Point P1, const C3Point P2) 
+void CTracer:: DrawAtomTrack(const C3Point P1, const C3Point P2) // called  by TraceAtomFast
 {
 	CMainView* pMV = (CMainView*)m_pViewWnd; 
 	CDC* pDC = pMV->GetDC(); // also works!
@@ -4050,7 +4124,7 @@ void CTracer:: DrawAtomTrack(const C3Point P1, const C3Point P2)
 	pDC->LineTo(p2);
 	pMV->ReleaseDC(pDC);
 	//pDC.SelectObject(pOldpen);
-	::GdiFlush();
+	::GdiFlush(); // temp rem
 	cs.Unlock();
 }
 

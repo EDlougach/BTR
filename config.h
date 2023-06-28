@@ -242,7 +242,7 @@ inline void Message_NotSelected()  {AfxMessageBox("NO plate selected!", MB_ICONI
 							   C3Point Ploc, C3Point DimOrtH, C3Point DimOrtV, 
 							   C3Point Vel, C3Point dVH, C3Point dVV);
 //	void  DrawPlate();
-	void  DrawPlate(CView * pView, CDC* pDC); // show plate + recalc  RgnPlan,  RgnSide
+	void  DrawPlate(CView * pView, CDC* pDC, BOOL BEAM); // show plate + recalc  RgnPlan,  RgnSide
 	void  ApplyLoad(BOOL flag, double Hx, double Hy);
 	void  ShowLoadState();
 	void  ShowLoad();

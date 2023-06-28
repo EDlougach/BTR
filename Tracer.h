@@ -10,9 +10,9 @@
 
 
 #define  ATOM	1000
-#define  SRCION	2000
+//define  SRCION	2000
 #define  POSION	3000
-#define	 REION	4000
+#define  REION	4000
 #define  ELECTRON 5000
 #define  RELECTRON 5001
 #define  THIN	0
@@ -259,6 +259,7 @@ private:
 	int m_Falls; // number of solid falls for reflected ions
 	int m_ID; // thread personal Number
 	int m_Run; // 1,2,3
+	int SRCION;
 		
 public :
 	CArray<ATTRIBUTES, ATTRIBUTES> * pAttr; // current bml rays Attr Array

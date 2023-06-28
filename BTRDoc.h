@@ -18,13 +18,13 @@ using namespace std;
 #define   MaxThreadNumber		21
 #define   NofPlasmaImpurMax		16
 
-#define   BTRVersion			5.0 
+#define   BTRVersion			5.25 
 #define   MAXSCENLIMIT			32
 #define   MAXLOADLIMIT			1024
 // defaults to change
 
 class CAskDlg;
-class CBtrDoc;
+//class CBtrDoc;
 
 int FindDataColumns(FILE * file);
 
@@ -157,6 +157,8 @@ public:
 	CStringArray ScenData[21]; // list of options for each scenario
 	CStringArray SkipSurfClass; // list of substrings to find in plate Comment
 	CStringArray ExceptSurf; // exceptions in skip
+	CStringArray Reflectors; // keeping falls
+	CArray<int, int> ReflectorNums; // falls keepers surf numbers
 	CString m_Text;
 	CStringArray  DataComment;
 	CStringArray  DataName;
@@ -245,7 +247,7 @@ public:
 	int OptCombiPlot; ///-1 - no load, 0 - map is calculated, >0 - selected but not calculated 
 	bool OptSINGAP;
 	bool TaskRID;
-	bool OptDeuterium;
+	//bool OptDeuterium;
 	bool OptReionAccount;
 	bool OptReionStop;
 	bool OptNeutrStop;
@@ -266,14 +268,14 @@ public:
 	bool OptAddPressure;
 	bool OptTraceSingle;
 	bool OptAddDuct;
-	int OptStart;
+	int  OptStart;
 		
 	bool OptCalcNeutralizer;
 	bool OptCalcRID;
 	bool OptCalcDuct;
 	double CalcLimitXmin, CalcLimitXmax;
 	bool OptCalcBeamTrack;
-	
+	bool OptKeepFalls;
 	
 	int PlateCounter;
 	int LoadSelected;
@@ -288,9 +290,10 @@ public:
 	CPlate * pMarkedPlate;
 	CPlate   emptyPlate;
 	CPlate * pTorCrossPlate;
-
-	CPlate * pBeamHorPlane; // new - total NBL plane
-	CPlate * pBeamVertPlane; // new - total NBL plane
+	//temporary removed
+	//CPlate * pBeamHorPlane; // new - total NBL plane
+	//CPlate * pBeamVertPlane; // new - total NBL plane
+	
 
 	int     EmitterNumber;// plate for next beam start
 	int		PlasmaEmitter; // DuctExit or AreaLimit for trace in plasma
@@ -344,7 +347,7 @@ public:
 	CArray <double, double>	BeamletPosHor;
 	CArray <double, double>	BeamletPosVert;
 
-	int  TracePartType; // 0:e, 1:H+, 2:D+, -1:H-, -2:D-, 10:H0, 20:H0
+	int TracePartType; // 0:e, 1:H+, 2:D+, -1:H-, -2:D-, 10:H0, 20:D0
 	int	TracePartQ;
 	int	TracePartNucl;
 	double   TracePartMass;
@@ -650,7 +653,9 @@ public:
 	void  InitAddPlates();
 	void  SetAddPlates();
 	CPlate * GetPlateByNumber(int N);
-	bool  AddCond(CPlate * plate);// add to PlateList if condition
+	bool  AddCond(CPlate * plate);
+	void  AddReflectors(CString text);
+	// add to PlateList if condition
 	void  AddPlate(CPlate * plate);// Add plate to AddSurfList
 	int   FindPlateClones(CPlate * plate);
 	CPlate * AddPlate(bool isSolid, C3Point p0, C3Point p1, C3Point p2, C3Point p3);// not used
@@ -673,12 +678,17 @@ public:
 	void  ReadSINGAP();
 	bool  IsBeamletsFile(char * name);
 	bool  OldBeamletsFormat(char * name);
-	int   ReadBeamletsOld(char * name);
-	int   ReadBeamletsNew(char * name);
+	int   ReadBeamletsOld(char * name);//BERT
+	int   ReadBeamletsBTR(char * name);
+	int   ReadBeamletsNew(char * name);//AK
 	void  SetSINGAP();
 	void  SetSINGAPfromMAMUG();
 	void  SetVShifts();
 	void  SetReionPercent();
+	void  SetNeutrCurrents_Neg();
+	void  SetNeutrCurrents_Pos();
+	void  SetNeutrYield_Neg();
+	void  SetNeutrYield_Pos();
 	double GetReionDecay(C3Point P);
 	double GetNeutrDecay(C3Point P1, C3Point P2);
 	void  SetNeutrCurrents();

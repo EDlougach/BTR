@@ -1,0 +1,62 @@
+<<<<< Components REPORT >>>>>>
+Neutralized , W        (0.600)	 2.400e+07    
+Resid Ions, W          (0.400)	 1.600e+07    
+Reionized, W           (0.000)	 0.000e+00    
+Injected, W                   	 2.400e+07    
+Solid Surf, W                 	 8.000e+06    
+Injected + Solid, W           	 3.200e+07    
+
+__CUT-OFF_LIMITS__
+Total Power, W            (0)	 0.000e+00    
+
+___NEUTRALISER____
+Total Power, W            (0)	 0.000e+00    
+Walls Power, W            (0)	 0.000e+00    
+Walls MaxPD, W/m2             	 0.000e+00    
+Faces Power, W            (0)	 0.000e+00    
+Faces MaxPD, W/m2             	 0.000e+00    
+  Start Power, W              	 4.000e+07    
+  Exit Power, W               	 3.200e+07    
+
+______RID_______
+Total Power, W            (4)	 8.000e+06    
+Walls Power, W            (4)	 8.000e+06    
+Walls MaxPD, W/m2             	 7.298e+06    
+Faces Power, W            (0)	 0.000e+00    
+Faces MaxPD, W/m2             	 0.000e+00    
+  Exit Power, W               	 2.400e+07    
+
+__CALORIMETER___
+Total Power, W            (0)	 0.000e+00    
+MaxPD, W/m2                   	 0.000e+00    
+  Exit Power, W               	 2.400e+07    
+
+____SCRAPER_____
+Total Power, W            (0)	 0.000e+00    
+MaxPD, W/m2                   	 0.000e+00    
+Walls Power, W            (0)	 0.000e+00    
+Walls MaxPD, W/m2             	 0.000e+00    
+Faces Power, W            (0)	 0.000e+00    
+Faces MaxPD, W/m2             	 0.000e+00    
+
+_____D-LINER_____
+Total Power, W            (0)	 0.000e+00    
+MaxPD, W/m2                   	 0.000e+00    
+
+____BLANKET_____
+Total Power, W            (0)	 0.000e+00    
+MaxPD, W/m2                   	 0.000e+00    
+
+____ALL DUCT >_____
+Total Power, W            (0)	 0.000e+00    
+MaxPD, W/m2                   	 0.000e+00    
+  Exit Power, W               	 2.400e+07    
+
+__ADDIT_(solid)___
+Total Power, W            (0)	 0.000e+00    
+MaxPD, W/m2                   	 0.000e+00    
+  Exit Power, W               	 0.000e+00    
+
+___AREA_BOUNDS____
+Total Power, W            (1)	 2.400e+07    
+  Exit Power, W               	 0.000e+00    

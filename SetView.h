@@ -35,6 +35,7 @@ public:
 	CRect LoadRect;
 	CArray<CRect, CRect> RectArrayX;
 	CArray<CRect, CRect> RectArrayY;
+	bool ShowProf;
 
 // Operations
 public:
@@ -78,6 +79,7 @@ protected:
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnSize(UINT nType, int cx, int cy);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };

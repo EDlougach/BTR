@@ -1,10 +1,14 @@
 start NewDocument
 Created Load Track arrays 
 Set Beam - done
-MEM : BTR takes 7280 of 458680 available
+SINGAP beam is set from MAMUG
+Total beam power, W 4e+07
+MEM : BTR takes 10252 of 197680 available
 CUT-OFF LIMIT: BOTTOM - MAP SKIPPED 
 CUT-OFF LIMIT: TOP - MAP SKIPPED 
 CUT-OFF LIMIT: RIGHT - MAP SKIPPED 
 CUT-OFF LIMIT: LEFT - MAP SKIPPED 
+SINGAP beam is set from MAMUG
+Total beam power, W 4e+07
 Init Default Scenarious: 1
 Close tmp log

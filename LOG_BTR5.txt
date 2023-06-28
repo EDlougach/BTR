@@ -1,0 +1,16 @@
+
+ BTR LOG ----  Date 01-01-1970   Time 03:00:00 --------
+ BTR version 5.25 /MULTI
+HomeDirName :  C:\Users\Eugenia\Codes\BTR
+SET Log-file  C:\Users\Eugenia\Codes\BTR\LOG_BTR5.txt
+
+____Basic Config file:___  Undefined ___
+-------- DEFAULT CONFIG ---------
+Config is read :   Undefined 
+- found reflectors = 0 
+_________ Reset Log File __________
+Log File output is ON
+ -->[STOP]<--
+
+------------ EXIT BTR 5 session -----------------
+---------- END / CLOSE LOG-file ----------

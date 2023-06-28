@@ -71,6 +71,7 @@ public:
 	int m_AtomPower;
 	int m_NegIon_Power;
 	int m_PosIon_Power;
+	afx_msg void OnClickedRefl();
 };
 
 //{{AFX_INSERT_LOCATION}}

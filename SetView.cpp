@@ -74,16 +74,25 @@ void CSetView::OnInitialUpdate()
 	// TODO: calculate the total size of this view
 	sizeTotal.cx = 100; sizeTotal.cy = 1000;
 	SetScrollSizes(MM_TEXT, sizeTotal);
-	
+
 	Xmax = 1; Ymax = 1; Zmax = 1;
 	double Fi = PI * 40/180;
 	double Teta = PI * 20/180;
 	SinFi = sin(Fi); CosFi = cos(Fi);
 	SinTeta = sin(Teta); CosTeta = cos(Teta);
 	Load = NULL;
+	ShowProf = FALSE;
 
 }
-
+void CSetView::OnSize(UINT nType, int cx, int cy) 
+{
+	CScrollView::OnSize(nType, cx, cy);
+	ShowProf = FALSE;
+/*	CRect rect;
+	GetClientRect(rect);
+	UpdateScales(rect);
+	STOP = FALSE;*/
+}
 void CSetView::OnDraw(CDC* pDC)
 {
 	//AfxMessageBox("CSetView OnDraw");
@@ -95,7 +104,11 @@ void CSetView::OnDraw(CDC* pDC)
 	GetClientRect(rect);
 	pDC->Rectangle(rect);*/
 	CBTRDoc* pDoc = (CBTRDoc*)GetDocument();
-	if (pDoc->ShowProfiles && Load != NULL) ShowProfiles(); 
+	//bool ShowProf = pDoc->ShowProfiles;
+	ShowProf = TRUE;
+	if (pDoc->pMarkedPlate == NULL || !(pDoc->ShowProfiles)) ShowProf = FALSE; 
+	//if (pDoc->ShowProfiles && Load != NULL) ShowProfiles(); 
+	if (ShowProf) ShowProfiles(); 
 	else ShowStatus();
 
 	return;
@@ -605,6 +618,8 @@ void CSetView:: ShowLoadProfiles(CDC* pDC)
 	int ip = Load->iProf;
 	int jp = Load->jProf;
 
+	if (ip < 0 || ip > Load->Nx - 1 || jp < 0 || jp > Load->Ny - 1) return;
+
 	RectArrayX.RemoveAll();
 	RectArrayY.RemoveAll();
 
@@ -631,6 +646,7 @@ void CSetView:: ShowLoadProfiles(CDC* pDC)
 	 pos = S1.Find("e",0);
 	 pos1 = S1.Find(".",0);
 	 if (pos>0) S = "1.0" + S1.Mid(pos);
+	 else return;
 	 order = atof(S);
 	 S = S1.Mid(pos);
 	 S.MakeUpper();
@@ -699,26 +715,27 @@ void CSetView:: ShowLoadProfiles(CDC* pDC)
 		 pDC->TextOut(x-w-5, y-5, S);
 		 x = xmax2; pDC->LineTo(x,y);		 
 	}
-///////////////////////////////////////////////////////////
+///////////////////////// profiles //////////////////////////////////
 	pDC->MoveTo(xmin, ymin1);
 	for (i = 0; i <= Load->Nx; i++) {
 		x = xmin + (int) (i*(Load->StepX) * scaleX);
 		y = ymin1 - (int)(Load->Val[i][Load->jProf] * scaleZ);
+		//pDC->MoveTo(x,y);y = ymax1;
 		pDC->LineTo(x, y);
 	}
 	pDC->MoveTo(xmin, ymin2);
 	for (j = 0; j <= Load->Ny; j++) {
 		x = xmin + (int) (j*(Load->StepY)* scaleY);
 		y = ymin2 - (int)(Load->Val[Load->iProf][j] * scaleZ);
+		//pDC->MoveTo(x,y);y = ymax2;
 		pDC->LineTo(x, y);
 	}
 
 	CRect rect;
-	
 	pOldPen = pDC->SelectObject(&Pen); // red
 
 	for (i = 0; i <= Load->Nx; i++) {
-		x = xmin + (int) (i*Load->StepX* scaleX);
+		x = xmin + (int) (i*(Load->StepX)* scaleX);
 		y = ymin1 - (int)(Load->Val[i][Load->jProf] * scaleZ);
 		pDC->Ellipse(x-3, y-3, x+3, y+3);
 		rect = new CRect();
@@ -730,7 +747,7 @@ void CSetView:: ShowLoadProfiles(CDC* pDC)
 	//pDC->TextOut(xmax1 - 80, ymax1 - 20, S);
 
 	for (j = 0; j <= Load->Ny; j++) {
-		x = xmin + (int) (j*Load->StepY* scaleY);
+		x = xmin + (int) (j*(Load->StepY)* scaleY);
 		y = ymin2 - (int)(Load->Val[Load->iProf][j] * scaleZ);
 		pDC->Ellipse(x-3, y-3, x+3, y+3);
 		rect = new CRect();
@@ -1559,7 +1576,7 @@ void CSetView::OnLButtonDblClk(UINT /* nFlags */, CPoint /* point */)
 	// double dHor = pDoc->pMarkedPlate->Orig.Y;
 	// double dVert = pDoc->pMarkedPlate->Orig.Z;
 
-	if (pDoc->ShowProfiles) 
+	//if (pDoc->ShowProfiles) 
 		pDoc->pMarkedPlate->WriteProfiles();
 
 /*	// save image
@@ -1612,7 +1629,7 @@ void CSetView::OnLButtonDown(UINT /* nFlags */, CPoint point) // taken from BTR-
 	}
 	} //(icorr < 0)
 	
-	if (icorr < 0 && jcorr < 0) return;
+	if (icorr < 0 || jcorr < 0 || icorr > Load->Nx-1 || jcorr > Load->Ny-1) return;
 	
 	double val = pDoc->pMarkedPlate->Load->Val[icorr][jcorr];
 	CString S;

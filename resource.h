@@ -140,6 +140,7 @@
 #define IDC_NonGauss                    1096
 #define IDC_Beamlet                     1097
 #define IDC_Particles                   1098
+#define IDC_Particles2                  1099
 #define IDC_Xmin                        1108
 #define IDC_Xmax                        1114
 #define IDC_Help                        1120
@@ -296,6 +297,7 @@
 #define IDC_MaxScen                     1357
 #define IDC_BUTTON1                     1358
 #define IDC_BUTTON_PARAM                1358
+#define IDC_Refl                        1359
 #define ID_DATA_GET                     32771
 #define ID_DATA_STORE                   32772
 #define ID_VIEW_FITONOFF                32773
@@ -455,9 +457,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_3D_CONTROLS                     1
-#define _APS_NEXT_RESOURCE_VALUE        184
+#define _APS_NEXT_RESOURCE_VALUE        185
 #define _APS_NEXT_COMMAND_VALUE         32947
-#define _APS_NEXT_CONTROL_VALUE         1359
+#define _APS_NEXT_CONTROL_VALUE         1360
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

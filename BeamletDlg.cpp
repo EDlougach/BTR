@@ -118,8 +118,8 @@ void BeamletDlg:: UpdateValues()
 {
 	CBTRDoc * pDoc = (CBTRDoc*)doc;
 	if ((int)pDoc->BeamSplitType ==0) { 
-			pDoc->PolarNumber = m_Npolar;
-			pDoc->AzimNumber =  m_Nazim;
+			pDoc->PolarNumberAtom = m_Npolar;
+			pDoc->AzimNumberAtom =  m_Nazim;
 		}
 		else {
 			pDoc->BeamSplitNumberY = m_Npolar;

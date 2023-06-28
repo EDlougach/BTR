@@ -12,7 +12,7 @@
 #include "ParticlesDlg.h"
 #include "ThickDlg.h"
 #include "ThinDlg.h"
-//#include "InjectDlg.h"
+#include "TaskDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -90,6 +90,7 @@ BEGIN_MESSAGE_MAP(CBeamDlg, CDialog)
 	ON_BN_CLICKED(IDC_File, OnFile)
 	ON_BN_CLICKED(IDC_IONPOWER, OnIonPower)
 	//}}AFX_MSG_MAP
+	ON_BN_CLICKED(IDC_Refl, &CBeamDlg::OnClickedRefl)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -160,7 +161,7 @@ void CBeamDlg::OnReionisation()
 	pDoc->SetReionization();
 /*	CReionDlg dlg;
 
-	switch (pDoc->TracePartType) { // 0:e, 1:H+, 2:D+, -1:H-, -2:D-, 10:H0, 20:H0
+	switch (pDoc->TracePartType) { // 0:e, 1:H+, 2:D+, -1:H-, -2:D-, 10:H0, 20:D0
 	case 0:	dlg.m_Caption = "e -> e+"; break;
 	case 1:
 	case -1:
@@ -227,8 +228,8 @@ void CBeamDlg::OnBeamlet()
 	if (idres == IDOK) {
 
 		if (m_Gauss == 0) { 
-			pDoc->PolarNumber = dlg.m_Npolar;
-			pDoc->AzimNumber = dlg.m_Nazim;
+			pDoc->PolarNumberAtom = dlg.m_Npolar;
+			pDoc->AzimNumberAtom = dlg.m_Nazim;
 		}
 		else {
 			pDoc->BeamSplitNumberY = dlg.m_Npolar;
@@ -271,7 +272,7 @@ void CBeamDlg::OnParticles()
 	CBTRDoc * pDoc = (CBTRDoc*)doc;
 	CParticlesDlg dlg;
 
-	switch (pDoc->TracePartType) {
+	switch (pDoc->TracePartType) { // 0:e, 1:H+, 2:D+, -1:H-, -2:D-, 10:H0, 20:D0
 	case 0: dlg.m_Caption = "ELECTRONS"; break;
 	case 1: dlg.m_Caption = "HYDROGEN ions"; break;
 	case 2:	dlg.m_Caption = "DEUTERIUM ions"; break;
@@ -311,9 +312,10 @@ void CBeamDlg::OnParticles()
 		}
 
 	m_D = -1;
-	if (pDoc->TracePartType == -2 || pDoc->TracePartType == 2 || pDoc->TracePartType == 20) m_D = 0;
-	if (pDoc->TracePartType == -1 || pDoc->TracePartType == 1 || pDoc->TracePartType == 10) m_D = 1;
-	if (pDoc->TracePartType == 0) m_D = 2;
+	// 0:e, 1:H+, 2:D+, -1:H-, -2:D-, 10:H0, 20:D0
+	if (pDoc->TracePartType == -2 || pDoc->TracePartType == 2 || pDoc->TracePartType == 20) m_D = 0; // D
+	if (pDoc->TracePartType == -1 || pDoc->TracePartType == 1 || pDoc->TracePartType == 10) m_D = 1; // H
+	if (pDoc->TracePartType == 0) m_D = 2; // e
 	
 	UpdateData(TRUE);
 
@@ -456,6 +458,42 @@ void CBeamDlg::OnFile()
 
 void CBeamDlg::OnIonPower() 
 {
+	UpdateData(TRUE);
+	CBTRDoc * pDoc = (CBTRDoc*)doc;
+	pDoc->OptKeepFalls = !pDoc->OptKeepFalls;
+	CString S = " - The falls will be kept!";
+	if (!pDoc->OptKeepFalls)
+		S = " - The falls will be NOT kept";
+	//logout << S << "\n";
+	AfxMessageBox(S);
+	SetButtons();
+}
+
+
+void CBeamDlg::OnClickedRefl()
+{
 	// TODO: Add your control notification handler code here
+	CBTRDoc * pDoc = (CBTRDoc*)doc;
+	CTaskDlg dlg;
+	CString text = "";
+	CString S, Sn;
+	int npe = pDoc->PlasmaEmitter;
+	S.Format(" %d, ", npe);
+	text += S;
+	int nmax = pDoc->ReflectorNums.GetSize();
+	for (int i = 0; i < nmax; i++) {
+		int n = pDoc->ReflectorNums[i];
+		if (n == npe) continue;
+		Sn.Format(" %d, ", n);
+		text += Sn;
+	}
 	
+	dlg.m_Task = text;
+
+	if (dlg.DoModal() == IDOK) {
+		text = dlg.m_Task;
+		pDoc->AddReflectors(text); // parse text
+	}
+	
+	//else TaskName = "No tytle";
 }

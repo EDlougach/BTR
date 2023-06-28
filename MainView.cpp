@@ -38,6 +38,7 @@ CMainView::CMainView()
 	MenuPop.LoadMenu(IDR_MENUPOP);
 	//	if (!BlackPen.CreatePen(PS_SOLID,   1, RGB(0,0,0)))	return;
 	BlackPen.CreateStockObject(BLACK_PEN);
+	if (!YellowPen.CreatePen(PS_SOLID, 2, RGB(50, 255, 100))) return;
 	if (!ThinPen.CreatePen(PS_SOLID,   1, RGB(100,100,100))) return;
 	if (!ThickPen.CreatePen(PS_SOLID, 2, RGB(200,200,200)))	return;
 	if (!DotPen.CreatePen(PS_DOT,    1, RGB(100,100,100)))	return;
@@ -46,12 +47,11 @@ CMainView::CMainView()
 	if (!RosePen.CreatePen(PS_SOLID,  1, RGB(255,0,0)))	return;
 	if (!MamugPen.CreatePen(PS_SOLID, 1, RGB(200,50,255)))	return;
 	if (!SingapPen.CreatePen(PS_SOLID, 1, RGB(200,50,255)))	return;
-	if (!YellowPen.CreatePen(PS_SOLID, 3, RGB(250,250,0)))	return;
+	
 	if (!GreenPen.CreatePen(PS_SOLID, 1, RGB(0,150,0)))	return;
 	if (!BluePen.CreatePen(PS_SOLID,   1, RGB(0,0,255)))	return;
 	if (!AtomPen.CreatePen(PS_SOLID,  1, RGB(50,0,255)))	return;
 	//	if (YellowBrush.CreateSolidBrush(RGB(255,255,220))) return;
-
 
 	// coordinates/labels font
 	smallfont.CreateFont(-10, 0, 0, 0, 600, FALSE, FALSE, 0,
@@ -217,13 +217,15 @@ void CMainView::OnDraw(CDC* pDC)
 	double Ymin, Ymax, Zmin, Zmax;
 
 	//STOP = FALSE;
-	if (SHOW_BEAM) {
+/*	if (SHOW_BEAM) {
 		if (pDoc->OptSINGAP) ShowSINGAP();
 		else ShowMAMuG();
 	} // show beam
 	else
-		ShowBeamPlanes();
-
+		ShowBeamPlanes(); // beam axial crosssections
+*/
+	if (pDoc->OptSINGAP) ShowSINGAP();
+	else ShowMAMuG();
 	// draw beam centerline
 	pDC->SetROP2(R2_NOT);
 	C3Point P = pDoc->GetBeamFootLimits(xmax, Ymin, Ymax, Zmin, Zmax);
@@ -647,7 +649,7 @@ void CMainView:: ShowNBLine()
 	POSITION pos = List.GetHeadPosition();
 	while (pos != NULL) {
 		pPlate = List.GetNext(pos);
-		pPlate->DrawPlate(this, pDC);
+		pPlate->DrawPlate(this, pDC, SHOW_BEAM);
 	}
 	pDC->SelectObject(pOldFont);
 	ReleaseDC(pDC);
@@ -701,15 +703,18 @@ pDC->SelectObject(pOldPen);
 */
 void CMainView::ShowBeamPlanes()
 {
-	MSG message;
+	// temporary removed
+/*	MSG message;
 	STOP = FALSE;
 	CDC* pDC = GetDC();
 	CBTRDoc* pDoc = (CBTRDoc*)GetDocument();
 	int origX = OrigX;
 	int origY = OrigY;
 	int origZ = OrigZ;
+	
 	CPlate * plane1 = pDoc->pBeamHorPlane;
 	CPlate * plane2 = pDoc->pBeamVertPlane;
+	
 	double Xmax = plane1->Xmax;
 	double DimX = Xmax;//DimX = right - left;
 	double Ymax = plane1->Ymax;
@@ -759,12 +764,12 @@ void CMainView::ShowBeamPlanes()
 	Nyy = (int)floor(DimY / hy);
 	Nzz = (int)floor(DimZ / hz);
 
-	int rx = (int)(hx * ScaleX / 2) + 2;//  = (int)(StepX *  pLV->ScaleX / 2)+1;
-	if (rx<1) rx = 1; // fill point 'radius'
-	int ry = (int)(hy * ScaleY / 2) + 2;//  = (int)(StepY *  pLV->ScaleY / 2)+1;
-	if (ry<1) ry = 1; // fill point 'radius'
-	int rz = (int)(hz * ScaleZ / 2) + 2;//  = (int)(StepY *  pLV->ScaleY / 2)+1;
-	if (rz<1) rz = 1; // fill point 'radius'
+	int rx = (int)(hx * ScaleX / 2) + 3;//  = (int)(StepX *  pLV->ScaleX / 2)+1;
+	//if (rx<1) rx = 1; // fill point 'radius'
+	int ry = (int)(hy * ScaleY / 2) + 3;//  = (int)(StepY *  pLV->ScaleY / 2)+1;
+	//if (ry<1) ry = 1; // fill point 'radius'
+	int rz = (int)(hz * ScaleZ / 2) + 3;//  = (int)(StepY *  pLV->ScaleY / 2)+1;
+	//if (rz<1) rz = 1; // fill point 'radius'
 
 	for (ii = 0; ii < Nxx; ii++) {
 		x = (ii + 0.5)*hx; //left + (ii + 0.5)*hx
@@ -812,6 +817,7 @@ void CMainView::ShowBeamPlanes()
 	} // ii
 
 	ReleaseDC(pDC);
+	*/
 }
 
 void CMainView:: ShowMAMuG() // IonSources
@@ -1038,12 +1044,19 @@ void CMainView:: ShowTraced() // not called
 void CMainView:: ShowParticlePos(C3Point Pos, COLORREF color)
 {
 	CDC* pDC = GetDC();
+	//CPen * pen = &GreenPen;
+	//if (charge > 0) pen = &RosePen;// thick 1
+	//CPen * pOldPen = pDC->SelectObject(pen);
 	int x = OrigX + (int)(Pos.X * ScaleX);
 	int y = OrigY - (int)(Pos.Y * ScaleY);
 	int z = OrigZ - (int)(Pos.Z * ScaleZ);
 	pDC->SetPixel(x, y, color);
 	pDC->SetPixel(x, z, color);
+	//pDC->Ellipse(x - 1, y - 1, x + 1, y + 1);
+	//pDC->Ellipse(x - 1, z - 1, x + 1, z + 1);
+	//pDC->SelectObject(pOldPen);
 	ReleaseDC(pDC);
+
 }
 /*  CPen BlackPen;	CPen ThinPen; 	CPen ThickPen;
 	CPen DotPen;	CPen MarkPen;	CPen RedPen;
@@ -1820,7 +1833,7 @@ void CMainView::OnLButtonDown(UINT /* nFlags */, CPoint point)
 		pDoc->OptCombiPlot = 1; // IMPORTANT map is now selected (not calculated)
 	// NEW	
 		pDoc->OnPlateSelect(); 	//for pMarkedPlate Calls: SetLoadArray(plate, TRUE);OptCombiPlot = 0; P_CalculateLoad(plate);
-		plate0->DrawPlate(this, &dc);// show red in the main view
+		plate0->DrawPlate(this, &dc, SHOW_BEAM);// show red in the main view
 		plate0->SetViewDim(); // - set max limits 
 		plate0->ShowEmptyLoad(); // show total rect, pLV->SetPlate(this);
 		plate0->DrawLoadRect(); //can be zero - calculate and Show Scale (local) for current limits!!

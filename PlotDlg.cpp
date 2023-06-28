@@ -29,7 +29,11 @@ CPlotDlg::CPlotDlg(CWnd* pParent /*=NULL*/)
 	ZOOM = 1;
 	SHIFT_X = 0;
 	SHIFT_Y = 0;
-
+	
+	//SetWindowPos(NULL, 100, 100, 200, 200, NULL);
+	//CDialog::SetWindowPos(NULL, 0, 0, 100, 100, WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME);
+		//SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
+	//STYLE WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
 
 }
 
@@ -75,7 +79,7 @@ void CPlotDlg::OnPaint()
 //	CString S;
 	
 	//GetWindowRect(&rect);
-	GetClientRect(&rect);
+	GetClientRect(&rect);	//SetRect(&rect, 0, 0, 100, 100);
 	rect.DeflateRect(10,50,10,50);
 	//SizeTotal.x = rect.Width();
 	//SizeTotal.y = rect.Height();
@@ -83,7 +87,7 @@ void CPlotDlg::OnPaint()
 //	pDC->SetBkColor(RGB(255,255,255));
 
 	CBrush YellowBrush;
-	YellowBrush.CreateSolidBrush(RGB(240,250,210));
+	YellowBrush.CreateSolidBrush(RGB(240,250,230));//RGB(240,250,210)
 	CBrush * oldbrush = pDC->SelectObject(&YellowBrush);
 	pDC->Rectangle(rect);
 	pDC->SelectObject(oldbrush);
@@ -129,13 +133,13 @@ void CPlotDlg:: DrawPlot(CDC* pDC, CRect * Bound)
 {
 	if (Plot == NULL) return;
 	CFont font;
-	font.CreateFont(-12, 0, 0, 0, 200, FALSE, FALSE, 0,
+	font.CreateFont(-12, 0, 0, 0, BOLD_FONTTYPE, FALSE, FALSE, 0,
 		ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, 
 		DEFAULT_PITCH | FF_MODERN, "System");
 	pDC->SelectObject(&font);
 
 	SetDlgItemText(IDC_CAPTION, Plot->Caption);
-	pDC->SetBkColor(RGB(240,250,210));
+	pDC->SetBkColor(RGB(240,240,230)); //(240,250,210)
 	pDC->SetBkMode(1);
 	CPen DotPen;
 	if (!DotPen.CreatePen(PS_DOT, 1, RGB(100,100,100)))	return;
@@ -147,7 +151,7 @@ void CPlotDlg:: DrawPlot(CDC* pDC, CRect * Bound)
 	plotrect.bottom = Bound->bottom - 40;
 	plotrect.top = Bound->top + 40;
 	plotrect.left = Bound->left + 50;
-	plotrect.right = Bound->right - 30;
+	plotrect.right = Bound->right - 50;
 
 
 	if (Plot->PosNegX)  // simmetrical
@@ -170,7 +174,7 @@ void CPlotDlg:: DrawPlot(CDC* pDC, CRect * Bound)
 	//if (Plot->PosNegY) Ymin = -Ymax;
 		
 	int Kx = (int)ceil((Xmax - Xmin)/ Plot->CrossX);
-	int Ky = (int)ceil((Ymax - Ymin)/ Plot->CrossY);
+	int Ky = (int)floor((Ymax - Ymin)/ Plot->CrossY);
 	ScaleX = fabs((SHIFT_X + plotrect.right - Orig.x) *ZOOM / (Xmax - Xmin));
 	ScaleY = fabs((SHIFT_Y + plotrect.top - Orig.y)/ Ymax); // ZOOM = 1!
 
@@ -196,25 +200,25 @@ void CPlotDlg:: DrawPlot(CDC* pDC, CRect * Bound)
 	sw = pDC->GetTextExtent(Sord).cx;
 	sh = pDC->GetTextExtent(Sord).cy;
 
-	pDC->TextOut(Orig.x - sw/2, plotrect.top - sh - sh/2, Sord);
-	LegendX =  Orig.x + sw/2 + 20;
+	pDC->TextOut(Orig.x - sw - 5, plotrect.top - sh - sh/2, Sord);
+	LegendX = Orig.x;// +sw / 2 + 20;
 	s.Format("%s", Plot->LabelY); 
 	sw = pDC->GetTextExtent(s).cx;
 	sh = pDC->GetTextExtent(s).cy;
-	pDC->TextOut(LegendX, plotrect.top - sh - sh/2, s);
+	pDC->TextOut(LegendX+5, plotrect.top - sh - sh/2, s);
 	LegendX =  LegendX + sw + 40;
 	LegendY =  plotrect.top - sh;
 
 	
 	pOldPen = pDC->SelectObject(&DotPen);
 	// grid
-	for (i = 0; i <= Kx; i++) {
+	for (i = 0; i < Kx; i++) {
 		x = i * Plot->CrossX; 
 		ix = Orig.x + (int)((x) * ScaleX);
 		pDC->MoveTo(ix, plotrect.bottom); pDC->LineTo(ix, plotrect.top);
 	}
 	if (Plot->PosNegX){
-		for (i = 1; i <= Kx; i++) {
+		for (i = 1; i < Kx; i++) {
 			x = -i * Plot->CrossX; 
 			ix = Orig.x + (int)((x) * ScaleX);
 			pDC->MoveTo(ix, plotrect.bottom); pDC->LineTo(ix, plotrect.top);
@@ -309,14 +313,14 @@ void CPlotDlg:: DrawPlot(CDC* pDC, CRect * Bound)
 	
 		
 	// AXES
-	for (i = 0; i <= Kx; i++) { 
+	for (i = 0; i < Kx; i++) { 
 		x = i*Plot->CrossX; 
 		ix = Orig.x + (int)((x) * ScaleX);
 		pDC->MoveTo(ix, Orig.y - 3); pDC->LineTo(ix, Orig.y + 3);
 		s.Format("%g", (x + Xmin));
 		//if (fabs(x + Xmin) <1.e-12) s.Format("0");
 		sw = pDC->GetTextExtent(s).cx;
-		pDC->TextOut(ix - sw/2, Orig.y +5, s);
+		pDC->TextOut(ix - sw/2, Orig.y +5, s); //ix 
 	}
 	for (j = 0; j <= Ky; j++) {
 		y = Ymin + j*Plot->CrossY;
@@ -332,7 +336,7 @@ void CPlotDlg:: DrawPlot(CDC* pDC, CRect * Bound)
 	// label X
 	s.Format("%s", Plot->LabelX);
 	sw = pDC->GetTextExtent(s).cx; sh = pDC->GetTextExtent(s).cy;
-	pDC->TextOut(plotrect.right +20 - sw , Orig.y - sh - sh/2, s);
+	pDC->TextOut( plotrect.right +5, Orig.y + 5 , s);// -sh/2 ;  20 - sw  
 
 }
 
@@ -438,7 +442,7 @@ void CPlotDlg::PlotLines(CDC* pDC)
 */		
 			if (x>=xprev){
 				pDC->LineTo(ix, jyprev);
-				if ((x - xprev)*ScaleX >= 10)
+				if ((x - xprev)*ScaleX >= 2)
 				pDC->LineTo(ix, Orig.y);
 				pDC->LineTo(ix, jy);
 			}

@@ -2,26 +2,43 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{0df5f73e-0d4d-4bf4-bfaa-0a5e7efbe7ed}</UniqueIdentifier>
+      <UniqueIdentifier>{d93337ab-d1c8-4383-a7cc-e660efc72b2c}</UniqueIdentifier>
       <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
     </Filter>
     <Filter Include="Header Files">
-      <UniqueIdentifier>{324bb4db-b2cc-416a-a4ca-91dece5250a6}</UniqueIdentifier>
+      <UniqueIdentifier>{54c7fccf-af10-486f-9a9b-50808daf6891}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
     <Filter Include="Resource Files">
-      <UniqueIdentifier>{998a4ba6-001c-47da-a81c-1e2ec1ee0ae8}</UniqueIdentifier>
+      <UniqueIdentifier>{d7156798-ee55-4739-8e63-c417f21cbd7e}</UniqueIdentifier>
       <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+    <Filter Include="HTML Help Topics">
+      <UniqueIdentifier>{e3e9fc6b-d8c8-4075-9d00-9767d1e028ba}</UniqueIdentifier>
+      <Extensions>htm;html</Extensions>
+    </Filter>
+    <Filter Include="HTML Help Files">
+      <UniqueIdentifier>{c5594594-59c4-400d-b4df-83cbbfae920c}</UniqueIdentifier>
+      <Extensions>hhp;hhc;hhk;gif;jpg</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AddGasDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="AskDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AtomDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="BeamDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="BeamletDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BMP_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="BTR.cpp">
@@ -42,6 +59,9 @@
     <ClCompile Include="DataView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DefLoadDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="FieldsDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -51,7 +71,19 @@
     <ClCompile Include="InjectDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="InputDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="InvertText.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="IonSourceDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LevelsDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LimitsDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="LoadStepDlg.cpp">
@@ -72,16 +104,25 @@
     <ClCompile Include="MFDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MultiPlotDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="NBIconfDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NeutrDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NumberDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="partcfg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ParticlesDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PlasmaDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PlotDlg.cpp">
@@ -102,7 +143,19 @@
     <ClCompile Include="ResSmooth.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="RIDDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SendMail.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="SetView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StartDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StatOutDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="StdAfx.cpp">
@@ -120,55 +173,13 @@
     <ClCompile Include="ThinDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ViewSizeDlg.cpp">
+    <ClCompile Include="ThreadsDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="InputDlg.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="InvertText.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="BMP_utils.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="Tracer.cpp">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="StartDlg.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ThreadsDlg.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PlasmaDlg.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="RIDDlg.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NumberDlg.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="LevelsDlg.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="LimitsDlg.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="AddGasDlg.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="AtomDlg.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MultiPlotDlg.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SendMail.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DefLoadDlg.cpp">
+    <ClCompile Include="ViewSizeDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -178,13 +189,22 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AddGasDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="AskDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AtomDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BeamDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BeamletDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BMP_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BTR.h">
@@ -205,16 +225,34 @@
     <ClInclude Include="DataView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DefLoadDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="FieldsDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GasDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="geom_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="InjectDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="InputDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="InvertText.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="IonSourceDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LevelsDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LimitsDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="LoadStepDlg.h">
@@ -235,16 +273,25 @@
     <ClInclude Include="MFDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MultiPlotDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="NBIconfDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="NeutrDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="NumberDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="partfld.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ParticlesDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PlasmaDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PlotDlg.h">
@@ -262,13 +309,22 @@
     <ClInclude Include="RemnDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ResSmooth.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="RIDDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SendMail.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="SetView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StartDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StatOutDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="StdAfx.h">
@@ -286,55 +342,13 @@
     <ClInclude Include="ThinDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ViewSizeDlg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="InputDlg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="InvertText.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="BMP_utils.h">
+    <ClInclude Include="ThreadsDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Tracer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="StartDlg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThreadsDlg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PlasmaDlg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="RIDDlg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NumberDlg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="LevelsDlg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="LimitsDlg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AddGasDlg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AtomDlg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MultiPlotDlg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SendMail.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DefLoadDlg.h">
+    <ClInclude Include="ViewSizeDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -354,20 +368,250 @@
     <Image Include="res\Toolbar.bmp">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="..\..\..\Public\Pictures\Sample Pictures\Lighthouse.bmp">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="D:\Dlugach_ED\Pictures\onsite_23-05-2009.bmp">
-      <Filter>Resource Files</Filter>
+    <Image Include="hlp\Images\screenshot.jpg">
+      <Filter>HTML Help Topics</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="GasKstar.txt" />
+    <None Include="res\BTR.rc2">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="hlp\afx_hidd_color.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\afx_hidd_fileopen.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\afx_hidd_filesave.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\afx_hidd_find.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\afx_hidd_font.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\afx_hidd_newtypedlg.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\afx_hidd_print.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\afx_hidd_printdlg.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\afx_hidd_printsetup.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\afx_hidd_replace.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\afx_hidp_default.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\afx_hidw_dockbar_top.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\afx_hidw_preview_bar.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\afx_hidw_status_bar.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\afx_hidw_toolbar.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_app_about.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_app_exit.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_context_help.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_edit_clear.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_edit_clear_all.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_edit_copy.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_edit_cut.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_edit_find.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_edit_paste.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_edit_redo.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_edit_repeat.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_edit_replace.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_edit_undo.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_file_close.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_file_mru_file1.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_file_new.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_file_open.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_file_page_setup.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_file_print.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_file_print_preview.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_file_print_setup.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_file_save.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_file_save_as.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_file_send_mail.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_help_index.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_help_using.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_ht_caption.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_ht_nowhere.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_next_pane.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_prev_pane.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_sc_close.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_sc_maximize.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_sc_minimize.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_sc_move.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_sc_nextwindow.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_sc_prevwindow.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_sc_restore.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_sc_size.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_sc_tasklist.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_view_ruler.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_view_status_bar.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_view_toolbar.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_window_all.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_window_arrange.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_window_cascade.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_window_new.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_window_split.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_window_tile.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_window_tile_horz.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hid_window_tile_vert.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\hidr_doc1type.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\main_index.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\menu_edit.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\menu_file.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\menu_help.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\menu_tasks.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\menu_view.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\scrollbars.htm">
+      <Filter>HTML Help Topics</Filter>
+    </None>
+    <None Include="hlp\BTR.hhc">
+      <Filter>HTML Help Files</Filter>
+    </None>
+    <None Include="hlp\BTR.hhk">
+      <Filter>HTML Help Files</Filter>
+    </None>
+    <None Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="res\BTR.rc2">
-      <Filter>Resource Files</Filter>
+    <CustomBuild Include="Resource.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="hlp\BTR.hhp">
+      <Filter>HTML Help Files</Filter>
     </CustomBuild>
   </ItemGroup>
 </Project>
