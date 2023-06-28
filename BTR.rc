@@ -1059,7 +1059,7 @@ CAPTION "About BTR"
 FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,23,13,20,20
-    CTEXT           "BTR v5.25 (23 02 2023)",IDC_STATIC,62,15,146,12,SS_NOPREFIX | SS_CENTERIMAGE | NOT WS_GROUP
+    CTEXT           "BTR v5.27 (28 06 2023)",IDC_STATIC,62,15,146,12,SS_NOPREFIX | SS_CENTERIMAGE | NOT WS_GROUP
     DEFPUSHBUTTON   "OK",IDOK,203,14,28,17,WS_GROUP
     CTEXT           " E.D.Dlougach         e-mail:  edlougach@gmail.com",IDC_STATIC,42,35,174,12,SS_CENTERIMAGE
     CTEXT           "https://sites.google.com/view/btr-code/home",IDC_STATIC,77,61,157,13
