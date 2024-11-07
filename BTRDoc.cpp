@@ -787,7 +787,7 @@ void CBTRDoc:: InitBeam()
 	TraceOption = 1; // 0-time, 1-length
 
 	// SOURCE PARTICLES -----------------------------------------
-	TracePartType = 1; //H+     // -2; D-
+	TracePartType = -2; //1 H+     // -2; D-
 /*	TracePartQ  = -1;	TracePartNucl = 1;*/
 		
 	AddData("Source ions Tracking Step, m", NAME(TraceStepL), TraceStepL = 0.5, 1);
@@ -8220,7 +8220,7 @@ bool CBTRDoc:: OldBeamletsFormat(char * name) // check if this is Bert's file - 
 
 }
 
-int CBTRDoc:: ReadBeamletsOld(char * name) // BERT de ESHE file (old)
+int CBTRDoc:: ReadBeamletsOld(char * name) // BERT de ESHE file (old) 10 columns - corrected 05.11.24 after Globus FB
 // START  POS-X  WID-X  ALF-X  DIV-X  POS-Y  WID-Y  ALF-Y  DIV-Y   FRACTION
 {
 	Singap_Array.RemoveAll();
@@ -8275,7 +8275,7 @@ int CBTRDoc:: ReadBeamletsOld(char * name) // BERT de ESHE file (old)
 		for (int i = 0; i < total; i++)
 		{
 			fr = Singap_Array[i].Fraction; // can be zero current!
-			Singap_Array[i].Fraction = fr * IonBeamCurrent / total;
+			Singap_Array[i].Fraction = fr * IonBeamPower * 1000000 / SumFract; //IonBeamCurrent / total; // CORRECTED 
 		}
 
 	}
@@ -14589,7 +14589,7 @@ void CBTRDoc:: F_CalculateLoad(CPlate * plate)
 	//plate->ShowLoadState();
 }
 
-void CBTRDoc::OnStart() // BTR-slow
+void CBTRDoc::OnStart() // BTR-slow - NOT USED!!! 
 {
 	//if (!STOP) OnStop();
 	if (!STOP) {
